@@ -1,14 +1,16 @@
 import { Asset, APIResponse } from '@/types';
+import { fetchWithRetry, APIError } from '@/utils/api';
 
 /**
  * Bitcoin Handler - BTC + Ordinals Support
- * 
+ *
  * Bitcoin integration for the HEX-focused portfolio tracker.
  * Handles:
- * - BTC balance fetching
+ * - BTC balance fetching with retry logic
  * - Ordinals (Bitcoin NFTs) detection with special handling for Quantum Cats
  * - UTXO management
- * 
+ * - Rate limiting and error recovery
+ *
  * CUSTOMIZATION POINTS:
  * - API_BASE_URL: Bitcoin API endpoint (Blockstream, Mempool, etc.)
  * - ORDINALS_API: Ordinals indexer endpoint
@@ -60,12 +62,17 @@ export class BitcoinHandler {
 
       console.log(`🟠 Fetching BTC balance for: ${address} (${this.getAddressType(address)})`);
       
-      // Fetch address info from Blockstream API
-      const response = await fetch(`${this.API_BASE_URL}/address/${address}`);
-      
-      if (!response.ok) {
-        throw new Error(`Bitcoin API error: ${response.status}`);
-      }
+      // Fetch address info from Blockstream API with retry
+      const response = await fetchWithRetry(
+        `${this.API_BASE_URL}/address/${address}`,
+        {},
+        {
+          maxRetries: 3,
+          onRetry: (attempt, error, delay) => {
+            console.log(`⚠️ Bitcoin API retry attempt ${attempt} after ${delay}ms:`, error.message);
+          }
+        }
+      );
       
       const data = await response.json();
       
@@ -95,9 +102,26 @@ export class BitcoinHandler {
       };
     } catch (error) {
       console.error('❌ Error fetching BTC balance:', error);
+
+      let errorMessage = 'Failed to fetch BTC balance';
+      let errorCode = 'UNKNOWN_ERROR';
+
+      if (error instanceof APIError) {
+        errorMessage = error.message;
+        errorCode = error.code || 'API_ERROR';
+
+        if (error.rateLimitInfo?.isRateLimited) {
+          errorCode = 'RATE_LIMITED';
+          errorMessage = `Rate limited. Retry after ${Math.ceil((error.rateLimitInfo.retryAfter || 0) / 1000)}s`;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
       return {
         success: false,
-        error: `Failed to fetch BTC balance: ${error}`,
+        error: errorMessage,
+        errorCode,
         timestamp: new Date()
       };
     }
@@ -132,17 +156,21 @@ export class BitcoinHandler {
         try {
           console.log(`🔍 Trying ${indexer.name} for Ordinals...`);
           
-          const response = await fetch(indexer.url, {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'HEX-Portfolio-Tracker/1.0'
+          const response = await fetchWithRetry(
+            indexer.url,
+            {
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'HEX-Portfolio-Tracker/1.0'
+              }
+            },
+            {
+              maxRetries: 2,
+              onRetry: (attempt, error, delay) => {
+                console.log(`⚠️ ${indexer.name} retry attempt ${attempt} after ${delay}ms:`, error.message);
+              }
             }
-          });
-          
-          if (!response.ok) {
-            console.warn(`⚠️ ${indexer.name} returned ${response.status}, trying next...`);
-            continue;
-          }
+          );
           
           const data = await response.json();
           const parsedOrdinals = await indexer.parseFunction(data, address);

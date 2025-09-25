@@ -100,6 +100,9 @@ export interface APIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  errorCode?: string;
+  partialFailure?: boolean;
+  errors?: string[];
   timestamp: Date;
 }
 
