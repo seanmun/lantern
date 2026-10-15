@@ -29,6 +29,12 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
     { address: '0xA1077a294dDE1B09bB078844df40758a5D0f9a27', symbol: 'WPLS', name: 'Wrapped Pulse', decimals: 18 },
     { address: '0x15D38573d2feeb82e7ad5187aB8c1D52810B1f07', symbol: 'USDC', name: 'USD Coin from Ethereum', decimals: 6 },
     { address: '0xF6f8Db0aBa00007681F8fAF16A0FDa1c9B030b11', symbol: 'PRVX', name: 'ProveX', decimals: 18 },
+    { address: '0xc10A4Ed9b4042222d69ff0B374eddd47ed90fC1F', symbol: 'PCOCK', name: 'PulseChain Peacock', decimals: 18 },
+    { address: '0xe33a5AE21F93aceC5CfC0b7b0FDBB65A0f0Be5cC', symbol: 'MOST', name: 'MostWanted', decimals: 18 },
+    // Fork copies of Ethereum tokens: same address as on Ethereum, but they trade
+    // independently on Pulsechain (not backed by BTC or pegged to $1)
+    { address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', symbol: 'pWBTC', name: 'Wrapped BTC (Pulsechain fork copy)', decimals: 8 },
+    { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'pDAI', name: 'Dai (Pulsechain fork copy)', decimals: 18 },
     ...MAXIMUS_POOLS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
     // Ethereum pool tokens bridged to Pulsechain (no stake of their own)
     { address: '0x189a3CA3cC1337e85c7bC0a43b8d3457FD5AaE89', symbol: 'eDECI', name: 'Maximus Decimus from Ethereum', decimals: 8 },
