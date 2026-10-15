@@ -28,6 +28,7 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
     { address: '0x2fa878Ab3F87CC1C9737Fc071108F904c0B0C95d', symbol: 'INC', name: 'Incentive', decimals: 18 },
     { address: '0xA1077a294dDE1B09bB078844df40758a5D0f9a27', symbol: 'WPLS', name: 'Wrapped Pulse', decimals: 18 },
     { address: '0x15D38573d2feeb82e7ad5187aB8c1D52810B1f07', symbol: 'USDC', name: 'USD Coin from Ethereum', decimals: 6 },
+    { address: '0xF6f8Db0aBa00007681F8fAF16A0FDa1c9B030b11', symbol: 'PRVX', name: 'ProveX', decimals: 18 },
     ...MAXIMUS_POOLS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
     // Ethereum pool tokens bridged to Pulsechain (no stake of their own)
     { address: '0x189a3CA3cC1337e85c7bC0a43b8d3457FD5AaE89', symbol: 'eDECI', name: 'Maximus Decimus from Ethereum', decimals: 8 },
