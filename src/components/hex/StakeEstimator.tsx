@@ -8,6 +8,7 @@ import { MAX_STAKE_DAYS, MIN_STAKE_DAYS, estimateStake, trailingAverage } from '
 import { formatUSD } from '@/utils/prices';
 import { Hexagon } from './Hexagon';
 import { PayoutHistoryChart } from './PayoutHistoryChart';
+import { TSharePriceChart } from './TSharePriceChart';
 import { HEX_CHAIN_COLORS } from './colors';
 
 interface StakeEstimatorProps {
@@ -296,9 +297,13 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
 
       {history.length > 0 && (
         <div className="mt-8">
-          <PayoutHistoryChart series={history} color={color} assumption={payout} />
+          <PayoutHistoryChart series={history} color={color} label={`${chainLabel(s.chain)} HEX`} assumption={payout} />
         </div>
       )}
+
+      <div className="mt-8">
+        <TSharePriceChart currentPrice={s.tSharePriceHex} />
+      </div>
 
       <p className="mt-4 text-xs text-gray-500">
         Estimates only, not financial advice. Real payouts depend on future total T-Shares, end-stake penalties paid into the

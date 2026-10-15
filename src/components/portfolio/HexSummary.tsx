@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Asset, HexStakeStatus } from '@/types';
 import { chainLabel } from '@/config/chainDisplay';
 import { formatUSD } from '@/utils/prices';
@@ -8,6 +9,8 @@ import { Hexagon } from '@/components/hex/Hexagon';
 import { HexNetworkStrip } from '@/components/hex/HexNetworkStrip';
 import { LadderRow, StakeLadder } from '@/components/hex/StakeLadder';
 import { HEX_CHAIN_COLORS } from '@/components/hex/colors';
+import { MaturityCalendar } from '@/components/hex/MaturityCalendar';
+import { ForkComparison } from '@/components/hex/ForkComparison';
 
 interface HexSummaryProps {
   assets: Asset[];
@@ -41,7 +44,10 @@ function StatusBadge({ status, graceDaysLeft }: { status: HexStakeStatus; graceD
  * HEX-specific view: network stats, portfolio-level stake totals, the stake
  * ladder timeline, and detail tables for stakes and Maximus pools.
  */
+const STAKE_ROWS_COLLAPSED = 10;
+
 export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
+  const [showAllStakes, setShowAllStakes] = useState(false);
   const stakes = assets
     .filter((a): a is Asset & { stake: NonNullable<Asset['stake']> } => a.type === 'stake' && !!a.stake)
     .sort((a, b) => a.stake.endDay - b.stake.endDay);
@@ -52,6 +58,7 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
 
   if (stakes.length === 0 && pools.length === 0 && !hasLiquidHex) return null;
 
+  const hexPrices = Object.fromEntries(hexStats.map((x) => [x.chain, x.hexPriceUSD]));
   const walletName = (a: Asset) => walletNames.get(a.walletAddress.toLowerCase()) ?? '';
   const currentDay = hexStats[0]?.currentDay ?? Math.max(0, ...stakes.map((a) => a.stake.endDay - a.stake.daysRemaining));
 
@@ -150,6 +157,17 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
       )}
 
       {stakes.length > 0 && (
+        <div className="mb-8">
+          <h3 className="mb-3 text-lg font-semibold text-gray-800">Maturity calendar</h3>
+          <MaturityCalendar stakes={stakes} hexPrices={hexPrices} />
+        </div>
+      )}
+
+      <div className="mb-8 empty:hidden">
+        <ForkComparison assets={assets} hexPrices={hexPrices} />
+      </div>
+
+      {stakes.length > 0 && (
         <div className="mb-8 overflow-x-auto">
           <h3 className="mb-3 text-lg font-semibold text-gray-800">Stakes</h3>
           <table className="w-full min-w-[760px] text-sm">
@@ -166,7 +184,7 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
               </tr>
             </thead>
             <tbody>
-              {stakes.map((a) => (
+              {(showAllStakes ? stakes : stakes.slice(0, STAKE_ROWS_COLLAPSED)).map((a) => (
                 <tr key={a.id} className="border-b border-gray-100 last:border-0">
                   <td className="py-2 pr-4">
                     <div className="flex items-center gap-2 font-medium text-gray-900">
@@ -192,6 +210,14 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
               ))}
             </tbody>
           </table>
+          {stakes.length > STAKE_ROWS_COLLAPSED && (
+            <button
+              onClick={() => setShowAllStakes((v) => !v)}
+              className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+            >
+              {showAllStakes ? 'Show fewer' : `Show all ${stakes.length} stakes`}
+            </button>
+          )}
         </div>
       )}
 
