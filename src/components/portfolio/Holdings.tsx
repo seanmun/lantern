@@ -24,6 +24,7 @@ const CHAIN_DOT: Record<string, string> = {
 };
 
 function formatAmount(value: number): string {
+  if (value > 0 && value < 0.000001) return '<0.000001';
   const digits = value >= 1000 ? 0 : value >= 1 ? 4 : 6;
   return value.toLocaleString('en-US', { maximumFractionDigits: digits });
 }
@@ -41,7 +42,7 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
   if (holdings.length === 0) return null;
 
   const total = holdings.reduce((sum, h) => sum + (h.valueUSD ?? 0), 0);
-  const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind === 'native');
+  const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind !== 'token');
   const dust = holdings.length - main.length;
   const pool = showDust ? holdings : main;
   const rows = showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
@@ -104,7 +105,10 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
                       </div>
                     </td>
                     <td className="py-2.5 pr-4 text-right tabular-nums">{formatAmount(h.balance)}</td>
-                    <td className="py-2.5 pr-4 text-right tabular-nums text-gray-600">{h.priceUSD !== undefined ? formatUSD(h.priceUSD) : '—'}</td>
+                    <td className="py-2.5 pr-4 text-right tabular-nums text-gray-600">
+                      {h.priceUSD !== undefined ? formatUSD(h.priceUSD) : '—'}
+                      {h.blendedPrice && <div className="text-[10px] uppercase tracking-wide text-gray-400" title="Parts trade at different prices; this is total value ÷ total balance">avg</div>}
+                    </td>
                     <td className="py-2.5 pr-4 text-right font-semibold tabular-nums text-gray-900">{h.valueUSD !== undefined ? formatUSD(h.valueUSD) : '—'}</td>
                     <td className="py-2.5">
                       <div className="flex items-center gap-2">
@@ -116,17 +120,18 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
                     </td>
                   </tr>
 
-                  {isOpen && h.parts.map((a) => (
+                  {isOpen && h.parts.map(({ asset: a, label, amount }) => (
                     <tr key={a.id} className="border-b border-gray-100 bg-gray-50/70 text-xs">
                       <td className="py-1.5 pl-8 pr-4 text-gray-600">
-                        {walletName(a.walletAddress)} · {chainLabel(a.chain)}
-                        {a.type === 'stake' && a.stake && ` · stake #${a.stake.stakeId}`}
+                        {walletName(a.walletAddress)} · {chainLabel(a.chain)} · <span className="text-gray-800">{label}</span>
+                      </td>
+                      <td className="py-1.5 pr-4 text-right tabular-nums text-gray-700">{formatAmount(amount)}</td>
+                      <td className="py-1.5 pr-4 text-right tabular-nums text-gray-500">
+                        {a.valueUSD !== undefined && amount > 0 ? formatUSD(a.valueUSD / amount) : '—'}
                       </td>
                       <td className="py-1.5 pr-4 text-right tabular-nums text-gray-700">
-                        {formatAmount(Number(a.balanceFormatted) + (a.stake?.interestHex ?? 0))}
+                        {a.valueUSD === undefined ? '—' : a.valueUSD > 0 && a.valueUSD < 0.01 ? '<$0.01' : formatUSD(a.valueUSD)}
                       </td>
-                      <td className="py-1.5 pr-4 text-right tabular-nums text-gray-500">{a.priceUSD !== undefined ? formatUSD(a.priceUSD) : '—'}</td>
-                      <td className="py-1.5 pr-4 text-right tabular-nums text-gray-700">{a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—'}</td>
                       <td />
                     </tr>
                   ))}
@@ -158,7 +163,8 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
           </button>
         )}
         <span className="text-gray-500">
-          Native coins combine across chains (ETH on Ethereum, Base and Robinhood is one row). Tokens stay per chain, since eHEX and pHEX trade separately.
+          ETH includes WETH on every chain. HEX includes liquid, staked (principal + interest) and Maximus pools at their HEX
+          backing, on both chains; values use each part&apos;s own price, so its price is an average. Other tokens stay per chain.
         </span>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import { Asset } from '@/types';
+import { HEX_ADDRESS } from '@/config/hex';
 import { NATIVE_COIN } from '@/utils/prices';
 import { normalizeAddress } from '@/utils/address';
 
@@ -6,67 +7,103 @@ export interface Holding {
   key: string;
   name: string;
   symbol: string;
-  kind: 'native' | 'token' | 'stake';
+  kind: 'native' | 'token' | 'hex';
   chains: string[];
-  balance: number;
+  balance: number;     // in the holding's unit (ETH, HEX, ...)
   valueUSD?: number;
-  priceUSD?: number;
+  priceUSD?: number;   // value / balance; a blend when parts trade at different prices
+  blendedPrice: boolean;
   imageUrl?: string;
-  parts: Asset[]; // the per-wallet, per-chain assets that make up this row
+  parts: HoldingPart[];
+}
+
+export interface HoldingPart {
+  asset: Asset;
+  label: string;  // what this part is, e.g. "liquid", "stake #123", "MAXI pool"
+  amount: number; // contribution in the holding's unit
 }
 
 const NATIVE_NAMES: Record<string, string> = { bitcoin: 'Bitcoin', ethereum: 'Ether', pulsechain: 'Pulse', solana: 'Solana' };
 
+// Wrapped ETH by contract (never by ticker, so look-alikes don't fold in)
+const WETH = new Set([
+  'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  'base:0x4200000000000000000000000000000000000006',
+  'robinhood:0x0bd7d308f8e1639fab988df18a8011f41eacad73',
+]);
+const HEX_CONTRACT = HEX_ADDRESS.toLowerCase();
+
 /**
- * Which assets are "the same holding":
- * - native coins by the coin they are (ETH on Ethereum, Base and Robinhood Chain is one ETH)
- * - tokens by chain + contract, never by ticker: eHEX and pHEX share a contract
- *   address but trade separately, and same-ticker tokens can be bridged copies or spam
- * - HEX stakes per chain, valued at principal + interest earned
+ * Which assets roll up into one holding:
+ * - ETH: native ETH on every chain + WETH
+ * - HEX: liquid HEX, stakes (principal + interest) and Maximus pool tokens
+ *   (counted at their HEX backing), on Ethereum and Pulsechain together
+ * - other native coins by coin; other tokens by chain + contract, never by ticker
  */
-function holdingKey(a: Asset): { key: string; kind: Holding['kind'] } | null {
-  if (a.type === 'native') return { key: `native:${NATIVE_COIN[a.chain] ?? a.chain}`, kind: 'native' };
-  if (a.type === 'stake') return { key: `stake:${a.chain}`, kind: 'stake' };
+function classify(a: Asset): { key: string; kind: Holding['kind']; label: string; amount: number } | null {
+  const contract = a.contractAddress ? `${a.chain}:${normalizeAddress(a.chain, a.contractAddress)}` : null;
+  const balance = Number(a.balanceFormatted);
+
+  if (a.type === 'stake' && a.stake) {
+    return { key: 'hex', kind: 'hex', label: `stake #${a.stake.stakeId}`, amount: balance + a.stake.interestHex };
+  }
+  if (a.type === 'token' && a.pool) {
+    return { key: 'hex', kind: 'hex', label: `${a.symbol} pool (${balance.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${a.symbol})`, amount: a.pool.backingHex };
+  }
+  if (a.type === 'token' && contract === `${a.chain}:${HEX_CONTRACT}`) {
+    return { key: 'hex', kind: 'hex', label: 'liquid', amount: balance };
+  }
+  if (a.type === 'native') {
+    const coin = NATIVE_COIN[a.chain] ?? a.chain;
+    return { key: `native:${coin}`, kind: 'native', label: a.symbol, amount: balance };
+  }
+  if (a.type === 'token' && contract && WETH.has(contract)) {
+    return { key: 'native:ethereum', kind: 'native', label: 'WETH', amount: balance };
+  }
   if (a.type === 'token') {
-    const id = a.contractAddress ? normalizeAddress(a.chain, a.contractAddress) : `${a.tokenStandard}:${a.symbol}`;
-    return { key: `token:${a.chain}:${id}`, kind: 'token' };
+    const id = contract ?? `${a.chain}:${a.tokenStandard}:${a.symbol}`;
+    return { key: `token:${id}`, kind: 'token', label: a.symbol, amount: balance };
   }
   return null; // NFTs and Ordinals are shown in the gallery, not summed
 }
-
-const amountOf = (a: Asset) => Number(a.balanceFormatted) + (a.stake?.interestHex ?? 0);
 
 export function groupHoldings(assets: Asset[]): Holding[] {
   const groups = new Map<string, Holding>();
 
   for (const a of assets) {
-    const id = holdingKey(a);
-    const amount = amountOf(a);
-    if (!id || !(amount > 0)) continue;
+    const c = classify(a);
+    if (!c || !(c.amount > 0)) continue;
 
-    let h = groups.get(id.key);
+    let h = groups.get(c.key);
     if (!h) {
+      const coin = NATIVE_COIN[a.chain];
       h = {
-        key: id.key,
-        kind: id.kind,
-        name: id.kind === 'native' ? NATIVE_NAMES[NATIVE_COIN[a.chain]] ?? a.name : id.kind === 'stake' ? 'HEX (staked)' : a.name,
-        symbol: a.symbol,
+        key: c.key,
+        kind: c.kind,
+        name: c.kind === 'hex' ? 'HEX (liquid + staked + pools)' : c.kind === 'native' ? NATIVE_NAMES[c.key === 'native:ethereum' ? 'ethereum' : coin] ?? a.name : a.name,
+        symbol: c.kind === 'hex' ? 'HEX' : c.key === 'native:ethereum' ? 'ETH' : a.symbol,
         chains: [],
         balance: 0,
-        imageUrl: a.imageUrl,
+        blendedPrice: false,
+        imageUrl: c.kind === 'token' ? a.imageUrl : undefined,
         parts: [],
       };
-      groups.set(id.key, h);
+      groups.set(c.key, h);
     }
-    h.balance += amount;
+    h.balance += c.amount;
     if (a.valueUSD !== undefined) h.valueUSD = (h.valueUSD ?? 0) + a.valueUSD;
     if (!h.chains.includes(a.chain)) h.chains.push(a.chain);
-    h.parts.push(a);
+    h.parts.push({ asset: a, label: c.label, amount: c.amount });
   }
 
   for (const h of groups.values()) {
     if (h.valueUSD !== undefined && h.balance > 0) h.priceUSD = h.valueUSD / h.balance;
-    h.parts.sort((x, y) => (y.valueUSD ?? 0) - (x.valueUSD ?? 0));
+    // Flag a blend when parts imply prices more than 1% apart (eHEX vs pHEX, pools vs HEX)
+    const unitPrices = h.parts
+      .filter((p) => p.asset.valueUSD !== undefined && p.amount > 0)
+      .map((p) => p.asset.valueUSD! / p.amount);
+    h.blendedPrice = unitPrices.length > 1 && Math.max(...unitPrices) > Math.min(...unitPrices) * 1.01;
+    h.parts.sort((x, y) => (y.asset.valueUSD ?? 0) - (x.asset.valueUSD ?? 0));
   }
   return [...groups.values()].sort((x, y) => (y.valueUSD ?? -1) - (x.valueUSD ?? -1));
 }
