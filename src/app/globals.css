@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-bitcoin: #f7931a;
+  --color-ethereum: #627eea;
+  --color-pulsechain: #ff006b;
+  --color-base: #0052ff;
+  --color-solana: #9945ff;
+  --color-robinhood: #00c805;
+}

@@ -69,7 +69,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
               }}
               onLoad={handleImageLoad}
               onError={handleImageError}
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
             />
           </>
         ) : asset.imageUrl && !imageError ? (
@@ -238,7 +238,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
                     maxWidth: '128px',
                     maxHeight: '128px'
                   }}
-                  sandbox="allow-scripts allow-same-origin"
+                  sandbox="allow-scripts"
                 />
               ) : (
                 <img
