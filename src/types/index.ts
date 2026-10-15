@@ -15,14 +15,15 @@ export interface Chain {
   ordinalsApi?: string;
 }
 
+// Persisted in localStorage, so dates are ISO strings
 export interface Wallet {
   id: string;
   name: string; // User-defined name, inline editable
   address: string;
-  chains: Record<string, ChainStatus>; // Which chains are enabled for this wallet
+  chains: string[]; // Chains tracked for this address
   avatar?: NFTAvatar;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ChainStatus {

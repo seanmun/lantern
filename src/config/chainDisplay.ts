@@ -1,0 +1,43 @@
+/**
+ * UI metadata per chain. Tailwind classes are written out in full so the
+ * class scanner picks them up.
+ */
+export interface ChainDisplay {
+  key: string;
+  label: string;
+  icon: string;
+  dot: string;
+  title: string;
+  badge: string;
+  border: string;
+}
+
+export const CHAIN_DISPLAY: ChainDisplay[] = [
+  {
+    key: 'bitcoin', label: 'Bitcoin', icon: '₿',
+    dot: 'from-orange-400 to-orange-600', title: 'from-orange-600 to-orange-800',
+    badge: 'bg-orange-100 text-orange-800', border: 'border-orange-100 hover:border-orange-200',
+  },
+  {
+    key: 'ethereum', label: 'Ethereum', icon: 'Ξ',
+    dot: 'from-blue-400 to-blue-600', title: 'from-blue-600 to-blue-800',
+    badge: 'bg-blue-100 text-blue-800', border: 'border-blue-100 hover:border-blue-200',
+  },
+  {
+    key: 'pulsechain', label: 'Pulsechain', icon: '♦',
+    dot: 'from-pink-400 to-pink-600', title: 'from-pink-600 to-pink-800',
+    badge: 'bg-pink-100 text-pink-800', border: 'border-pink-100 hover:border-pink-200',
+  },
+  {
+    key: 'base', label: 'Base', icon: '◉',
+    dot: 'from-blue-500 to-indigo-700', title: 'from-blue-700 to-indigo-900',
+    badge: 'bg-indigo-100 text-indigo-800', border: 'border-indigo-100 hover:border-indigo-200',
+  },
+  {
+    key: 'robinhood', label: 'Robinhood Chain', icon: '🪶',
+    dot: 'from-green-400 to-emerald-600', title: 'from-green-600 to-emerald-800',
+    badge: 'bg-green-100 text-green-800', border: 'border-green-100 hover:border-green-200',
+  },
+];
+
+export const chainLabel = (key: string) => CHAIN_DISPLAY.find((c) => c.key === key)?.label ?? key;

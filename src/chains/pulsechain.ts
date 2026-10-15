@@ -19,6 +19,7 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
   nativeName: 'Pulse',
   nativeSymbol: 'PLS',
   publicRpcUrl: 'https://rpc.pulsechain.com',
+  rpcBatching: false, // batched calls take ~7s here vs ~0.5s unbatched
   tokenStandard: 'PRC-20',
   hex: true,
   tokens: [

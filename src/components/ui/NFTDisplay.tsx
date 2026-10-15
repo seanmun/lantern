@@ -4,6 +4,12 @@ import { Asset, HexStakeInfo } from '@/types';
 import { useState } from 'react';
 import { formatUSD } from '@/utils/prices';
 
+// HTML, SVG, text and JSON inscriptions can't render in <img>; show them in a sandboxed frame
+function rendersInFrame(asset: Asset): boolean {
+  const type = asset.contentType?.toLowerCase() ?? '';
+  return /html|svg|text\/|json|javascript/.test(type) || !!asset.collectionName?.toLowerCase().includes('quantum cat');
+}
+
 function formatAmount(value: string): string {
   return Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 });
 }
@@ -43,11 +49,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
 
   const isOrdinal = asset.type === 'ordinal';
   const isNFT = asset.type === 'nft';
-  const isHTMLOrdinal = isOrdinal && (
-    asset.contentType?.includes('html') ||
-    asset.contentType?.includes('text/html') ||
-    asset.collectionName?.toLowerCase().includes('quantum cat')
-  );
+  const isHTMLOrdinal = isOrdinal && rendersInFrame(asset);
 
   if (!isNFT && !isOrdinal) return null;
 
@@ -76,6 +78,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
               </div>
             )}
             <iframe
+              loading="lazy"
               src={asset.imageUrl}
               title={asset.name}
               className="border-0"
@@ -100,6 +103,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
               </div>
             )}
             <img
+              loading="lazy"
               src={asset.imageUrl}
               alt={asset.name}
               className="object-cover object-center"
@@ -180,13 +184,16 @@ interface NFTGridProps {
   title?: string;
 }
 
-export function NFTGrid({ assets, variant = 'default', title }: NFTGridProps) {
+const NFT_PAGE_SIZE = 24;
+
+export function NFTGrid({ assets, title }: NFTGridProps) {
+  const [visible, setVisible] = useState(NFT_PAGE_SIZE);
   const nftAssets = assets.filter(asset => asset.type === 'nft' || asset.type === 'ordinal');
 
   if (nftAssets.length === 0) return null;
 
-  // 3 column grid layout
-  const gridClasses = 'grid-cols-3';
+  // Cards are a fixed 128px wide, so 2 columns fit on a phone
+  const gridClasses = 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6';
 
   return (
     <div>
@@ -206,7 +213,7 @@ export function NFTGrid({ assets, variant = 'default', title }: NFTGridProps) {
       )}
 
       <div className={`grid gap-4 ${gridClasses} w-full`}>
-        {nftAssets.map((asset) => (
+        {nftAssets.slice(0, visible).map((asset) => (
           <div key={asset.id} className="transform hover:scale-105 transition-transform duration-200">
             <NFTCard
               asset={asset}
@@ -215,6 +222,17 @@ export function NFTGrid({ assets, variant = 'default', title }: NFTGridProps) {
           </div>
         ))}
       </div>
+
+      {visible < nftAssets.length && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setVisible(v => v + NFT_PAGE_SIZE * 2)}
+            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+          >
+            Show more ({(nftAssets.length - visible).toLocaleString()} remaining)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -226,14 +244,10 @@ interface AssetWithNFTProps {
 
 export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps) {
   const isNFTOrOrdinal = asset.type === 'nft' || asset.type === 'ordinal';
-  const isHTMLOrdinal = asset.type === 'ordinal' && (
-    asset.contentType?.includes('html') ||
-    asset.contentType?.includes('text/html') ||
-    asset.collectionName?.toLowerCase().includes('quantum cat')
-  );
+  const isHTMLOrdinal = asset.type === 'ordinal' && rendersInFrame(asset);
 
   return (
-    <div className="border rounded-lg p-4">
+    <div className="rounded-lg p-4">
       <div className="flex items-start space-x-3">
         {/* NFT/Ordinal Image Preview */}
         {isNFTOrOrdinal && showNFTPreview && (
@@ -251,6 +265,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
             {asset.imageUrl ? (
               isHTMLOrdinal ? (
                 <iframe
+              loading="lazy"
                   src={asset.imageUrl}
                   title={asset.name}
                   className="border-0"
@@ -264,6 +279,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
                 />
               ) : (
                 <img
+              loading="lazy"
                   src={asset.imageUrl}
                   alt={asset.name}
                   className="object-cover object-center"

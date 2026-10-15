@@ -31,7 +31,7 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function isRetryableError(error: any, retryableStatuses: number[]): boolean {
+function isRetryableError(error: { status?: number }, retryableStatuses: number[]): boolean {
   if (!error.status) return true;
 
   if (error.status === 429) return true;
@@ -135,14 +135,17 @@ export async function fetchWithRetry(
 
       lastError = new APIError(`HTTP ${response.status}: ${response.statusText}`, response.status);
 
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
         lastError = new APIError('Request timeout', undefined, 'TIMEOUT');
       } else {
-        lastError = error;
+        lastError = error instanceof Error ? error : new Error(String(error));
       }
 
-      if (attempt === maxRetries) {
+      // 4xx errors like 404/410 won't succeed on retry
+      const nonRetryable = lastError instanceof APIError && lastError.status !== undefined
+        && !isRetryableError(lastError, retryableStatuses);
+      if (attempt === maxRetries || nonRetryable) {
         throw lastError;
       }
     }
@@ -160,7 +163,7 @@ export async function fetchWithRetry(
 
 export function createAPIClient(baseURL: string, defaultHeaders: Record<string, string> = {}) {
   return {
-    async get(endpoint: string, retryOptions?: RetryOptions): Promise<any> {
+    async get(endpoint: string, retryOptions?: RetryOptions): Promise<unknown> {
       const response = await fetchWithRetry(
         `${baseURL}${endpoint}`,
         {
@@ -172,7 +175,7 @@ export function createAPIClient(baseURL: string, defaultHeaders: Record<string, 
       return response.json();
     },
 
-    async post(endpoint: string, body: any, retryOptions?: RetryOptions): Promise<any> {
+    async post(endpoint: string, body: unknown, retryOptions?: RetryOptions): Promise<unknown> {
       const response = await fetchWithRetry(
         `${baseURL}${endpoint}`,
         {

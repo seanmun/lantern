@@ -6,7 +6,7 @@ import { HEX_ADDRESS, MAXIMUS_POOLS } from '@/config/hex';
  *
  * CUSTOMIZATION POINTS:
  * - tokens: Add/remove tokens to automatically check
- * - Set NEXT_PUBLIC_ALCHEMY_API_KEY for faster RPC + NFT support
+ * - Set ALCHEMY_API_KEY for faster RPC + NFT support
  */
 export const ETHEREUM_CONFIG: EvmChainConfig = {
   key: 'ethereum',

@@ -1,3 +1,4 @@
+import 'server-only';
 import { ethers } from 'ethers';
 import { Asset, APIResponse, HexStakeInfo } from '@/types';
 import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from '@/config/hex';
@@ -33,6 +34,7 @@ export interface EvmChainConfig {
   tokenStandard: string;
   tokens: EvmToken[];
   hex?: boolean;          // chain has HEX staking + Maximus pools
+  rpcBatching?: boolean;  // default true; some public RPCs answer JSON-RPC batches very slowly
 }
 
 const ERC20_ABI = [
@@ -40,7 +42,8 @@ const ERC20_ABI = [
   'function totalSupply() view returns (uint256)',
 ];
 
-const ALCHEMY_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
+// Server-side only. NEXT_PUBLIC_ fallback keeps older .env.local files working.
+const ALCHEMY_KEY = process.env.ALCHEMY_API_KEY || process.env.NEXT_PUBLIC_ALCHEMY_API_KEY;
 const HAS_ALCHEMY = !!ALCHEMY_KEY && ALCHEMY_KEY !== 'your_alchemy_key_here';
 
 function errorResponse<T>(message: string, error: unknown): APIResponse<T> {
@@ -56,7 +59,10 @@ export class EvmHandler {
       ? `https://${config.alchemyNetwork}.g.alchemy.com/v2/${ALCHEMY_KEY}`
       : config.publicRpcUrl;
     // staticNetwork skips the eth_chainId probe on every request
-    this.provider = new ethers.JsonRpcProvider(rpcUrl, config.chainId, { staticNetwork: true });
+    this.provider = new ethers.JsonRpcProvider(rpcUrl, config.chainId, {
+      staticNetwork: true,
+      ...(config.rpcBatching === false && { batchMaxCount: 1 }),
+    });
   }
 
   private baseAsset(address: string): Pick<Asset, 'chain' | 'walletAddress' | 'lastUpdated'> {

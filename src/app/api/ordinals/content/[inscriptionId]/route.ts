@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const INSCRIPTION_ID_RE = /^[0-9a-f]{64}i\d+$/;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ inscriptionId: string }> }
 ) {
   const { inscriptionId } = await params;
 
-  if (!inscriptionId) {
-    return NextResponse.json({ error: 'Inscription ID is required' }, { status: 400 });
+  if (!INSCRIPTION_ID_RE.test(inscriptionId)) {
+    return NextResponse.json({ error: 'Invalid inscription ID' }, { status: 400 });
   }
 
   try {
@@ -17,7 +19,8 @@ export async function GET(
     const response = await fetch(ordinalsUrl, {
       headers: {
         'User-Agent': 'Crypto-Portfolio-Tracker/1.0',
-      }
+      },
+      signal: AbortSignal.timeout(15_000),
     });
 
     if (!response.ok) {
@@ -31,8 +34,11 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=86400', // Cache for 24 hours
-        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=86400', // Inscriptions are immutable
+        // Inscription HTML/SVG is untrusted: even if opened directly it runs in
+        // an opaque origin and can't touch this app's storage or cookies.
+        'Content-Security-Policy': 'sandbox allow-scripts',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
 
@@ -40,7 +46,7 @@ export async function GET(
     console.error('Error fetching ordinal content:', error);
     return NextResponse.json(
       { error: 'Failed to fetch ordinal content' },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

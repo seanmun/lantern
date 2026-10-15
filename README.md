@@ -60,29 +60,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 🔑 API Setup
 
-The tracker needs API keys for blockchain data. Add these to your `.env.local`:
+Everything works without API keys using public RPCs and free price APIs. Optional keys go in `.env.local`. They're read server-side only and never sent to the browser:
 
 ```bash
-# Ethereum/EVM chains
-NEXT_PUBLIC_ALCHEMY_API_KEY=your_alchemy_key
-NEXT_PUBLIC_INFURA_API_KEY=your_infura_key
-
-# Bitcoin & Ordinals
-NEXT_PUBLIC_BLOCKSTREAM_API=https://blockstream.info/api
-NEXT_PUBLIC_ORDINALS_API=https://ordinals.com/api
-
-# Solana
-NEXT_PUBLIC_HELIUS_API_KEY=your_helius_key
-
-# Pricing
-NEXT_PUBLIC_COINGECKO_API_KEY=your_coingecko_key
+ALCHEMY_API_KEY=      # Faster Ethereum/Base/Robinhood RPC + NFTs
+XVERSE_API_KEY=       # Full Ordinals metadata (numbers, collections, floors)
+COINGECKO_API_KEY=    # CoinGecko Demo key for BTC/ETH/PLS prices
 ```
 
-**Get your API keys:**
-- [Alchemy](https://alchemy.com/) - Free tier available
-- [Infura](https://infura.io/) - Free tier available  
-- [Helius](https://helius.xyz/) - Free tier available
-- [CoinGecko](https://coingeckoterminal.com/api) - Free tier available
+Add wallets from the dashboard. They're saved in your browser's localStorage, not on the server.
 
 ## 🏗️ Project Structure
 
