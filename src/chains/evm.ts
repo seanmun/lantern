@@ -1,8 +1,8 @@
 import 'server-only';
 import { ethers } from 'ethers';
-import { Asset, APIResponse, HexStakeInfo } from '@/types';
+import { Asset, APIResponse, HexPoolStats, HexStakeInfo } from '@/types';
 import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from '@/config/hex';
-import { getHexState, stakeYield } from './hex';
+import { endStakeToday, getHexState, stakeYield } from './hex';
 
 /**
  * Generic EVM Chain Handler
@@ -207,6 +207,7 @@ export class EvmHandler {
       const stakedHearts = s.stakedHearts as bigint;
       const stakeShares = s.stakeShares as bigint;
       const yieldInfo = stakeYield(state, { stakedHearts, stakeShares, lockedDay, stakedDays });
+      const endNow = endStakeToday(state, { stakedHearts, stakeShares, lockedDay, stakedDays });
       return {
         stakeId: Number(s.stakeId),
         stakedHearts,
@@ -222,6 +223,10 @@ export class EvmHandler {
         apy: yieldInfo.apy,
         status: yieldInfo.status,
         graceDaysLeft: yieldInfo.graceDaysLeft,
+        endNow: {
+          returnHex: Number(ethers.formatUnits(endNow.returnHearts, HEX_DECIMALS)),
+          penaltyHex: Number(ethers.formatUnits(endNow.penaltyHearts, HEX_DECIMALS)),
+        },
       };
     });
   }
@@ -306,6 +311,34 @@ export class EvmHandler {
     } catch (error) {
       console.warn('⚠️ Failed to read Maximus pool backing:', error);
     }
+  }
+
+  /** Current cycle of every Maximus pool on this chain (whether or not the viewer holds it). */
+  async getPoolStats(): Promise<HexPoolStats[]> {
+    if (!this.config.hex) return [];
+    const hex = new ethers.Contract(HEX_ADDRESS, HEX_ABI, this.provider);
+
+    const results = await Promise.allSettled(MAXIMUS_POOLS.map(async (pool) => {
+      const token = new ethers.Contract(pool.address, ERC20_ABI, this.provider);
+      const [supply, stakes]: [bigint, RawStake[]] = await Promise.all([token.totalSupply(), this.readStakes(pool.address, hex)]);
+      const latest = stakes[stakes.length - 1];
+      if (!latest) return null;
+      return {
+        chain: this.config.key,
+        symbol: pool.symbol,
+        name: pool.name,
+        address: pool.address,
+        cycleDays: pool.cycleDays,
+        supply: Number(ethers.formatUnits(supply, HEX_DECIMALS)),
+        principalHex: stakes.reduce((sum, s) => sum + Number(ethers.formatUnits(s.stakedHearts, HEX_DECIMALS)), 0),
+        interestHex: stakes.reduce((sum, s) => sum + s.interestHex, 0),
+        projectedInterestHex: stakes.reduce((sum, s) => sum + s.projectedInterestHex, 0),
+        endDay: latest.endDay,
+        daysRemaining: latest.daysRemaining,
+      };
+    }));
+
+    return results.flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []));
   }
 
   async getAllAssets(address: string): Promise<APIResponse<Asset[]>> {

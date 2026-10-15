@@ -11,6 +11,8 @@ import { LadderRow, StakeLadder } from '@/components/hex/StakeLadder';
 import { HEX_CHAIN_COLORS } from '@/components/hex/colors';
 import { MaturityCalendar } from '@/components/hex/MaturityCalendar';
 import { ForkComparison } from '@/components/hex/ForkComparison';
+import { buildIcs, downloadFile } from '@/utils/ics';
+import { hexDayToDate } from '@/config/hex';
 
 interface HexSummaryProps {
   assets: Asset[];
@@ -72,6 +74,32 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
   const needsAction = stakes.filter((a) => a.stake.status === 'matured' || a.stake.status === 'late');
   const interestUSD = stakes.reduce((sum, a) => sum + (a.priceUSD ?? 0) * a.stake.interestHex, 0);
 
+  const exportCalendar = () => {
+    const events = stakes
+      .filter((a) => a.stake.status !== 'late')
+      .flatMap((a) => {
+        const label = `HEX stake #${a.stake.stakeId} (${chainLabel(a.chain)})`;
+        const amount = `${formatHex(Number(a.balanceFormatted))} HEX principal + est. ${formatHex(a.stake.projectedInterestHex)} HEX interest`;
+        return [
+          {
+            uid: `${a.id}-end@crypto-portfolio-tracker`,
+            title: `${label} ends`,
+            date: hexDayToDate(a.stake.endDay),
+            description: `${amount}. Wallet: ${walletName(a)} (${a.walletAddress}). End it within 14 days to avoid the late penalty.`,
+            alarmDaysBefore: 1,
+          },
+          {
+            uid: `${a.id}-grace@crypto-portfolio-tracker`,
+            title: `Last day to end ${label} without penalty`,
+            date: hexDayToDate(a.stake.endDay + 14),
+            description: `From tomorrow HEX deducts a late-end penalty from this stake. Wallet: ${a.walletAddress}.`,
+            alarmDaysBefore: 3,
+          },
+        ];
+      });
+    downloadFile('hex-stakes.ics', buildIcs(events));
+  };
+
   const ladderRows: LadderRow[] = [
     ...stakes.map((a) => ({
       id: a.id,
@@ -87,6 +115,10 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
         { label: 'value', value: a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—' },
         { label: 'T-Shares', value: a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 }) },
         { label: 'APY', value: formatPct(a.stake.apy) },
+        {
+          label: a.stake.endNow.penaltyHex > 0 ? `if ended today (−${formatHex(a.stake.endNow.penaltyHex)} penalty)` : 'if ended today',
+          value: `${formatHex(a.stake.endNow.returnHex)} HEX`,
+        },
         { label: a.stake.daysRemaining > 0 ? `${a.stake.daysRemaining.toLocaleString()} days left` : 'ended', value: formatDate(a.stake.endDate) },
       ],
     })),
@@ -169,14 +201,23 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
 
       {stakes.length > 0 && (
         <div className="mb-8 overflow-x-auto">
-          <h3 className="mb-3 text-lg font-semibold text-gray-800">Stakes</h3>
-          <table className="w-full min-w-[760px] text-sm">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-lg font-semibold text-gray-800">Stakes</h3>
+            <button
+              onClick={exportCalendar}
+              className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+            >
+              📅 Add end dates to calendar (.ics)
+            </button>
+          </div>
+          <table className="w-full min-w-[880px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
                 <th className="py-2 pr-4 font-medium">Stake</th>
                 <th className="py-2 pr-4 text-right font-medium">Principal</th>
                 <th className="py-2 pr-4 text-right font-medium">Interest</th>
                 <th className="py-2 pr-4 text-right font-medium">Value</th>
+                <th className="py-2 pr-4 text-right font-medium">If ended today</th>
                 <th className="py-2 pr-4 text-right font-medium">T-Shares</th>
                 <th className="py-2 pr-4 text-right font-medium">APY</th>
                 <th className="py-2 pr-4 font-medium">Status</th>
@@ -199,6 +240,18 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
                     <div className="text-xs text-gray-500">est. {formatHex(a.stake.projectedInterestHex)} at end</div>
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums">{a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—'}</td>
+                  <td className="py-2 pr-4 text-right tabular-nums">
+                    {formatHex(a.stake.endNow.returnHex)}
+                    {(() => {
+                      const net = a.stake.endNow.returnHex - Number(a.balanceFormatted);
+                      if (a.stake.endNow.penaltyHex === 0) return <div className="text-xs text-gray-500">no penalty</div>;
+                      return (
+                        <div className={`text-xs ${net < 0 ? 'font-medium text-red-700' : 'text-gray-500'}`}>
+                          −{formatHex(a.stake.endNow.penaltyHex)} penalty{net < 0 ? ` · loses ${formatHex(-net)} principal` : ''}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="py-2 pr-4 text-right tabular-nums">{a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}</td>
                   <td className="py-2 pr-4 text-right tabular-nums">{formatPct(a.stake.apy)}</td>
                   <td className="py-2 pr-4"><StatusBadge status={a.stake.status} graceDaysLeft={a.stake.graceDaysLeft} /></td>

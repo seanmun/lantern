@@ -10,6 +10,7 @@ import { WalletList } from '@/components/wallet/WalletList';
 import { ChainSection } from '@/components/portfolio/ChainSection';
 import { HexSummary } from '@/components/portfolio/HexSummary';
 import { StakeEstimator } from '@/components/hex/StakeEstimator';
+import { PoolComparison } from '@/components/hex/PoolComparison';
 import { HEX_ADDRESS } from '@/config/hex';
 import { NFTGrid } from '@/components/ui/NFTDisplay';
 import { formatUSD } from '@/utils/prices';
@@ -112,6 +113,8 @@ export default function DashboardPage() {
       {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} />}
 
       {hexStats.length > 0 && <StakeEstimator stats={hexStats} liquidHex={liquidHex} />}
+
+      {hexStats.length > 0 && <PoolComparison stats={hexStats} />}
 
       {wallets.length > 0 && (
         <>

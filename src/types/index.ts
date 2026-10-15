@@ -99,6 +99,10 @@ export interface HexStakeInfo {
   apy: number;                  // realized, annualized %
   status: HexStakeStatus;
   graceDaysLeft?: number;       // days until late penalty begins (matured stakes)
+  endNow: {                     // if ended today, per the contract's penalty rules
+    returnHex: number;
+    penaltyHex: number;
+  };
 }
 
 export interface HexPoolInfo {
@@ -108,6 +112,21 @@ export interface HexPoolInfo {
   backingHex: number;          // principal + interest earned so far
   backingValueUSD?: number;
   currentStake?: Pick<HexStakeInfo, 'lockedDay' | 'stakedDays' | 'endDay' | 'endDate' | 'daysRemaining' | 'apy'>;
+}
+
+// A Maximus pool's current cycle, for comparing against staking directly
+export interface HexPoolStats {
+  chain: string;
+  symbol: string;
+  name: string;
+  address: string;
+  cycleDays: number;
+  supply: number;
+  principalHex: number;
+  interestHex: number;          // earned so far
+  projectedInterestHex: number; // at cycle end, recent payout rate
+  endDay: number;
+  daysRemaining: number;
 }
 
 export interface HexNetworkStats {
