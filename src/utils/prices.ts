@@ -94,6 +94,9 @@ export async function fetchHexPrices(chains: string[]): Promise<Record<string, n
 }
 
 export function formatUSD(value: number): string {
-  if (value !== 0 && Math.abs(value) < 0.01) return `$${value.toPrecision(3)}`;
+  // Sub-dollar prices (HEX, PLS) need significant digits, not cents
+  if (value !== 0 && Math.abs(value) < 1) {
+    return value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumSignificantDigits: 3 });
+  }
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }

@@ -208,3 +208,12 @@ export function networkStats(chain: string, state: HexState): HexNetworkStats {
     totalTShares: Number(ethers.formatUnits(state.stakeSharesTotal, 12)),
   };
 }
+
+/** Daily payout per T-Share (HEX) for every stored day, index = HEX day. */
+export function payoutHistory(state: HexState): number[] {
+  return state.payouts.map((payout, day) =>
+    state.shares[day] > BigInt(0)
+      ? Number((payout * ONE_T_SHARE * BigInt(1_000_000)) / state.shares[day]) / 1e6 / 1e8
+      : 0
+  );
+}

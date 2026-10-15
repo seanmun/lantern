@@ -9,6 +9,8 @@ import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 import { WalletList } from '@/components/wallet/WalletList';
 import { ChainSection } from '@/components/portfolio/ChainSection';
 import { HexSummary } from '@/components/portfolio/HexSummary';
+import { StakeEstimator } from '@/components/hex/StakeEstimator';
+import { HEX_ADDRESS } from '@/config/hex';
 import { NFTGrid } from '@/components/ui/NFTDisplay';
 import { formatUSD } from '@/utils/prices';
 
@@ -21,7 +23,8 @@ export default function DashboardPage() {
   const { wallets, addWallet, removeWallet, renameWallet } = useWallets();
   const { results, assets, isLoading, lastUpdated, refresh, retry } = usePortfolio(wallets);
 
-  const hexStats = useHexStats(wallets.some((w) => w.chains.includes('ethereum') || w.chains.includes('pulsechain')));
+  // Always loaded: the stake estimator works even before any wallet is added
+  const hexStats = useHexStats(true);
 
   const totalUSD = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
@@ -39,6 +42,16 @@ export default function DashboardPage() {
     }
     return { walletNames: names, walletTotals: totals, walletLoading: loading };
   }, [wallets, results]);
+
+  const liquidHex = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const a of assets) {
+      if (a.type === 'token' && a.contractAddress?.toLowerCase() === HEX_ADDRESS.toLowerCase()) {
+        totals[a.chain] = (totals[a.chain] ?? 0) + Number(a.balanceFormatted);
+      }
+    }
+    return totals;
+  }, [assets]);
 
   const hasCollectibles = assets.some((a) => a.type === 'nft' || a.type === 'ordinal');
 
@@ -96,9 +109,12 @@ export default function DashboardPage() {
         )}
       </section>
 
+      {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} />}
+
+      {hexStats.length > 0 && <StakeEstimator stats={hexStats} liquidHex={liquidHex} />}
+
       {wallets.length > 0 && (
         <>
-          <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} />
 
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {CHAIN_DISPLAY.map((chain) => (

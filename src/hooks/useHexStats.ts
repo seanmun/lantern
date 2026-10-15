@@ -6,6 +6,7 @@ import { fetchHexPrices } from '@/utils/prices';
 
 export interface HexStatsWithPrice extends HexNetworkStats {
   hexPriceUSD: number | null;
+  payoutHistory?: number[]; // daily payout per T-Share, index = HEX day
 }
 
 /**
@@ -24,8 +25,14 @@ export function useHexStats(enabled: boolean) {
         const response = await fetch('/api/hex');
         const { stats: network }: { stats: HexNetworkStats[] } = await response.json();
         const prices = await fetchHexPrices(network.map((s) => s.chain));
+        if (cancelled) return;
+        setStats(network.map((s) => ({ ...s, hexPriceUSD: prices[s.chain] ?? null })));
+
+        // History is larger and only needed by the estimator chart; load it second
+        const historyResponse = await fetch('/api/hex/history');
+        const { history }: { history: Record<string, number[]> } = await historyResponse.json();
         if (!cancelled) {
-          setStats(network.map((s) => ({ ...s, hexPriceUSD: prices[s.chain] ?? null })));
+          setStats((prev) => prev.map((s) => ({ ...s, payoutHistory: history[s.chain] })));
         }
       } catch (error) {
         console.warn('⚠️ HEX stats unavailable:', error);
