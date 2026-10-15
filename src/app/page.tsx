@@ -12,6 +12,7 @@ import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 import { WalletList } from '@/components/wallet/WalletList';
 import { ChainSection } from '@/components/portfolio/ChainSection';
 import { HexSummary } from '@/components/portfolio/HexSummary';
+import { Holdings } from '@/components/portfolio/Holdings';
 import { StakeEstimator } from '@/components/hex/StakeEstimator';
 import { PoolComparison } from '@/components/hex/PoolComparison';
 import { HEX_ADDRESS } from '@/config/hex';
@@ -124,6 +125,8 @@ export default function DashboardPage() {
           </button>
         )}
       </section>
+
+      {wallets.length > 0 && <Holdings assets={assets} walletNames={walletNames} />}
 
       {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} endedStakes={stakeHistory.stakes} historyUnavailable={stakeHistory.unavailable} />}
 

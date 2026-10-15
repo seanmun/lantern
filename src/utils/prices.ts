@@ -3,7 +3,7 @@ import { HEX_ADDRESS } from '@/config/hex';
 import { normalizeAddress } from '@/utils/address';
 
 // Chain → CoinGecko id of its native gas coin
-const NATIVE_COIN: Record<string, string> = {
+export const NATIVE_COIN: Record<string, string> = {
   bitcoin: 'bitcoin',
   ethereum: 'ethereum',
   base: 'ethereum',
