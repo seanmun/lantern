@@ -124,11 +124,15 @@ export function ChainStatusIndicator({ status, size = 'sm' }: ChainStatusIndicat
   );
 }
 
-export function ConnectionStatusBar({ statuses }: { statuses: Map<string, ConnectionState> }) {
-  const chains = ['Bitcoin', 'Ethereum', 'Pulsechain', 'Base', 'Solana'];
-
+export function ConnectionStatusBar({
+  statuses,
+  chains = ['Bitcoin', 'Ethereum', 'Pulsechain', 'Base', 'Robinhood'],
+}: {
+  statuses: Map<string, ConnectionState>;
+  chains?: string[];
+}) {
   return (
-    <div className="flex items-center space-x-4 p-2 bg-gray-50 rounded-lg">
+    <div className="flex flex-wrap items-center gap-4 p-2 bg-gray-50 rounded-lg">
       {chains.map(chain => {
         const status = statuses.get(chain.toLowerCase()) || 'disconnected';
         const config = statusConfig[status];

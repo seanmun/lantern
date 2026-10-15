@@ -7,8 +7,15 @@
     "explorerUrl": "https://etherscan.io",
     "addressFormat": "hex",
     "color": "#627eea",
-    "features": ["tokens", "nfts"],
-    "tokenStandards": ["ERC-20", "ERC-721", "ERC-1155"],
+    "features": [
+      "tokens",
+      "nfts"
+    ],
+    "tokenStandards": [
+      "ERC-20",
+      "ERC-721",
+      "ERC-1155"
+    ],
     "nftApis": {
       "alchemy": "/getNFTs",
       "opensea": "/api/v1/assets"
@@ -21,7 +28,9 @@
     "explorerUrl": "https://blockstream.info",
     "addressFormat": "base58",
     "color": "#f7931a",
-    "features": ["ordinals"],
+    "features": [
+      "ordinals"
+    ],
     "ordinalsApi": "https://ordinals.com/api"
   },
   "pulsechain": {
@@ -32,8 +41,15 @@
     "explorerUrl": "https://scan.pulsechain.com",
     "addressFormat": "hex",
     "color": "#ff006b",
-    "features": ["tokens", "nfts"],
-    "tokenStandards": ["PRC-20", "PRC-721", "PRC-1155"]
+    "features": [
+      "tokens",
+      "nfts"
+    ],
+    "tokenStandards": [
+      "PRC-20",
+      "PRC-721",
+      "PRC-1155"
+    ]
   },
   "base": {
     "name": "Base",
@@ -43,8 +59,15 @@
     "explorerUrl": "https://basescan.org",
     "addressFormat": "hex",
     "color": "#0052ff",
-    "features": ["tokens", "nfts"],
-    "tokenStandards": ["ERC-20", "ERC-721", "ERC-1155"]
+    "features": [
+      "tokens",
+      "nfts"
+    ],
+    "tokenStandards": [
+      "ERC-20",
+      "ERC-721",
+      "ERC-1155"
+    ]
   },
   "solana": {
     "name": "Solana",
@@ -53,8 +76,31 @@
     "explorerUrl": "https://explorer.solana.com",
     "addressFormat": "base58",
     "color": "#9945ff",
-    "features": ["tokens", "nfts"],
-    "tokenStandards": ["SPL"],
+    "features": [
+      "tokens",
+      "nfts"
+    ],
+    "tokenStandards": [
+      "SPL"
+    ],
     "nftStandard": "Metaplex"
+  },
+  "robinhood": {
+    "name": "Robinhood Chain",
+    "symbol": "ETH",
+    "chainId": 4663,
+    "rpcUrl": "https://rpc.mainnet.chain.robinhood.com",
+    "explorerUrl": "https://robinhoodchain.blockscout.com",
+    "addressFormat": "hex",
+    "color": "#00c805",
+    "features": [
+      "tokens",
+      "nfts"
+    ],
+    "tokenStandards": [
+      "ERC-20",
+      "ERC-721",
+      "ERC-1155"
+    ]
   }
 }

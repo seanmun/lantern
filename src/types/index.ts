@@ -40,7 +40,7 @@ export interface NFTAvatar {
 
 export interface Asset {
   id: string;
-  type: 'native' | 'token' | 'nft' | 'ordinal';
+  type: 'native' | 'token' | 'nft' | 'ordinal' | 'stake';
   chain: string;
   walletAddress: string;
   
@@ -72,8 +72,32 @@ export interface Asset {
   inscriptionNumber?: number;
   contentType?: string; // image/png, text/plain, text/html, etc.
   contentUrl?: string;  // Direct link to inscription content
-  
+
+  // HEX stake specific (balance = staked principal in HEX)
+  stake?: HexStakeInfo;
+
+  // Maximus perpetual pool token specific
+  pool?: HexPoolInfo;
+
   lastUpdated: Date;
+}
+
+export interface HexStakeInfo {
+  stakeId: number;
+  tShares: number;
+  lockedDay: number;
+  stakedDays: number;
+  endDay: number;
+  endDate: string; // ISO date
+  daysRemaining: number;
+}
+
+export interface HexPoolInfo {
+  poolName: string;
+  cycleDays: number;
+  backingHex: number;      // HEX principal backing this wallet's balance
+  backingValueUSD?: number;
+  currentStake?: Omit<HexStakeInfo, 'stakeId' | 'tShares'>;
 }
 
 export interface Portfolio {

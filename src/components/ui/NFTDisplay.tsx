@@ -1,7 +1,27 @@
 'use client';
 
-import { Asset } from '@/types';
+import { Asset, HexStakeInfo } from '@/types';
 import { useState } from 'react';
+import { formatUSD } from '@/utils/prices';
+
+function formatAmount(value: string): string {
+  return Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 });
+}
+
+function StakeProgress({ lockedDay, stakedDays, endDate, daysRemaining }: Pick<HexStakeInfo, 'lockedDay' | 'stakedDays' | 'endDate' | 'daysRemaining'>) {
+  const progress = Math.min(100, ((stakedDays - daysRemaining) / stakedDays) * 100);
+  const ends = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return (
+    <div title={`Locked on HEX day ${lockedDay}`}>
+      <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-pink-500 to-purple-600" style={{ width: `${progress}%` }} />
+      </div>
+      <p className="mt-1">
+        {daysRemaining > 0 ? `${daysRemaining.toLocaleString()} days left · ends ${ends}` : `Matured ${ends}`}
+      </p>
+    </div>
+  );
+}
 
 interface NFTCardProps {
   asset: Asset;
@@ -143,7 +163,9 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
           <div className={`w-2 h-2 rounded-full mr-2 ${
             asset.chain === 'bitcoin' ? 'bg-orange-500' :
             asset.chain === 'ethereum' ? 'bg-blue-500' :
-            asset.chain === 'pulsechain' ? 'bg-pink-500' : 'bg-gray-400'
+            asset.chain === 'pulsechain' ? 'bg-pink-500' :
+            asset.chain === 'base' ? 'bg-base' :
+            asset.chain === 'robinhood' ? 'bg-robinhood' : 'bg-gray-400'
           }`}></div>
           <span className="text-xs text-gray-500 capitalize">{asset.chain}</span>
         </div>
@@ -279,15 +301,41 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
               asset.type === 'ordinal' ? 'bg-orange-100 text-orange-800' :
               asset.type === 'nft' ? 'bg-blue-100 text-blue-800' :
               asset.type === 'token' ? 'bg-green-100 text-green-800' :
+              asset.type === 'stake' ? 'bg-pink-100 text-pink-800' :
               'bg-gray-100 text-gray-800'
             }`}>
-              {asset.type.toUpperCase()}
+              {asset.pool ? 'POOL' : asset.type.toUpperCase()}
             </span>
           </div>
 
           <p className="text-sm text-gray-500 mt-1">
-            Balance: {asset.balanceFormatted}
+            {asset.type === 'stake' ? 'Principal' : 'Balance'}: {formatAmount(asset.balanceFormatted)} {asset.symbol}
+            {asset.valueUSD !== undefined && (
+              <span className="ml-2 font-medium text-gray-800">{formatUSD(asset.valueUSD)}</span>
+            )}
           </p>
+
+          {asset.stake && (
+            <div className="mt-2 space-y-1 text-xs text-gray-500">
+              <p>{asset.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })} T-Shares · {asset.stake.stakedDays.toLocaleString()} days</p>
+              <StakeProgress {...asset.stake} />
+            </div>
+          )}
+
+          {asset.pool && (
+            <div className="mt-2 space-y-1 text-xs text-gray-500">
+              <p>
+                Principal backing: {formatAmount(String(asset.pool.backingHex))} HEX
+                {asset.pool.backingValueUSD !== undefined && ` (${formatUSD(asset.pool.backingValueUSD)})`}
+                {asset.valueUSD !== undefined && asset.pool.backingValueUSD ? (
+                  <span className="ml-1 font-medium text-gray-700">
+                    · trades at {((asset.valueUSD / asset.pool.backingValueUSD) * 100).toFixed(0)}% of principal (excludes unrealized yield)
+                  </span>
+                ) : null}
+              </p>
+              {asset.pool.currentStake && <StakeProgress {...asset.pool.currentStake} />}
+            </div>
+          )}
 
           {/* Additional NFT/Ordinal Info */}
           {isNFTOrOrdinal && (

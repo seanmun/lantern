@@ -1,183 +1,149 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { EthereumHandler } from '@/chains/ethereum';
 import { PulsechainHandler } from '@/chains/pulsechain';
+import { BaseHandler } from '@/chains/base';
+import { RobinhoodHandler } from '@/chains/robinhood';
 import { BitcoinHandler } from '@/chains/bitcoin';
-import { Asset } from '@/types';
+import { Asset, APIResponse } from '@/types';
 import { useToastHelpers } from '@/components/ui/Toast';
 import { ConnectionStatus, ConnectionStatusBar, ConnectionState } from '@/components/ui/ConnectionStatus';
 import { ChainError, ErrorState } from '@/components/ui/ErrorState';
 import { ChainSectionSkeleton } from '@/components/ui/Skeleton';
 import { NFTGrid, AssetWithNFT } from '@/components/ui/NFTDisplay';
+import { applyPrices, formatUSD } from '@/utils/prices';
+
+const testEthWallet = process.env.NEXT_PUBLIC_TEST_ETH_WALLET;
+const testBtcWallet = process.env.NEXT_PUBLIC_TEST_BTC_WALLET;
+
+interface TestChain {
+  key: string;
+  label: string;
+  icon: string;
+  wallet?: string;
+  createHandler: () => { getAllAssets(address: string): Promise<APIResponse<Asset[]>> };
+  // Literal Tailwind classes so they survive class scanning
+  button: string;
+  dot: string;
+  title: string;
+  badge: string;
+  border: string;
+}
+
+const CHAINS: TestChain[] = [
+  {
+    key: 'bitcoin', label: 'Bitcoin', icon: '₿', wallet: testBtcWallet, createHandler: () => new BitcoinHandler(),
+    button: 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700',
+    dot: 'from-orange-400 to-orange-600', title: 'from-orange-600 to-orange-800',
+    badge: 'bg-orange-100 text-orange-800', border: 'border-orange-100 hover:border-orange-200',
+  },
+  {
+    key: 'ethereum', label: 'Ethereum', icon: 'Ξ', wallet: testEthWallet, createHandler: () => new EthereumHandler(),
+    button: 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+    dot: 'from-blue-400 to-blue-600', title: 'from-blue-600 to-blue-800',
+    badge: 'bg-blue-100 text-blue-800', border: 'border-blue-100 hover:border-blue-200',
+  },
+  {
+    key: 'pulsechain', label: 'Pulsechain', icon: '♦', wallet: testEthWallet, createHandler: () => new PulsechainHandler(),
+    button: 'from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700',
+    dot: 'from-pink-400 to-pink-600', title: 'from-pink-600 to-pink-800',
+    badge: 'bg-pink-100 text-pink-800', border: 'border-pink-100 hover:border-pink-200',
+  },
+  {
+    key: 'base', label: 'Base', icon: '◉', wallet: testEthWallet, createHandler: () => new BaseHandler(),
+    button: 'from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800',
+    dot: 'from-blue-500 to-indigo-700', title: 'from-blue-700 to-indigo-900',
+    badge: 'bg-indigo-100 text-indigo-800', border: 'border-indigo-100 hover:border-indigo-200',
+  },
+  {
+    key: 'robinhood', label: 'Robinhood', icon: '🪶', wallet: testEthWallet, createHandler: () => new RobinhoodHandler(),
+    button: 'from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700',
+    dot: 'from-green-400 to-emerald-600', title: 'from-green-600 to-emerald-800',
+    badge: 'bg-green-100 text-green-800', border: 'border-green-100 hover:border-green-200',
+  },
+];
+
+const sumUSD = (assets: Asset[]) => assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
 export default function TestPage() {
-  const [ethAssets, setEthAssets] = useState<Asset[]>([]);
-  const [plsAssets, setPlsAssets] = useState<Asset[]>([]);
-  const [btcAssets, setBtcAssets] = useState<Asset[]>([]);
+  const [assets, setAssets] = useState<Map<string, Asset[]>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const [chainStates, setChainStates] = useState<Map<string, ConnectionState>>(new Map());
   const [chainErrors, setChainErrors] = useState<Map<string, string>>(new Map());
   const [chainLoading, setChainLoading] = useState<Map<string, boolean>>(new Map());
 
   const toast = useToastHelpers();
 
-  const testEthWallet = process.env.NEXT_PUBLIC_TEST_ETH_WALLET;
-  const testBtcWallet = process.env.NEXT_PUBLIC_TEST_BTC_WALLET;
-  const testPlsWallet = testEthWallet;
-
   const updateChainState = (chain: string, state: ConnectionState, error?: string) => {
-    setChainStates(prev => new Map(prev.set(chain, state)));
-    if (error) {
-      setChainErrors(prev => new Map(prev.set(chain, error)));
-    } else {
-      setChainErrors(prev => {
-        const newMap = new Map(prev);
-        newMap.delete(chain);
-        return newMap;
-      });
-    }
+    setChainStates(prev => new Map(prev).set(chain, state));
+    setChainErrors(prev => {
+      const next = new Map(prev);
+      if (error) next.set(chain, error);
+      else next.delete(chain);
+      return next;
+    });
   };
 
   const updateChainLoading = (chain: string, loading: boolean) => {
-    setChainLoading(prev => new Map(prev.set(chain, loading)));
+    setChainLoading(prev => new Map(prev).set(chain, loading));
   };
 
-  const fetchEthereumData = async () => {
-    if (!testEthWallet) return;
-
-    try {
-      updateChainState('ethereum', 'connecting');
-      updateChainLoading('ethereum', true);
-
-      const ethHandler = new EthereumHandler();
-      const result = await ethHandler.getAllAssets(testEthWallet);
-
-      if (result.success && result.data) {
-        setEthAssets(result.data);
-        updateChainState('ethereum', 'connected');
-        toast.success('Ethereum Connected', `Found ${result.data.length} assets`);
-      } else {
-        const errorMsg = result.error || 'Failed to fetch Ethereum assets';
-        updateChainState('ethereum', 'error', errorMsg);
-        toast.error('Ethereum Error', errorMsg);
-      }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Ethereum fetch failed';
-      updateChainState('ethereum', 'error', errorMsg);
-      toast.error('Ethereum Error', errorMsg);
-    } finally {
-      updateChainLoading('ethereum', false);
-    }
-  };
-
-  const fetchPulsechainData = async () => {
-    if (!testPlsWallet) return;
-
-    try {
-      updateChainState('pulsechain', 'connecting');
-      updateChainLoading('pulsechain', true);
-
-      const plsHandler = new PulsechainHandler();
-      const result = await plsHandler.getAllAssets(testPlsWallet);
-
-      if (result.success && result.data) {
-        setPlsAssets(result.data);
-        updateChainState('pulsechain', 'connected');
-        toast.success('Pulsechain Connected', `Found ${result.data.length} assets`);
-      } else {
-        const errorMsg = result.error || 'Failed to fetch Pulsechain assets';
-        updateChainState('pulsechain', 'error', errorMsg);
-        toast.error('Pulsechain Error', errorMsg);
-      }
-    } catch (err: any) {
-      const errorMsg = err.message || 'Pulsechain fetch failed';
-      updateChainState('pulsechain', 'error', errorMsg);
-      toast.error('Pulsechain Error', errorMsg);
-    } finally {
-      updateChainLoading('pulsechain', false);
-    }
-  };
-
-  const fetchBitcoinData = async () => {
-    if (!testBtcWallet) {
-      const errorMsg = 'No test BTC wallet found in environment variables';
-      updateChainState('bitcoin', 'error', errorMsg);
-      setError(errorMsg);
+  const fetchChain = useCallback(async (chain: TestChain) => {
+    if (!chain.wallet) {
+      updateChainState(chain.key, 'error', `No test wallet for ${chain.label} in .env.local`);
       return;
     }
 
     try {
-      updateChainState('bitcoin', 'connecting');
-      updateChainLoading('bitcoin', true);
+      updateChainState(chain.key, 'connecting');
+      updateChainLoading(chain.key, true);
 
-      const btcHandler = new BitcoinHandler();
-      const result = await btcHandler.getAllAssets(testBtcWallet);
+      const result = await chain.createHandler().getAllAssets(chain.wallet);
 
       if (result.success && result.data) {
-        setBtcAssets(result.data);
-        updateChainState('bitcoin', 'connected');
-        toast.success('Bitcoin Connected', `Found ${result.data.length} assets`);
-      } else {
-        const errorMsg = result.error || 'Failed to fetch Bitcoin assets';
-        updateChainState('bitcoin', 'error', errorMsg);
-
-        if (result.errorCode === 'RATE_LIMITED') {
-          toast.rateLimit('Bitcoin');
-          updateChainState('bitcoin', 'rate_limited', errorMsg);
-        } else {
-          toast.error('Bitcoin Error', errorMsg);
+        const priced = await applyPrices(result.data);
+        setAssets(prev => new Map(prev).set(chain.key, priced));
+        updateChainState(chain.key, 'connected');
+        if (result.partialFailure) {
+          toast.warning(`${chain.label} partially loaded`, result.errors?.join('; '));
         }
-
-        setError(errorMsg);
+      } else {
+        const errorMsg = result.error || `Failed to fetch ${chain.label} assets`;
+        if (result.errorCode === 'RATE_LIMITED') {
+          toast.rateLimit(chain.label);
+          updateChainState(chain.key, 'rate_limited', errorMsg);
+        } else {
+          updateChainState(chain.key, 'error', errorMsg);
+          toast.error(`${chain.label} Error`, errorMsg);
+        }
       }
-    } catch (err: any) {
-      const errorMsg = err.message || `Bitcoin error: ${err}`;
-      updateChainState('bitcoin', 'error', errorMsg);
-      toast.error('Bitcoin Error', errorMsg);
-      setError(errorMsg);
-    } finally {
-      updateChainLoading('bitcoin', false);
-    }
-  };
-
-  const fetchAllChains = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      ['bitcoin', 'ethereum', 'pulsechain'].forEach(chain => {
-        updateChainState(chain, 'connecting');
-        updateChainLoading(chain, true);
-      });
-
-      toast.info('Fetching All Chains', 'Loading data from Bitcoin, Ethereum, and Pulsechain...');
-
-      await Promise.allSettled([
-        fetchEthereumData(),
-        fetchPulsechainData(),
-        fetchBitcoinData()
-      ]);
-
-      toast.success('Multi-Chain Fetch Complete', 'Blockchain data loaded');
-
     } catch (err) {
-      setError(`Error: ${err}`);
-      toast.error('Multi-Chain Error', 'Failed to fetch from blockchains');
+      const errorMsg = err instanceof Error ? err.message : `${chain.label} fetch failed`;
+      updateChainState(chain.key, 'error', errorMsg);
+      toast.error(`${chain.label} Error`, errorMsg);
     } finally {
-      setIsLoading(false);
+      updateChainLoading(chain.key, false);
     }
-  };
+    // toast helpers are recreated each render; fetch logic doesn't depend on them changing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchAllChains = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.allSettled(CHAINS.map(fetchChain));
+    setIsLoading(false);
+  }, [fetchChain]);
 
   useEffect(() => {
     if (testEthWallet || testBtcWallet) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data load
       fetchAllChains();
     }
-  }, [testEthWallet, testBtcWallet]);
+  }, [fetchAllChains]);
 
-  const totalAssets = ethAssets.length + plsAssets.length + btcAssets.length;
+  const allAssets = [...assets.values()].flat();
+  const totalUSD = sumUSD(allAssets);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -188,7 +154,7 @@ export default function TestPage() {
             Multi-Chain Portfolio
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Track your assets across Bitcoin, Ethereum, and Pulsechain with real-time blockchain integration
+            Track your assets across Bitcoin, Ethereum, Pulsechain, Base and Robinhood Chain
           </p>
         </div>
 
@@ -198,61 +164,40 @@ export default function TestPage() {
             <h2 className="text-2xl font-bold text-gray-800">Portfolio Overview</h2>
             <div className="text-right">
               <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {totalAssets}
+                {formatUSD(totalUSD)}
               </div>
-              <div className="text-sm text-gray-500 uppercase tracking-wide">Total Assets</div>
+              <div className="text-sm text-gray-500 uppercase tracking-wide">{allAssets.length} assets</div>
             </div>
           </div>
 
           <div className="mb-6">
-            <ConnectionStatusBar statuses={chainStates} />
+            <ConnectionStatusBar statuses={chainStates} chains={CHAINS.map(c => c.label)} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <button
-              onClick={fetchBitcoinData}
-              disabled={chainLoading.get('bitcoin') || !testBtcWallet}
-              className="group relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
-            >
-              <span className="flex items-center justify-center">
-                {chainLoading.get('bitcoin') ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : '₿'} Bitcoin
-              </span>
-            </button>
-
-            <button
-              onClick={fetchEthereumData}
-              disabled={chainLoading.get('ethereum') || !testEthWallet}
-              className="group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
-            >
-              <span className="flex items-center justify-center">
-                {chainLoading.get('ethereum') ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : 'Ξ'} Ethereum
-              </span>
-            </button>
-
-            <button
-              onClick={fetchPulsechainData}
-              disabled={chainLoading.get('pulsechain') || !testPlsWallet}
-              className="group relative bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
-            >
-              <span className="flex items-center justify-center">
-                {chainLoading.get('pulsechain') ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                ) : '♦'} Pulsechain
-              </span>
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            {CHAINS.map(chain => (
+              <button
+                key={chain.key}
+                onClick={() => fetchChain(chain)}
+                disabled={chainLoading.get(chain.key) || !chain.wallet}
+                className={`bg-gradient-to-r ${chain.button} disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none`}
+              >
+                <span className="flex items-center justify-center gap-2">
+                  {chainLoading.get(chain.key) ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : chain.icon} {chain.label}
+                </span>
+              </button>
+            ))}
 
             <button
               onClick={fetchAllChains}
               disabled={isLoading || (!testEthWallet && !testBtcWallet)}
-              className="group relative bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+              className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 hover:from-purple-700 hover:via-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-400 text-white px-4 py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
             >
-              <span className="flex items-center justify-center">
+              <span className="flex items-center justify-center gap-2">
                 {isLoading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 ) : '⚡'} Sync All
               </span>
             </button>
@@ -260,179 +205,86 @@ export default function TestPage() {
 
           {(!testEthWallet || !testBtcWallet) && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-amber-800 text-sm font-medium">
-                    Add wallet addresses to .env.local: {!testEthWallet && 'NEXT_PUBLIC_TEST_ETH_WALLET'} {!testBtcWallet && 'NEXT_PUBLIC_TEST_BTC_WALLET'}
-                  </p>
-                </div>
-              </div>
+              <p className="text-amber-800 text-sm font-medium">
+                Add wallet addresses to .env.local: {!testEthWallet && 'NEXT_PUBLIC_TEST_ETH_WALLET'} {!testBtcWallet && 'NEXT_PUBLIC_TEST_BTC_WALLET'}
+              </p>
             </div>
           )}
         </div>
 
         {/* Error Display */}
-        {Array.from(chainErrors.entries()).map(([chain, error]) => (
-          <div key={chain} className="mb-4">
-            <ChainError
-              chain={chain.charAt(0).toUpperCase() + chain.slice(1)}
-              error={error}
-              onRetry={() => {
-                if (chain === 'bitcoin') fetchBitcoinData();
-                else if (chain === 'ethereum') fetchEthereumData();
-                else if (chain === 'pulsechain') fetchPulsechainData();
-              }}
-            />
-          </div>
-        ))}
+        {Array.from(chainErrors.entries()).map(([key, error]) => {
+          const chain = CHAINS.find(c => c.key === key);
+          if (!chain) return null;
+          return (
+            <div key={key} className="mb-4">
+              <ChainError chain={chain.label} error={error} onRetry={() => fetchChain(chain)} />
+            </div>
+          );
+        })}
 
         {/* Chain Asset Sections */}
         <div className="grid xl:grid-cols-3 lg:grid-cols-2 gap-6">
-          {/* Bitcoin Assets */}
-          {chainLoading.get('bitcoin') ? (
-            <ChainSectionSkeleton />
-          ) : btcAssets.length > 0 ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full mr-4 shadow-lg"></div>
-                  <span className="bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
-                    Bitcoin Assets
-                  </span>
-                  <span className="ml-3 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {btcAssets.length}
-                  </span>
-                </h2>
-                <ConnectionStatus
-                  chain="Bitcoin"
-                  status={chainStates.get('bitcoin') || 'disconnected'}
-                  error={chainErrors.get('bitcoin')}
-                  onRetry={fetchBitcoinData}
-                />
-              </div>
-              <div className="space-y-4">
-                {btcAssets.filter(asset => asset.type !== 'ordinal' && asset.type !== 'nft').map((asset) => (
-                  <div key={asset.id} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-orange-100 hover:border-orange-200 transition-colors">
-                    <AssetWithNFT asset={asset} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : chainStates.get('bitcoin') === 'error' ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-red-200 rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold flex items-center text-red-600 mb-6">
-                <div className="w-6 h-6 bg-red-400 rounded-full mr-4"></div>
-                Bitcoin Assets (Failed to Load)
-              </h2>
-              <ErrorState
-                title="Bitcoin Connection Failed"
-                message={chainErrors.get('bitcoin') || 'Unknown error'}
-                variant="minimal"
-                onRetry={fetchBitcoinData}
-              />
-            </div>
-          ) : null}
+          {CHAINS.map(chain => {
+            const chainAssets = assets.get(chain.key) ?? [];
+            const listed = chainAssets.filter(a => a.type !== 'ordinal' && a.type !== 'nft');
 
-          {/* Ethereum Assets */}
-          {chainLoading.get('ethereum') ? (
-            <ChainSectionSkeleton />
-          ) : ethAssets.length > 0 ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mr-4 shadow-lg"></div>
-                  <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                    Ethereum Assets
-                  </span>
-                  <span className="ml-3 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {ethAssets.length}
-                  </span>
-                </h2>
-                <ConnectionStatus
-                  chain="Ethereum"
-                  status={chainStates.get('ethereum') || 'disconnected'}
-                  error={chainErrors.get('ethereum')}
-                  onRetry={fetchEthereumData}
-                />
-              </div>
-              <div className="space-y-4">
-                {ethAssets.filter(asset => asset.type !== 'ordinal' && asset.type !== 'nft').map((asset) => (
-                  <div key={asset.id} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-blue-100 hover:border-blue-200 transition-colors">
-                    <AssetWithNFT asset={asset} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : chainStates.get('ethereum') === 'error' ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-red-200 rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold flex items-center text-red-600 mb-6">
-                <div className="w-6 h-6 bg-red-400 rounded-full mr-4"></div>
-                Ethereum Assets (Failed to Load)
-              </h2>
-              <ErrorState
-                title="Ethereum Connection Failed"
-                message={chainErrors.get('ethereum') || 'Unknown error'}
-                variant="minimal"
-                onRetry={fetchEthereumData}
-              />
-            </div>
-          ) : null}
+            if (chainLoading.get(chain.key)) return <ChainSectionSkeleton key={chain.key} />;
 
-          {/* Pulsechain Assets */}
-          {chainLoading.get('pulsechain') ? (
-            <ChainSectionSkeleton />
-          ) : plsAssets.length > 0 ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold flex items-center">
-                  <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-pink-600 rounded-full mr-4 shadow-lg"></div>
-                  <span className="bg-gradient-to-r from-pink-600 to-pink-800 bg-clip-text text-transparent">
-                    Pulsechain Assets
-                  </span>
-                  <span className="ml-3 bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {plsAssets.length}
-                  </span>
-                </h2>
-                <ConnectionStatus
-                  chain="Pulsechain"
-                  status={chainStates.get('pulsechain') || 'disconnected'}
-                  error={chainErrors.get('pulsechain')}
-                  onRetry={fetchPulsechainData}
-                />
+            if (chainStates.get(chain.key) === 'error') {
+              return (
+                <div key={chain.key} className="bg-white/70 backdrop-blur-sm border border-red-200 rounded-2xl shadow-xl p-8">
+                  <h2 className="text-2xl font-bold flex items-center text-red-600 mb-6">
+                    <div className="w-6 h-6 bg-red-400 rounded-full mr-4"></div>
+                    {chain.label} Assets (Failed to Load)
+                  </h2>
+                  <ErrorState
+                    title={`${chain.label} Connection Failed`}
+                    message={chainErrors.get(chain.key) || 'Unknown error'}
+                    variant="minimal"
+                    onRetry={() => fetchChain(chain)}
+                  />
+                </div>
+              );
+            }
+
+            if (listed.length === 0) return null;
+
+            return (
+              <div key={chain.key} className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold flex items-center">
+                    <div className={`w-6 h-6 bg-gradient-to-r ${chain.dot} rounded-full mr-4 shadow-lg`}></div>
+                    <span className={`bg-gradient-to-r ${chain.title} bg-clip-text text-transparent`}>
+                      {chain.label}
+                    </span>
+                    <span className={`ml-3 ${chain.badge} px-3 py-1 rounded-full text-sm font-medium`}>
+                      {formatUSD(sumUSD(chainAssets))}
+                    </span>
+                  </h2>
+                  <ConnectionStatus
+                    chain={chain.label}
+                    status={chainStates.get(chain.key) || 'disconnected'}
+                    error={chainErrors.get(chain.key)}
+                    onRetry={() => fetchChain(chain)}
+                  />
+                </div>
+                <div className="space-y-4">
+                  {listed
+                    .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0))
+                    .map(asset => (
+                      <div key={asset.id} className={`bg-white/50 backdrop-blur-sm rounded-xl p-4 border ${chain.border} transition-colors`}>
+                        <AssetWithNFT asset={asset} />
+                      </div>
+                    ))}
+                </div>
               </div>
-              <div className="space-y-4">
-                {plsAssets.filter(asset => asset.type !== 'ordinal' && asset.type !== 'nft').map((asset) => (
-                  <div key={asset.id} className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-pink-100 hover:border-pink-200 transition-colors">
-                    <AssetWithNFT asset={asset} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : chainStates.get('pulsechain') === 'error' ? (
-            <div className="bg-white/70 backdrop-blur-sm border border-red-200 rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold flex items-center text-red-600 mb-6">
-                <div className="w-6 h-6 bg-red-400 rounded-full mr-4"></div>
-                Pulsechain Assets (Failed to Load)
-              </h2>
-              <ErrorState
-                title="Pulsechain Connection Failed"
-                message={chainErrors.get('pulsechain') || 'Unknown error'}
-                variant="minimal"
-                onRetry={fetchPulsechainData}
-              />
-            </div>
-          ) : null}
+            );
+          })}
         </div>
 
-        {/* Enhanced NFT & Ordinal Gallery */}
-        {(ethAssets.some(a => a.type === 'nft') ||
-          plsAssets.some(a => a.type === 'nft') ||
-          btcAssets.some(a => a.type === 'ordinal')) && (
+        {/* NFT & Ordinal Gallery */}
+        {allAssets.some(a => a.type === 'nft' || a.type === 'ordinal') && (
           <div className="mt-12 space-y-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
@@ -443,38 +295,19 @@ export default function TestPage() {
               </p>
             </div>
 
-            {/* Ethereum NFTs */}
-            {ethAssets.some(a => a.type === 'nft') && (
-              <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8">
-                <NFTGrid
-                  assets={ethAssets}
-                  title="Ethereum NFTs"
-                  variant="default"
-                />
-              </div>
-            )}
-
-            {/* Pulsechain NFTs */}
-            {plsAssets.some(a => a.type === 'nft') && (
-              <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8">
-                <NFTGrid
-                  assets={plsAssets}
-                  title="Pulsechain NFTs"
-                  variant="default"
-                />
-              </div>
-            )}
-
-            {/* Bitcoin Ordinals */}
-            {btcAssets.some(a => a.type === 'ordinal') && (
-              <div className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8">
-                <NFTGrid
-                  assets={btcAssets}
-                  title="Bitcoin Ordinals"
-                  variant="default"
-                />
-              </div>
-            )}
+            {CHAINS.map(chain => {
+              const chainAssets = assets.get(chain.key) ?? [];
+              if (!chainAssets.some(a => a.type === 'nft' || a.type === 'ordinal')) return null;
+              return (
+                <div key={chain.key} className="bg-white/70 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl p-8">
+                  <NFTGrid
+                    assets={chainAssets}
+                    title={chain.key === 'bitcoin' ? 'Bitcoin Ordinals' : `${chain.label} NFTs`}
+                    variant="default"
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

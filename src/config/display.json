@@ -1,10 +1,28 @@
 {
-  "displayOrder": ["bitcoin", "ethereum", "pulsechain", "base", "solana"],
-  "defaultExpanded": ["ethereum"],
+  "displayOrder": [
+    "bitcoin",
+    "ethereum",
+    "pulsechain",
+    "base",
+    "robinhood",
+    "solana"
+  ],
+  "defaultExpanded": [
+    "ethereum"
+  ],
   "grouping": {
-    "evm": ["ethereum", "pulsechain", "base"],
-    "utxo": ["bitcoin"],
-    "other": ["solana"]
+    "evm": [
+      "ethereum",
+      "pulsechain",
+      "base",
+      "robinhood"
+    ],
+    "utxo": [
+      "bitcoin"
+    ],
+    "other": [
+      "solana"
+    ]
   },
   "assetCategories": {
     "native": {
@@ -31,7 +49,12 @@
   "avatarSettings": {
     "defaultStyle": "geometric",
     "imageCaching": true,
-    "supportedFormats": ["jpg", "png", "gif", "webp"],
+    "supportedFormats": [
+      "jpg",
+      "png",
+      "gif",
+      "webp"
+    ],
     "thumbnailSize": 64,
     "ipfsGateways": [
       "https://gateway.pinata.cloud/ipfs/",
