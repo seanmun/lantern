@@ -7,7 +7,7 @@ export interface Holding {
   key: string;
   name: string;
   symbol: string;
-  kind: 'native' | 'token' | 'hex';
+  kind: 'native' | 'token' | 'hex' | 'collectibles';
   chains: string[];
   balance: number;     // in the holding's unit (ETH, HEX, ...)
   valueUSD?: number;
@@ -44,6 +44,9 @@ function classify(a: Asset): { key: string; kind: Holding['kind']; label: string
   const contract = a.contractAddress ? `${a.chain}:${normalizeAddress(a.chain, a.contractAddress)}` : null;
   const balance = Number(a.balanceFormatted);
 
+  if (a.type === 'collection') {
+    return { key: 'collectibles', kind: 'collectibles', label: `${a.name} (${a.balanceFormatted})`, amount: Number(a.balanceFormatted) };
+  }
   if (a.type === 'stake' && a.stake) {
     return { key: 'hex', kind: 'hex', label: `stake #${a.stake.stakeId}`, amount: balance + a.stake.interestHex };
   }
@@ -80,8 +83,8 @@ export function groupHoldings(assets: Asset[]): Holding[] {
       h = {
         key: c.key,
         kind: c.kind,
-        name: c.kind === 'hex' ? 'HEX (liquid + staked + pools)' : c.kind === 'native' ? NATIVE_NAMES[c.key === 'native:ethereum' ? 'ethereum' : coin] ?? a.name : a.name,
-        symbol: c.kind === 'hex' ? 'HEX' : c.key === 'native:ethereum' ? 'ETH' : a.symbol,
+        name: c.kind === 'hex' ? 'HEX (liquid + staked + pools)' : c.kind === 'collectibles' ? 'NFTs & Ordinals (floor value)' : c.kind === 'native' ? NATIVE_NAMES[c.key === 'native:ethereum' ? 'ethereum' : coin] ?? a.name : a.name,
+        symbol: c.kind === 'hex' ? 'HEX' : c.kind === 'collectibles' ? 'Collectibles' : c.key === 'native:ethereum' ? 'ETH' : a.symbol,
         chains: [],
         balance: 0,
         blendedPrice: false,
@@ -97,7 +100,8 @@ export function groupHoldings(assets: Asset[]): Holding[] {
   }
 
   for (const h of groups.values()) {
-    if (h.valueUSD !== undefined && h.balance > 0) h.priceUSD = h.valueUSD / h.balance;
+    // A per-item price across different collections means nothing; parts show each floor
+    if (h.valueUSD !== undefined && h.balance > 0 && h.kind !== 'collectibles') h.priceUSD = h.valueUSD / h.balance;
     // Flag a blend when parts imply prices more than 1% apart (eHEX vs pHEX, pools vs HEX)
     const unitPrices = h.parts
       .filter((p) => p.asset.valueUSD !== undefined && p.amount > 0)

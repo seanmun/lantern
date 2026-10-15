@@ -16,6 +16,11 @@ const TOKEN_BADGES: Record<string, string> = {
   'BRC-20': 'BRC-20',
 };
 
+/** Hash-style token IDs (70+ digits) don't fit a card; keep the ends. */
+function shortTokenId(id: string): string {
+  return id.length > 12 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id;
+}
+
 function formatAmount(value: string): string {
   return Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 });
 }
@@ -59,23 +64,10 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
 
   if (!isNFT && !isOrdinal) return null;
 
-  // Fixed pixel dimensions that cannot be overridden
-  const FIXED_IMAGE_SIZE = {
-    width: '128px',
-    height: '128px',
-    minWidth: '128px',
-    maxWidth: '128px',
-    minHeight: '128px',
-    maxHeight: '128px'
-  };
-
   return (
-    <div className="bg-white/90 backdrop-blur-sm border border-white/40 rounded-xl p-4 hover:shadow-xl hover:bg-white transition-all duration-300 w-full max-w-none group">
-      {/* NFT Image */}
-      <div
-        className="mx-auto mb-3 relative overflow-hidden rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex-shrink-0 group-hover:shadow-lg transition-shadow"
-        style={FIXED_IMAGE_SIZE}
-      >
+    <div className="group w-full min-w-0 rounded-xl border border-white/40 bg-white/90 p-2 backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl sm:p-4">
+      {/* NFT Image: square, fills the column up to 160px so 2 columns fit on a phone */}
+      <div className="relative mx-auto mb-3 aspect-square w-full max-w-40 overflow-hidden rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 transition-shadow group-hover:shadow-lg">
         {isHTMLOrdinal && asset.imageUrl ? (
           <>
             {imageLoading && (
@@ -87,15 +79,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
               loading="lazy"
               src={asset.imageUrl}
               title={asset.name}
-              className="border-0"
-              style={{
-                width: '128px',
-                height: '128px',
-                maxWidth: '128px',
-                maxHeight: '128px',
-                minWidth: '128px',
-                minHeight: '128px'
-              }}
+              className="h-full w-full border-0"
               onLoad={handleImageLoad}
               onError={handleImageError}
               sandbox="allow-scripts"
@@ -112,15 +96,7 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
               loading="lazy"
               src={asset.imageUrl}
               alt={asset.name}
-              className="object-cover object-center"
-              style={{
-                width: '128px',
-                height: '128px',
-                maxWidth: '128px',
-                maxHeight: '128px',
-                minWidth: '128px',
-                minHeight: '128px'
-              }}
+              className="h-full w-full object-cover object-center"
               onError={handleImageError}
               onLoad={handleImageLoad}
             />
@@ -163,8 +139,8 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
 
         {/* Token ID for regular NFTs */}
         {isNFT && asset.tokenId && (
-          <p className="text-xs text-blue-600 mb-1">
-            Token #{asset.tokenId}
+          <p className="mb-1 truncate text-xs text-blue-600" title={`Token #${asset.tokenId}`}>
+            Token #{shortTokenId(asset.tokenId)}
           </p>
         )}
 
@@ -382,7 +358,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
 
               {asset.tokenId && (
                 <p className="text-xs text-gray-500">
-                  Token ID: {asset.tokenId}
+                  Token ID: {shortTokenId(asset.tokenId)}
                 </p>
               )}
 

@@ -29,12 +29,13 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
   const [showAll, setShowAll] = useState(false);
   const assets = results.flatMap((r) => r.assets);
   const listed = assets
-    .filter((a) => a.type !== 'nft' && a.type !== 'ordinal' && a.type !== 'stake' && !isEmptyNative(a))
+    .filter((a) => a.type !== 'nft' && a.type !== 'ordinal' && a.type !== 'stake' && a.type !== 'collection' && !isEmptyNative(a))
     .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
   const main = listed.filter((a) => !isDust(a));
   const dust = listed.filter(isDust);
   const stakes = assets.filter((a) => a.type === 'stake');
   const collectibles = assets.filter((a) => a.type === 'nft' || a.type === 'ordinal').length;
+  const collectiblesValue = assets.filter((a) => a.type === 'collection').reduce((s, a) => s + (a.valueUSD ?? 0), 0);
   const loading = results.filter((r) => r.status === 'loading').length;
   const failed = results.filter((r) => r.status === 'error' || r.status === 'rate_limited');
   const total = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
@@ -97,7 +98,7 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
           <p className="pt-1 text-xs text-gray-500">
             {stakes.length > 0 && `${stakes.length} HEX stake${stakes.length === 1 ? '' : 's'} (${formatUSD(stakes.reduce((s, a) => s + (a.valueUSD ?? 0), 0))}) in HEX Stakes below`}
             {stakes.length > 0 && collectibles > 0 && ' · '}
-            {collectibles > 0 && `${collectibles} collectible${collectibles === 1 ? '' : 's'} in the gallery`}
+            {collectibles > 0 && `${collectibles} collectible${collectibles === 1 ? '' : 's'}${collectiblesValue > 0 ? ` (${formatUSD(collectiblesValue)} at floor)` : ''} in the gallery`}
           </p>
         )}
       </div>

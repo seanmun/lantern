@@ -63,7 +63,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 Everything works without API keys using public RPCs and free price APIs. Optional keys go in `.env.local`. They're read server-side only and never sent to the browser:
 
 ```bash
-ALCHEMY_API_KEY=      # Faster Ethereum/Base/Robinhood RPC, NFTs, Ethereum HEX history
+ALCHEMY_API_KEY=      # Faster RPC, Base/Robinhood NFTs, NFT floor prices, Ethereum HEX history
 XVERSE_API_KEY=       # Full Ordinals metadata (numbers, collections, floors)
 UNISAT_API_KEY=       # BRC-20 balances
 SOLANA_RPC_URL=       # Dedicated Solana RPC (public one is rate-limited)

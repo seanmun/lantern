@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { Asset, APIResponse, HexPoolStats, HexStakeInfo } from '@/types';
 import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from '@/config/hex';
 import { endStakeToday, getHexState, stakeYield } from './hex';
+import { BLOCKSCOUT_HOSTS, collectionAssets, fetchBlockscoutNfts, fetchBlockscoutTokens, looksLikeSpam, toHttpUrl } from './blockscout';
 
 /**
  * Generic EVM Chain Handler
@@ -149,7 +150,18 @@ export class EvmHandler {
         console.warn(`⚠️ ${this.config.key} token registry unavailable:`, error);
         return [] as EvmToken[];
       }) ?? [];
-      const results = await this.readBalances(address, [...this.config.tokens, ...extra]);
+      const known = [...this.config.tokens, ...extra];
+      const knownAddresses = new Set(known.map((t) => t.address.toLowerCase()));
+
+      // Explorer-indexed tokens we don't list explicitly (auto-discovery)
+      const discovered = await fetchBlockscoutTokens(this.config.key, address)
+        .then((tokens) => tokens.filter((t) => !knownAddresses.has(t.address.toLowerCase())))
+        .catch((error) => {
+          console.warn(`⚠️ ${this.config.key} token discovery unavailable:`, error instanceof Error ? error.message : error);
+          return [];
+        });
+
+      const results = await this.readBalances(address, known);
 
       const assets: Asset[] = [];
       for (const result of results) {
@@ -175,6 +187,22 @@ export class EvmHandler {
         });
       }
 
+      for (const t of discovered) {
+        assets.push({
+          ...this.baseAsset(address),
+          id: `${this.config.idPrefix}_${address}_${t.address}`,
+          type: 'token',
+          name: t.name,
+          symbol: t.symbol,
+          decimals: t.decimals,
+          balance: t.rawBalance.toString(),
+          balanceFormatted: ethers.formatUnits(t.rawBalance, t.decimals),
+          contractAddress: t.address,
+          tokenStandard: this.config.tokenStandard,
+          imageUrl: t.iconUrl,
+        });
+      }
+
       return { success: true, data: assets, timestamp: new Date() };
     } catch (error) {
       return errorResponse('Failed to fetch token balances', error);
@@ -182,51 +210,56 @@ export class EvmHandler {
   }
 
   /**
-   * NFTs via Alchemy NFT API v3, following pageKey pagination.
+   * NFTs: Alchemy NFT API v3 when a key is set (adds OpenSea floor prices and
+   * spam flags), otherwise the chain's Blockscout explorer when it has one.
+   * Returns the NFTs plus one 'collection' asset per contract for counts/floors.
    */
   async getNFTs(address: string): Promise<APIResponse<Asset[]>> {
-    if (!HAS_ALCHEMY || !this.config.alchemyNetwork) {
-      return { success: true, data: [], timestamp: new Date() };
-    }
-
     try {
-      const assets: Asset[] = [];
-      let pageKey: string | undefined;
-      const MAX_PAGES = 10;
+      let nfts: Asset[] = [];
+      const floors = new Map<string, { floor: number; currency: 'ETH' | 'USD' }>();
 
-      for (let page = 0; page < MAX_PAGES; page++) {
-        const url = new URL(`https://${this.config.alchemyNetwork}.g.alchemy.com/nft/v3/${ALCHEMY_KEY}/getNFTsForOwner`);
-        url.searchParams.set('owner', address);
-        url.searchParams.set('withMetadata', 'true');
-        url.searchParams.set('pageSize', '100');
-        if (pageKey) url.searchParams.set('pageKey', pageKey);
+      if (HAS_ALCHEMY && this.config.alchemyNetwork) {
+        let pageKey: string | undefined;
+        for (let page = 0; page < 10; page++) {
+          const url = new URL(`https://${this.config.alchemyNetwork}.g.alchemy.com/nft/v3/${ALCHEMY_KEY}/getNFTsForOwner`);
+          url.searchParams.set('owner', address);
+          url.searchParams.set('withMetadata', 'true');
+          url.searchParams.set('pageSize', '100');
+          if (pageKey) url.searchParams.set('pageKey', pageKey);
 
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Alchemy NFT API ${response.status}`);
-        const data = await response.json();
+          const response = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+          if (!response.ok) throw new Error(`Alchemy NFT API ${response.status}`);
+          const data = await response.json();
 
-        for (const nft of data.ownedNfts ?? []) {
-          assets.push({
-            ...this.baseAsset(address),
-            id: `${this.config.idPrefix}_${address}_${nft.contract.address}_${nft.tokenId}`,
-            type: 'nft',
-            name: nft.name || nft.raw?.metadata?.name || 'Unknown NFT',
-            symbol: nft.contract.symbol || 'NFT',
-            balance: nft.balance ?? '1',
-            balanceFormatted: nft.balance ?? '1',
-            contractAddress: nft.contract.address,
-            tokenId: nft.tokenId,
-            tokenStandard: nft.tokenType,
-            imageUrl: nft.image?.cachedUrl || nft.image?.originalUrl,
-            collectionName: nft.contract.name || nft.collection?.name,
-          });
+          for (const nft of data.ownedNfts ?? []) {
+            if (nft.contract?.isSpam || looksLikeSpam(nft.contract?.name, nft.name)) continue;
+            const floor = Number(nft.contract?.openSeaMetadata?.floorPrice);
+            if (floor > 0) floors.set(String(nft.contract.address).toLowerCase(), { floor, currency: 'ETH' });
+            nfts.push({
+              ...this.baseAsset(address),
+              id: `${this.config.idPrefix}_${address}_${nft.contract.address}_${nft.tokenId}`,
+              type: 'nft',
+              name: nft.name || nft.raw?.metadata?.name || `${nft.contract.name ?? 'NFT'} #${nft.tokenId}`,
+              symbol: nft.contract.symbol || 'NFT',
+              balance: nft.balance ?? '1',
+              balanceFormatted: nft.balance ?? '1',
+              contractAddress: nft.contract.address,
+              tokenId: nft.tokenId,
+              tokenStandard: nft.tokenType,
+              imageUrl: nft.image?.cachedUrl || toHttpUrl(nft.image?.originalUrl),
+              collectionName: nft.contract.name || nft.collection?.name,
+            });
+          }
+
+          pageKey = data.pageKey;
+          if (!pageKey) break;
         }
-
-        pageKey = data.pageKey;
-        if (!pageKey) break;
+      } else if (BLOCKSCOUT_HOSTS[this.config.key]) {
+        nfts = await fetchBlockscoutNfts(this.config.key, address, this.config.idPrefix);
       }
 
-      return { success: true, data: assets, timestamp: new Date() };
+      return { success: true, data: [...nfts, ...collectionAssets(nfts, floors)], timestamp: new Date() };
     } catch (error) {
       return errorResponse('Failed to fetch NFTs', error);
     }

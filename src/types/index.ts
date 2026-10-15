@@ -41,7 +41,7 @@ export interface NFTAvatar {
 
 export interface Asset {
   id: string;
-  type: 'native' | 'token' | 'nft' | 'ordinal' | 'stake';
+  type: 'native' | 'token' | 'nft' | 'ordinal' | 'stake' | 'collection';
   chain: string;
   walletAddress: string;
   
@@ -66,7 +66,9 @@ export interface Asset {
   tokenId?: string;
   imageUrl?: string;
   collectionName?: string;
-  floorPrice?: number;
+  floorPrice?: number;          // per item, in floorCurrency
+  floorCurrency?: 'ETH' | 'USD';
+  // 'collection' assets: balance = items held, valueUSD = items × floor
   
   // Ordinal specific (Bitcoin NFTs)
   inscriptionId?: string;

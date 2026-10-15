@@ -18,6 +18,8 @@ import { normalizeAddress } from '@/utils/address';
  */
 
 const CACHE_TTL_MS = 60_000;
+// Spam tokens often sit in tiny pools with absurd prices; ignore pools below this depth
+const MIN_LIQUIDITY_USD = 1_000;
 const BATCH_SIZE = 30;
 const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -72,7 +74,7 @@ async function fromDexScreener(chain: string, addresses: string[]): Promise<Reco
     for (const pair of pairs) {
       const address = normalizeAddress(chain, pair.baseToken.address);
       const liquidity = pair.liquidity?.usd ?? 0;
-      if (pair.priceUsd && liquidity >= (best[address] ?? -1)) {
+      if (pair.priceUsd && liquidity >= MIN_LIQUIDITY_USD && liquidity >= (best[address] ?? -1)) {
         best[address] = liquidity;
         prices[address] = Number(pair.priceUsd);
       }
@@ -84,9 +86,11 @@ async function fromDexScreener(chain: string, addresses: string[]): Promise<Reco
 async function fromGeckoTerminal(chain: string, addresses: string[]): Promise<Record<string, number>> {
   const prices: Record<string, number> = {};
   for (const batch of chunk(addresses, BATCH_SIZE)) {
-    const data = await getJSON(`https://api.geckoterminal.com/api/v2/simple/networks/${TOKEN_NETWORKS[chain][1]}/token_price/${batch.join(',')}`);
+    const data = await getJSON(`https://api.geckoterminal.com/api/v2/simple/networks/${TOKEN_NETWORKS[chain][1]}/token_price/${batch.join(',')}?include_total_reserve_in_usd=true`);
+    const reserves: Record<string, string | null> = data.data?.attributes?.total_reserve_in_usd ?? {};
     for (const [address, price] of Object.entries<string | null>(data.data?.attributes?.token_prices ?? {})) {
-      if (price != null) prices[normalizeAddress(chain, address)] = Number(price);
+      const reserve = Number(reserves[address] ?? 0);
+      if (price != null && reserve >= MIN_LIQUIDITY_USD) prices[normalizeAddress(chain, address)] = Number(price);
     }
   }
   return prices;
@@ -194,7 +198,7 @@ export async function POST(request: NextRequest) {
       chain,
       [...new Set((addresses as unknown[])
         .filter((a): a is string => typeof a === 'string' && isValidTokenAddress(chain, a))
-        .map((a) => normalizeAddress(chain, a)))].slice(0, 250),
+        .map((a) => normalizeAddress(chain, a)))].slice(0, 600),
     ] as const);
 
   const [nativePrices, ...tokenPrices] = await Promise.all([

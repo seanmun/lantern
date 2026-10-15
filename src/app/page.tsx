@@ -16,7 +16,7 @@ import { Holdings } from '@/components/portfolio/Holdings';
 import { StakeEstimator } from '@/components/hex/StakeEstimator';
 import { PoolComparison } from '@/components/hex/PoolComparison';
 import { HEX_ADDRESS } from '@/config/hex';
-import { NFTGrid } from '@/components/ui/NFTDisplay';
+import { CollectiblesGallery } from '@/components/portfolio/CollectiblesGallery';
 import { formatUSD } from '@/utils/prices';
 
 const TEST_WALLETS = [
@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const stakeHistory = useStakeHistory(wallets);
 
   const totalUSD = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
+  const collectiblesUSD = assets.filter((a) => a.type === 'collection').reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
   const { walletNames, walletTotals, walletLoading } = useMemo(() => {
     const names = new Map<string, string>();
@@ -59,7 +60,6 @@ export default function DashboardPage() {
     return totals;
   }, [assets]);
 
-  const hasCollectibles = assets.some((a) => a.type === 'nft' || a.type === 'ordinal');
 
   return (
     <main className="mx-auto max-w-7xl space-y-8">
@@ -74,6 +74,9 @@ export default function DashboardPage() {
         {wallets.length > 0 && (
           <div className="sm:text-right">
             <div className="text-4xl font-bold tabular-nums text-gray-900">{formatUSD(totalUSD)}</div>
+            {collectiblesUSD > 0 && (
+              <div className="text-xs text-gray-500">incl. {formatUSD(collectiblesUSD)} collectibles at floor value</div>
+            )}
             <div className="mt-1 flex items-center gap-3 text-sm text-gray-500 sm:justify-end">
               <span>
                 {isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}
@@ -150,24 +153,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          {hasCollectibles && (
-            <section className="space-y-6">
-              <h2 className="text-center text-3xl font-bold">
-                <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
-                  Collectibles
-                </span>
-              </h2>
-              {CHAIN_DISPLAY.map((chain) => {
-                const chainAssets = assets.filter((a) => a.chain === chain.key);
-                if (!chainAssets.some((a) => a.type === 'nft' || a.type === 'ordinal')) return null;
-                return (
-                  <div key={chain.key} className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
-                    <NFTGrid assets={chainAssets} title={chain.key === 'bitcoin' ? 'Bitcoin Ordinals' : `${chain.label} NFTs`} />
-                  </div>
-                );
-              })}
-            </section>
-          )}
+          <CollectiblesGallery assets={assets} />
         </>
       )}
     </main>

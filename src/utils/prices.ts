@@ -35,6 +35,7 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     if (asset.pool) {
       (tokens[asset.chain] ??= new Set()).add(HEX_ADDRESS.toLowerCase());
     }
+    if (asset.type === 'collection' && asset.floorCurrency === 'ETH') natives.add('ethereum');
   }
 
   if (natives.size === 0 && Object.keys(tokens).length === 0) return assets;
@@ -70,6 +71,12 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
       // A stake is worth its principal plus the interest it has earned so far
       const amount = Number(asset.balanceFormatted) + (asset.stake?.interestHex ?? 0);
       priced.valueUSD = amount * priceUSD;
+    }
+
+    // Collections priced in ETH (OpenSea floors via Alchemy): count × floor × ETH
+    const ethPrice = prices.natives.ethereum;
+    if (asset.type === 'collection' && asset.floorCurrency === 'ETH' && asset.floorPrice && ethPrice != null) {
+      priced.valueUSD = Number(asset.balanceFormatted) * asset.floorPrice * ethPrice;
     }
 
     const hexPrice = prices.tokens[asset.chain]?.[HEX_ADDRESS.toLowerCase()];

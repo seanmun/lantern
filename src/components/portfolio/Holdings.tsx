@@ -42,7 +42,7 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
   if (holdings.length === 0) return null;
 
   const total = holdings.reduce((sum, h) => sum + (h.valueUSD ?? 0), 0);
-  const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind !== 'token');
+  const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind === 'native' || h.kind === 'hex');
   const dust = holdings.length - main.length;
   const pool = showDust ? holdings : main;
   const rows = showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
@@ -104,7 +104,7 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
                         </div>
                       </div>
                     </td>
-                    <td className="py-2.5 pr-4 text-right tabular-nums">{formatAmount(h.balance)}</td>
+                    <td className="py-2.5 pr-4 text-right tabular-nums">{formatAmount(h.balance)}{h.kind === 'collectibles' && <span className="text-gray-500"> items</span>}</td>
                     <td className="py-2.5 pr-4 text-right tabular-nums text-gray-600">
                       {h.priceUSD !== undefined ? formatUSD(h.priceUSD) : '—'}
                       {h.blendedPrice && <div className="text-[10px] uppercase tracking-wide text-gray-400" title="Parts trade at different prices; this is total value ÷ total balance">avg</div>}

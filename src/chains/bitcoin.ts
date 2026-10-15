@@ -1,6 +1,7 @@
 import 'server-only';
 import { Asset, APIResponse } from '@/types';
 import { fetchWithRetry, APIError } from '@/utils/api';
+import { collectionAssets } from './blockscout';
 
 /**
  * Bitcoin Handler - BTC + Ordinals Support
@@ -40,6 +41,17 @@ interface XverseUtxoPage {
   total: number;
   results: { inscriptions: { id: string; content_type?: string }[] }[];
 }
+
+interface XverseCollection {
+  collection_id: string;
+  collection_name: string;
+  total_inscriptions: number;
+  inscription_floor_price_usd?: number | null;
+  thumbnail_inscriptions?: { id: string; content_type?: string }[];
+}
+
+const DEFAULT_COLLECTION = 'Bitcoin Ordinals';
+const UNCATEGORIZED_ID = 'other_collectibles';
 
 interface XverseRune {
   id: string;
@@ -169,11 +181,25 @@ export class BitcoinHandler {
    */
   async getOrdinals(address: string): Promise<APIResponse<Asset[]>> {
     try {
-      const ordinals = XVERSE_API_KEY
-        ? await this.fetchXverseInscriptions(address)
-        : await this.fetchXverseWalletInscriptions(address);
+      if (XVERSE_API_KEY) {
+        // Documented API: every inscription carries its collection and floor
+        const ordinals = await this.fetchXverseInscriptions(address);
+        const floors = new Map<string, { floor: number; currency: 'USD' }>();
+        for (const o of ordinals) {
+          if (o.collectionName && o.floorPrice) floors.set(o.collectionName, { floor: o.floorPrice, currency: 'USD' });
+        }
+        const inCollections = ordinals.filter((o) => o.collectionName && o.collectionName !== DEFAULT_COLLECTION);
+        return { success: true, data: [...ordinals, ...collectionAssets(inCollections, floors)], timestamp: new Date() };
+      }
 
-      return { success: true, data: ordinals, timestamp: new Date() };
+      const [ordinals, collections] = await Promise.all([
+        this.fetchXverseWalletInscriptions(address),
+        this.fetchXverseCollections(address).catch((error) => {
+          console.warn('⚠️ Ordinals collections unavailable:', error instanceof Error ? error.message : error);
+          return [] as XverseCollection[];
+        }),
+      ]);
+      return { success: true, data: [...ordinals, ...this.applyCollections(address, ordinals, collections)], timestamp: new Date() };
     } catch (error) {
       console.error('❌ Error fetching Ordinals:', error);
       return {
@@ -182,6 +208,66 @@ export class BitcoinHandler {
         timestamp: new Date()
       };
     }
+  }
+
+  /**
+   * Keyless Xverse wallet endpoint: the address's collections with counts and
+   * USD floor prices, plus up to 4 sample inscriptions each.
+   */
+  private async fetchXverseCollections(address: string): Promise<XverseCollection[]> {
+    const all: XverseCollection[] = [];
+    for (let offset = 0; offset < 500; offset += 50) {
+      const response = await fetchWithRetry(
+        `https://api.xverse.app/v1/address/${address}/ordinals/collections?offset=${offset}&limit=50`,
+        { headers: { Accept: 'application/json' } },
+        { maxRetries: 2 }
+      );
+      const page: { total: number; results: XverseCollection[] } = await response.json();
+      all.push(...(page.results ?? []));
+      if (offset + 50 >= page.total) break;
+    }
+    return all;
+  }
+
+  /**
+   * Tag the inscriptions we can match (collection samples) and add one
+   * 'collection' asset per collection, valued at count × floor.
+   */
+  private applyCollections(address: string, ordinals: Asset[], collections: XverseCollection[]): Asset[] {
+    const byInscription = new Map<string, XverseCollection>();
+    for (const c of collections) {
+      if (c.collection_id === UNCATEGORIZED_ID) continue;
+      for (const t of c.thumbnail_inscriptions ?? []) byInscription.set(t.id, c);
+    }
+    for (const o of ordinals) {
+      const c = o.inscriptionId ? byInscription.get(o.inscriptionId) : undefined;
+      if (c) o.collectionName = c.collection_name;
+    }
+
+    return collections
+      .filter((c) => c.collection_id !== UNCATEGORIZED_ID && c.total_inscriptions > 0)
+      .map((c): Asset => {
+        const floor = c.inscription_floor_price_usd && c.inscription_floor_price_usd > 0 ? c.inscription_floor_price_usd : undefined;
+        const sample = c.thumbnail_inscriptions?.[0];
+        return {
+          id: `btc_${address}_collection_${c.collection_id}`,
+          type: 'collection',
+          chain: this.CHAIN_NAME,
+          walletAddress: address,
+          name: c.collection_name,
+          symbol: 'ORD',
+          balance: String(c.total_inscriptions),
+          balanceFormatted: String(c.total_inscriptions),
+          collectionName: c.collection_name,
+          inscriptionId: sample?.id,
+          contentType: sample?.content_type,
+          imageUrl: sample ? `/api/ordinals/content/${sample.id}` : undefined,
+          floorPrice: floor,
+          floorCurrency: floor !== undefined ? 'USD' : undefined,
+          valueUSD: floor !== undefined ? floor * c.total_inscriptions : undefined,
+          lastUpdated: new Date(),
+        };
+      });
   }
 
   /**
