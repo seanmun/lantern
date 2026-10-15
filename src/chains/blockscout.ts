@@ -95,6 +95,9 @@ export interface DiscoveredToken {
   iconUrl?: string;
 }
 
+// Mass-airdrop scams reach 1M+ wallets but never get listed; real tokens with
+// that many holders have a CoinGecko-backed exchange rate on the explorer.
+const AIRDROP_HOLDERS = 100_000;
 const MAX_TOKEN_PAGES = 6;      // 50 per page; Ethereum's explorer returns the most valuable first
 const TOKEN_BUDGET_MS = 20_000; // stop paging (keeping what we have) after this long
 
@@ -109,7 +112,15 @@ interface BlockscoutTokenItem {
     type: string;
     icon_url?: string | null;
     reputation?: string | null;
+    exchange_rate?: string | null;
+    holders?: string | null;       // older Blockscout (Pulsechain)
+    holders_count?: string | null; // newer Blockscout (Ethereum)
   };
+}
+
+function isMassAirdrop(token: BlockscoutTokenItem['token']): boolean {
+  const holders = Number(token.holders_count ?? token.holders ?? 0);
+  return holders > AIRDROP_HOLDERS && !token.exchange_rate;
 }
 
 /** ERC-20s the explorer has indexed for the address, minus obvious spam. */
@@ -139,7 +150,7 @@ export async function fetchBlockscoutTokens(chain: string, address: string): Pro
   }
 
   return items
-    .filter((b) => b.token.type === 'ERC-20' && b.token.reputation !== 'scam' && !looksLikeSpam(b.token.name, b.token.symbol))
+    .filter((b) => b.token.type === 'ERC-20' && b.token.reputation !== 'scam' && !isMassAirdrop(b.token) && !looksLikeSpam(b.token.name, b.token.symbol))
     .map((b) => ({
       address: b.token.address_hash ?? b.token.address ?? '',
       symbol: b.token.symbol ?? '?',

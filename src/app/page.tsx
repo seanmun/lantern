@@ -5,6 +5,8 @@ import { useWallets } from '@/hooks/useWallets';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useHexStats } from '@/hooks/useHexStats';
 import { useStakeHistory } from '@/hooks/useStakeHistory';
+import { tokenKey, useHiddenTokens } from '@/hooks/useHiddenTokens';
+import { Asset } from '@/types';
 import { assetsToCsv } from '@/utils/csv';
 import { downloadFile } from '@/utils/ics';
 import { CHAIN_DISPLAY } from '@/config/chainDisplay';
@@ -26,7 +28,21 @@ const TEST_WALLETS = [
 
 export default function DashboardPage() {
   const { wallets, addWallet, removeWallet, renameWallet } = useWallets();
-  const { results, assets, isLoading, lastUpdated, refresh, retry } = usePortfolio(wallets);
+  const portfolio = usePortfolio(wallets);
+  const { isLoading, lastUpdated, refresh, retry } = portfolio;
+
+  // Hidden (spam) tokens are removed here, so every total and section skips them
+  const { hidden, hide, unhide } = useHiddenTokens();
+  const { results, assets, hiddenAssets } = useMemo(() => {
+    const hiddenSet = new Set(hidden);
+    const isHidden = (a: Asset) => a.type === 'token' && hiddenSet.has(tokenKey(a));
+    const visibleResults = portfolio.results.map((r) => ({ ...r, assets: r.assets.filter((a) => !isHidden(a)) }));
+    return {
+      results: visibleResults,
+      assets: visibleResults.flatMap((r) => r.assets),
+      hiddenAssets: portfolio.assets.filter(isHidden),
+    };
+  }, [portfolio.results, portfolio.assets, hidden]);
 
   // Always loaded: the stake estimator works even before any wallet is added
   const hexStats = useHexStats(true);
@@ -129,7 +145,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {wallets.length > 0 && <Holdings assets={assets} walletNames={walletNames} />}
+      {wallets.length > 0 && <Holdings assets={assets} walletNames={walletNames} hiddenAssets={hiddenAssets} hiddenKeys={hidden} onHide={hide} onUnhide={unhide} />}
 
       {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} endedStakes={stakeHistory.stakes} historyUnavailable={stakeHistory.unavailable} />}
 

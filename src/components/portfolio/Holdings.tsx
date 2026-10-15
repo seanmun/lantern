@@ -4,11 +4,16 @@ import { Fragment, useState } from 'react';
 import { Asset } from '@/types';
 import { chainLabel } from '@/config/chainDisplay';
 import { groupHoldings } from '@/utils/holdings';
+import { tokenKey } from '@/hooks/useHiddenTokens';
 import { formatUSD } from '@/utils/prices';
 
 interface HoldingsProps {
   assets: Asset[];
   walletNames: Map<string, string>;
+  hiddenAssets: Asset[];
+  hiddenKeys: string[];
+  onHide: (key: string) => void;
+  onUnhide: (key: string) => void;
 }
 
 const ROWS_COLLAPSED = 15;
@@ -33,13 +38,26 @@ function formatAmount(value: number): string {
  * Every wallet combined: one row per asset with total balance, price, value
  * and share of the portfolio. Click a row for the per-wallet breakdown.
  */
-export function Holdings({ assets, walletNames }: HoldingsProps) {
+export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide, onUnhide }: HoldingsProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [showHidden, setShowHidden] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [showDust, setShowDust] = useState(false);
 
   const holdings = groupHoldings(assets);
-  if (holdings.length === 0) return null;
+  if (holdings.length === 0 && hiddenKeys.length === 0) return null;
+
+  // Hidden tokens, one entry per key, with what they'd add (for the unhide list)
+  const hiddenList = hiddenKeys.map((key) => {
+    const parts = hiddenAssets.filter((a) => tokenKey(a) === key);
+    const first = parts[0];
+    return {
+      key,
+      label: first ? `${first.symbol} · ${first.name}` : key,
+      chain: first?.chain ?? key.split(':')[0],
+      valueUSD: parts.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0),
+    };
+  });
 
   const total = holdings.reduce((sum, h) => sum + (h.valueUSD ?? 0), 0);
   const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind === 'native' || h.kind === 'hex');
@@ -120,6 +138,19 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
                     </td>
                   </tr>
 
+                  {isOpen && h.kind === 'token' && (
+                    <tr className="border-b border-gray-100 bg-gray-50/70 text-xs">
+                      <td colSpan={5} className="py-1.5 pl-8 pr-4">
+                        <button
+                          onClick={() => { onHide(tokenKey(h.parts[0].asset)); setExpanded(null); }}
+                          className="font-medium text-red-700 hover:text-red-900"
+                        >
+                          Hide this token (spam / scam)
+                        </button>
+                        <span className="ml-2 text-gray-500">Removes it from all totals; you can unhide it below.</span>
+                      </td>
+                    </tr>
+                  )}
                   {isOpen && h.parts.map(({ asset: a, label, amount }) => (
                     <tr key={a.id} className="border-b border-gray-100 bg-gray-50/70 text-xs">
                       <td className="py-1.5 pl-8 pr-4 text-gray-600">
@@ -162,11 +193,31 @@ export function Holdings({ assets, walletNames }: HoldingsProps) {
             {showDust ? 'Hide small balances' : `Show ${dust} small or unpriced`}
           </button>
         )}
+        {hiddenList.length > 0 && (
+          <button onClick={() => setShowHidden((v) => !v)} className="font-medium text-purple-700 hover:text-purple-900">
+            {showHidden ? 'Hide hidden-token list' : `${hiddenList.length} hidden token${hiddenList.length === 1 ? '' : 's'}`}
+          </button>
+        )}
         <span className="text-gray-500">
           ETH includes WETH on every chain. HEX includes liquid, staked (principal + interest) and Maximus pools at their HEX
           backing, on both chains; values use each part&apos;s own price, so its price is an average. Other tokens stay per chain.
         </span>
       </div>
+      {showHidden && hiddenList.length > 0 && (
+        <ul className="mt-3 divide-y divide-gray-100 rounded-xl bg-white/60 text-sm">
+          {hiddenList.map((h) => (
+            <li key={h.key} className="flex items-center justify-between gap-3 px-4 py-2">
+              <span className="min-w-0 truncate">
+                <span className="font-medium text-gray-900">{h.label}</span>
+                <span className="ml-2 text-xs text-gray-500">{chainLabel(h.chain)}{h.valueUSD > 0 && ` · claims ${formatUSD(h.valueUSD)}`}</span>
+              </span>
+              <button onClick={() => onUnhide(h.key)} className="shrink-0 text-xs font-medium text-purple-700 hover:text-purple-900">
+                Unhide
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
