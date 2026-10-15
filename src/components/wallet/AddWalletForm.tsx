@@ -34,7 +34,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
         <input
           value={address}
           onChange={(e) => { setAddress(e.target.value); setError(null); }}
-          placeholder="Public address (0x… or bc1…)"
+          placeholder="Public address (0x…, bc1… or Solana)"
           spellCheck={false}
           autoComplete="off"
           aria-label="Wallet address"
@@ -63,7 +63,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
           : detected?.isValid
             ? `Will track: ${detected.compatibleChains.map(chainLabel).join(', ')}`
             : detected
-              ? 'Not a recognized EVM or Bitcoin address'
+              ? 'Not a recognized EVM, Bitcoin or Solana address'
               : 'Public addresses only. Wallets are saved in this browser, never on a server.'}
       </p>
     </form>

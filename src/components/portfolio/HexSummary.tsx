@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Asset, HexStakeStatus } from '@/types';
+import { Asset, EndedStake, HexStakeStatus } from '@/types';
 import { chainLabel } from '@/config/chainDisplay';
 import { formatUSD } from '@/utils/prices';
 import { HexStatsWithPrice } from '@/hooks/useHexStats';
@@ -12,12 +12,16 @@ import { HEX_CHAIN_COLORS } from '@/components/hex/colors';
 import { MaturityCalendar } from '@/components/hex/MaturityCalendar';
 import { ForkComparison } from '@/components/hex/ForkComparison';
 import { buildIcs, downloadFile } from '@/utils/ics';
+import { StakeHistory } from '@/components/hex/StakeHistory';
+import { StakeAlerts } from '@/components/hex/StakeAlerts';
 import { hexDayToDate } from '@/config/hex';
 
 interface HexSummaryProps {
   assets: Asset[];
   walletNames: Map<string, string>;
   hexStats: HexStatsWithPrice[];
+  endedStakes: EndedStake[];
+  historyUnavailable: string[];
 }
 
 const formatHex = (value: number) => value.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -48,7 +52,7 @@ function StatusBadge({ status, graceDaysLeft }: { status: HexStakeStatus; graceD
  */
 const STAKE_ROWS_COLLAPSED = 10;
 
-export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
+export function HexSummary({ assets, walletNames, hexStats, endedStakes, historyUnavailable }: HexSummaryProps) {
   const [showAllStakes, setShowAllStakes] = useState(false);
   const stakes = assets
     .filter((a): a is Asset & { stake: NonNullable<Asset['stake']> } => a.type === 'stake' && !!a.stake)
@@ -58,7 +62,7 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
     .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
   const hasLiquidHex = assets.some((a) => a.type === 'token' && a.symbol === 'HEX');
 
-  if (stakes.length === 0 && pools.length === 0 && !hasLiquidHex) return null;
+  if (stakes.length === 0 && pools.length === 0 && !hasLiquidHex && endedStakes.length === 0) return null;
 
   const hexPrices = Object.fromEntries(hexStats.map((x) => [x.chain, x.hexPriceUSD]));
   const walletName = (a: Asset) => walletNames.get(a.walletAddress.toLowerCase()) ?? '';
@@ -203,12 +207,15 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
         <div className="mb-8 overflow-x-auto">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-gray-800">Stakes</h3>
+            <div className="flex flex-wrap gap-2">
+            <StakeAlerts stakes={stakes} />
             <button
               onClick={exportCalendar}
               className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
             >
               📅 Add end dates to calendar (.ics)
             </button>
+            </div>
           </div>
           <table className="w-full min-w-[880px] text-sm">
             <thead>
@@ -337,6 +344,15 @@ export function HexSummary({ assets, walletNames, hexStats }: HexSummaryProps) {
           </p>
         </div>
       )}
+
+      <div className="mt-8 empty:hidden">
+        <StakeHistory
+          stakes={endedStakes}
+          unavailable={historyUnavailable}
+          walletName={(address) => walletNames.get(address.toLowerCase()) ?? ''}
+          hexPrices={hexPrices}
+        />
+      </div>
     </section>
   );
 }

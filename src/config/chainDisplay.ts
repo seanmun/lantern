@@ -38,6 +38,11 @@ export const CHAIN_DISPLAY: ChainDisplay[] = [
     dot: 'from-green-400 to-emerald-600', title: 'from-green-600 to-emerald-800',
     badge: 'bg-green-100 text-green-800', border: 'border-green-100 hover:border-green-200',
   },
+  {
+    key: 'solana', label: 'Solana', icon: '◎',
+    dot: 'from-violet-400 to-fuchsia-500', title: 'from-violet-600 to-fuchsia-700',
+    badge: 'bg-violet-100 text-violet-800', border: 'border-violet-100 hover:border-violet-200',
+  },
 ];
 
 export const chainLabel = (key: string) => CHAIN_DISPLAY.find((c) => c.key === key)?.label ?? key;

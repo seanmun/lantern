@@ -10,6 +10,12 @@ function rendersInFrame(asset: Asset): boolean {
   return /html|svg|text\/|json|javascript/.test(type) || !!asset.collectionName?.toLowerCase().includes('quantum cat');
 }
 
+const TOKEN_BADGES: Record<string, string> = {
+  'Stock Token': 'STOCK',
+  Rune: 'RUNE',
+  'BRC-20': 'BRC-20',
+};
+
 function formatAmount(value: string): string {
   return Number(value).toLocaleString('en-US', { maximumFractionDigits: 4 });
 }
@@ -307,9 +313,21 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
 
         {/* Asset Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-900 truncate">
-              {asset.name} ({asset.symbol})
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="flex min-w-0 items-center gap-2 font-medium text-gray-900">
+              {asset.type === 'token' && asset.imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element -- remote token logos, not optimizable assets
+                <img
+                  src={asset.imageUrl}
+                  alt=""
+                  width={20}
+                  height={20}
+                  loading="lazy"
+                  className="h-5 w-5 shrink-0 rounded-full"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              )}
+              <span className="truncate">{asset.name} ({asset.symbol})</span>
             </h3>
 
             {/* Type Badge */}
@@ -320,11 +338,11 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
               asset.type === 'stake' ? 'bg-pink-100 text-pink-800' :
               'bg-gray-100 text-gray-800'
             }`}>
-              {asset.pool ? 'POOL' : asset.type.toUpperCase()}
+              {asset.pool ? 'POOL' : TOKEN_BADGES[asset.tokenStandard ?? ''] ?? asset.type.toUpperCase()}
             </span>
           </div>
 
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="mt-1 break-words text-sm text-gray-500">
             {asset.type === 'stake' ? 'Principal' : 'Balance'}: {formatAmount(asset.balanceFormatted)} {asset.symbol}
             {asset.valueUSD !== undefined && (
               <span className="ml-2 font-medium text-gray-800">{formatUSD(asset.valueUSD)}</span>

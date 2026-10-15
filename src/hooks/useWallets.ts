@@ -65,18 +65,19 @@ export function useWallets() {
     const trimmed = address.trim();
     const validation = validateAddress(trimmed);
     if (!validation.isValid) {
-      return { ok: false, error: 'Not a recognized EVM (0x…) or Bitcoin address' };
+      return { ok: false, error: 'Not a recognized EVM (0x…), Bitcoin or Solana address' };
     }
 
     const existing = getSnapshot();
-    if (existing.some((w) => w.address.toLowerCase() === trimmed.toLowerCase())) {
+    const sameAddress = (a: string) => (validation.format === 'base58' ? a === trimmed : a.toLowerCase() === trimmed.toLowerCase());
+    if (existing.some((w) => sameAddress(w.address))) {
       return { ok: false, error: 'That wallet is already being tracked' };
     }
 
     const now = new Date().toISOString();
     const wallet: Wallet = {
       id: crypto.randomUUID(),
-      name: name?.trim() || `${validation.format === 'hex' ? 'EVM' : 'Bitcoin'} Wallet ${existing.length + 1}`,
+      name: name?.trim() || `${validation.format === 'hex' ? 'EVM' : validation.compatibleChains[0] === 'solana' ? 'Solana' : 'Bitcoin'} Wallet ${existing.length + 1}`,
       address: validation.format === 'bech32' ? trimmed.toLowerCase() : trimmed,
       chains: validation.compatibleChains,
       createdAt: now,

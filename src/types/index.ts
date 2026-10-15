@@ -114,6 +114,22 @@ export interface HexPoolInfo {
   currentStake?: Pick<HexStakeInfo, 'lockedDay' | 'stakedDays' | 'endDay' | 'endDate' | 'daysRemaining' | 'apy'>;
 }
 
+export interface EndedStake {
+  chain: string;
+  walletAddress: string;
+  stakeId: number;
+  stakedHex: number;
+  payoutHex: number;
+  penaltyHex: number;
+  returnHex: number;  // what the staker received
+  stakedDays: number;
+  servedDays: number;
+  lockedDay: number;
+  endedDay: number;
+  outcome: 'full' | 'early' | 'late';
+  preFork: boolean;   // ended before the Pulsechain fork, so it shows on both chains
+}
+
 // A Maximus pool's current cycle, for comparing against staking directly
 export interface HexPoolStats {
   chain: string;

@@ -4,6 +4,9 @@ import { useMemo } from 'react';
 import { useWallets } from '@/hooks/useWallets';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useHexStats } from '@/hooks/useHexStats';
+import { useStakeHistory } from '@/hooks/useStakeHistory';
+import { assetsToCsv } from '@/utils/csv';
+import { downloadFile } from '@/utils/ics';
 import { CHAIN_DISPLAY } from '@/config/chainDisplay';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 import { WalletList } from '@/components/wallet/WalletList';
@@ -26,6 +29,7 @@ export default function DashboardPage() {
 
   // Always loaded: the stake estimator works even before any wallet is added
   const hexStats = useHexStats(true);
+  const stakeHistory = useStakeHistory(wallets);
 
   const totalUSD = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
@@ -64,7 +68,7 @@ export default function DashboardPage() {
           <h1 className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent sm:text-5xl">
             Portfolio
           </h1>
-          <p className="mt-2 text-gray-600">Bitcoin, Ethereum, Pulsechain, Base & Robinhood Chain. Your data stays in your browser.</p>
+          <p className="mt-2 text-gray-600">Bitcoin, Ethereum, Pulsechain, Base, Robinhood Chain & Solana. Your data stays in your browser.</p>
         </div>
         {wallets.length > 0 && (
           <div className="sm:text-right">
@@ -73,6 +77,17 @@ export default function DashboardPage() {
               <span>
                 {isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}
               </span>
+              <button
+                onClick={() => downloadFile(
+                  `portfolio-${new Date().toISOString().slice(0, 10)}.csv`,
+                  assetsToCsv(assets, (address) => walletNames.get(address.toLowerCase()) ?? ''),
+                  'text/csv;charset=utf-8'
+                )}
+                disabled={assets.length === 0}
+                className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+              >
+                ⬇ CSV
+              </button>
               <button
                 onClick={refresh}
                 disabled={isLoading}
@@ -110,7 +125,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} />}
+      {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} endedStakes={stakeHistory.stakes} historyUnavailable={stakeHistory.unavailable} />}
 
       {hexStats.length > 0 && <StakeEstimator stats={hexStats} liquidHex={liquidHex} />}
 

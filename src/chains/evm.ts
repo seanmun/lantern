@@ -22,6 +22,8 @@ export interface EvmToken {
   symbol: string;
   name: string;
   decimals: number;
+  standard?: string; // overrides the chain's tokenStandard, e.g. 'Stock Token'
+  logoUrl?: string;
 }
 
 export interface EvmChainConfig {
@@ -36,7 +38,13 @@ export interface EvmChainConfig {
   tokens: EvmToken[];
   hex?: boolean;          // chain has HEX staking + Maximus pools
   rpcBatching?: boolean;  // default true; some public RPCs answer JSON-RPC batches very slowly
+  loadExtraTokens?: () => Promise<EvmToken[]>; // dynamic token lists (e.g. an official registry)
 }
+
+// Multicall3 is deployed at this address on Ethereum, Base, Robinhood Chain and Pulsechain
+const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
+const MULTICALL3_ABI = ['function aggregate3((address target, bool allowFailure, bytes callData)[] calls) view returns ((bool success, bytes returnData)[])'];
+const MULTICALL_CHUNK = 250;
 
 const ERC20_ABI = [
   'function balanceOf(address owner) view returns (uint256)',
@@ -101,15 +109,47 @@ export class EvmHandler {
     }
   }
 
+  /**
+   * balanceOf for many tokens: one Multicall3 call per chunk, falling back to
+   * individual calls if multicall fails (public RPCs throttle hundreds of calls).
+   */
+  private async readBalances(address: string, tokens: EvmToken[]): Promise<PromiseSettledResult<{ token: EvmToken; balance: bigint }>[]> {
+    const erc20 = new ethers.Interface(ERC20_ABI);
+    const multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, this.provider);
+    const callData = erc20.encodeFunctionData('balanceOf', [address]);
+
+    try {
+      const out: PromiseSettledResult<{ token: EvmToken; balance: bigint }>[] = [];
+      for (let i = 0; i < tokens.length; i += MULTICALL_CHUNK) {
+        const chunk = tokens.slice(i, i + MULTICALL_CHUNK);
+        const responses: { success: boolean; returnData: string }[] = await multicall.aggregate3(
+          chunk.map((t) => ({ target: ethers.getAddress(t.address), allowFailure: true, callData }))
+        );
+        responses.forEach((r, j) => {
+          if (r.success && r.returnData !== '0x') {
+            out.push({ status: 'fulfilled', value: { token: chunk[j], balance: erc20.decodeFunctionResult('balanceOf', r.returnData)[0] as bigint } });
+          } else {
+            out.push({ status: 'rejected', reason: `balanceOf failed for ${chunk[j].symbol}` });
+          }
+        });
+      }
+      return out;
+    } catch (error) {
+      console.warn(`⚠️ ${this.config.key} multicall failed, using individual calls:`, error);
+      return Promise.allSettled(tokens.map(async (token) => {
+        const contract = new ethers.Contract(ethers.getAddress(token.address), ERC20_ABI, this.provider);
+        return { token, balance: (await contract.balanceOf(address)) as bigint };
+      }));
+    }
+  }
+
   async getTokenBalances(address: string): Promise<APIResponse<Asset[]>> {
     try {
-      const results = await Promise.allSettled(
-        this.config.tokens.map(async (token) => {
-          const contract = new ethers.Contract(ethers.getAddress(token.address), ERC20_ABI, this.provider);
-          const balance: bigint = await contract.balanceOf(address);
-          return { token, balance };
-        })
-      );
+      const extra = await this.config.loadExtraTokens?.().catch((error) => {
+        console.warn(`⚠️ ${this.config.key} token registry unavailable:`, error);
+        return [] as EvmToken[];
+      }) ?? [];
+      const results = await this.readBalances(address, [...this.config.tokens, ...extra]);
 
       const assets: Asset[] = [];
       for (const result of results) {
@@ -130,7 +170,8 @@ export class EvmHandler {
           balance: balance.toString(),
           balanceFormatted: ethers.formatUnits(balance, token.decimals),
           contractAddress: token.address,
-          tokenStandard: this.config.tokenStandard,
+          tokenStandard: token.standard ?? this.config.tokenStandard,
+          imageUrl: token.logoUrl,
         });
       }
 

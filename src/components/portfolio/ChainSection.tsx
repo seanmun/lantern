@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import { Asset } from '@/types';
 import { ChainDisplay } from '@/config/chainDisplay';
 import { ChainResult } from '@/hooks/usePortfolio';
@@ -17,12 +19,20 @@ interface ChainSectionProps {
 }
 
 const isEmptyNative = (a: Asset) => a.type === 'native' && BigInt(a.balance) === BigInt(0);
+const DUST_USD = 1;
+const ROWS_COLLAPSED = 10;
+// Tiny or unpriced token balances (often airdropped spam) fold behind a toggle
+const isDust = (a: Asset) => a.type === 'token' && !a.pool && (a.valueUSD ?? 0) < DUST_USD;
 
 export function ChainSection({ chain, results, walletNames, showWalletNames, onRetry }: ChainSectionProps) {
+  const [showDust, setShowDust] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const assets = results.flatMap((r) => r.assets);
   const listed = assets
     .filter((a) => a.type !== 'nft' && a.type !== 'ordinal' && a.type !== 'stake' && !isEmptyNative(a))
     .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
+  const main = listed.filter((a) => !isDust(a));
+  const dust = listed.filter(isDust);
   const stakes = assets.filter((a) => a.type === 'stake');
   const collectibles = assets.filter((a) => a.type === 'nft' || a.type === 'ordinal').length;
   const loading = results.filter((r) => r.status === 'loading').length;
@@ -35,7 +45,7 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
   }
 
   return (
-    <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+    <section className="min-w-0 rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="flex min-w-0 items-center text-xl font-bold">
           <span className={`mr-3 h-5 w-5 shrink-0 rounded-full bg-gradient-to-r ${chain.dot} shadow`} />
@@ -54,7 +64,10 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
           />
         ))}
 
-        {listed.map((asset) => (
+        {(() => {
+          const pool = showDust ? listed : main;
+          return showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
+        })().map((asset) => (
           <div key={asset.id} className={`rounded-xl border bg-white/50 transition-colors ${chain.border}`}>
             {showWalletNames && (
               <div className="px-4 pt-2 text-xs font-medium text-gray-500">
@@ -64,6 +77,19 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
             <AssetWithNFT asset={asset} />
           </div>
         ))}
+
+        <div className="flex flex-wrap gap-x-4 gap-y-1 empty:hidden">
+          {(showDust ? listed : main).length > ROWS_COLLAPSED && (
+            <button onClick={() => setShowAll((v) => !v)} className="text-xs font-medium text-purple-700 hover:text-purple-900">
+              {showAll ? 'Show top 10' : `Show all ${(showDust ? listed : main).length} holdings`}
+            </button>
+          )}
+          {dust.length > 0 && (
+            <button onClick={() => setShowDust((v) => !v)} className="text-xs font-medium text-purple-700 hover:text-purple-900">
+              {showDust ? 'Hide small balances' : `Show ${dust.length} small or unpriced balance${dust.length === 1 ? '' : 's'}`}
+            </button>
+          )}
+        </div>
 
         {Array.from({ length: loading }, (_, i) => <AssetCardSkeleton key={`loading-${i}`} />)}
 

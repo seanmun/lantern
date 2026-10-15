@@ -1,5 +1,6 @@
 import { Asset } from '@/types';
 import { HEX_ADDRESS } from '@/config/hex';
+import { normalizeAddress } from '@/utils/address';
 
 // Chain → CoinGecko id of its native gas coin
 const NATIVE_COIN: Record<string, string> = {
@@ -8,6 +9,7 @@ const NATIVE_COIN: Record<string, string> = {
   base: 'ethereum',
   robinhood: 'ethereum',
   pulsechain: 'pulsechain',
+  solana: 'solana',
 };
 
 interface PriceResponse {
@@ -28,7 +30,7 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     if (asset.type === 'native' && NATIVE_COIN[asset.chain]) {
       natives.add(NATIVE_COIN[asset.chain]);
     } else if ((asset.type === 'token' || asset.type === 'stake') && asset.contractAddress) {
-      (tokens[asset.chain] ??= new Set()).add(asset.contractAddress.toLowerCase());
+      (tokens[asset.chain] ??= new Set()).add(normalizeAddress(asset.chain, asset.contractAddress));
     }
     if (asset.pool) {
       (tokens[asset.chain] ??= new Set()).add(HEX_ADDRESS.toLowerCase());
@@ -59,7 +61,7 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     if (asset.type === 'native') {
       priceUSD = prices.natives[NATIVE_COIN[asset.chain]];
     } else if (asset.contractAddress && (asset.type === 'token' || asset.type === 'stake')) {
-      priceUSD = prices.tokens[asset.chain]?.[asset.contractAddress.toLowerCase()];
+      priceUSD = prices.tokens[asset.chain]?.[normalizeAddress(asset.chain, asset.contractAddress)];
     }
 
     const priced: Asset = { ...asset };

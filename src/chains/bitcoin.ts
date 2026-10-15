@@ -10,6 +10,11 @@ import { fetchWithRetry, APIError } from '@/utils/api';
  * - Ordinals (Bitcoin NFTs) via Xverse
  * - Rate limiting and error recovery
  *
+ * Fungible tokens:
+ * - Runes via the keyless Xverse wallet endpoint (balances + USD prices)
+ * - BRC-20 balances via Unisat when UNISAT_API_KEY is set (free developer
+ *   key); priced from Xverse's keyless BRC-20 price feed
+ *
  * Ordinals sources (Hiro's Ordinals API shut down in March 2026):
  * 1. Xverse / Secret Key Labs API when XVERSE_API_KEY is set (documented,
  *    includes inscription numbers, collections and floor prices)
@@ -36,7 +41,23 @@ interface XverseUtxoPage {
   results: { inscriptions: { id: string; content_type?: string }[] }[];
 }
 
+interface XverseRune {
+  id: string;
+  runeName: string;
+  symbol?: string;
+  amount: number | string; // raw units
+  divisibility: number;
+  currentPrice?: number;   // USD per whole rune
+}
+
+interface UnisatBrc20Summary {
+  code: number;
+  msg: string;
+  data?: { total: number; detail: { ticker: string; overallBalance: string }[] };
+}
+
 const XVERSE_API_KEY = process.env.XVERSE_API_KEY;
+const UNISAT_API_KEY = process.env.UNISAT_API_KEY;
 const UTXO_PAGE_SIZE = 60;
 const MAX_UTXO_PAGES = 20;
 
@@ -251,21 +272,119 @@ export class BitcoinHandler {
     };
   }
 
+  private tokenAsset(address: string, t: { id: string; name: string; symbol: string; standard: string; balance: number; priceUSD?: number }): Asset {
+    return {
+      id: `btc_${address}_${t.standard}_${t.id}`,
+      type: 'token',
+      chain: this.CHAIN_NAME,
+      walletAddress: address,
+      name: t.name,
+      symbol: t.symbol,
+      balance: String(t.balance),
+      balanceFormatted: String(t.balance),
+      tokenStandard: t.standard,
+      // Priced here: Runes/BRC-20 have no contract address for /api/prices
+      priceUSD: t.priceUSD,
+      valueUSD: t.priceUSD !== undefined ? t.balance * t.priceUSD : undefined,
+      lastUpdated: new Date(),
+    };
+  }
+
   /**
-   * Get all Bitcoin assets (BTC + Ordinals)
+   * Runes balances (keyless Xverse wallet endpoint).
+   */
+  async getRunes(address: string): Promise<APIResponse<Asset[]>> {
+    try {
+      const response = await fetchWithRetry(
+        `https://api.xverse.app/v2/address/${address}/rune-balance`,
+        { headers: { Accept: 'application/json' } },
+        { maxRetries: 2 }
+      );
+      const runes: XverseRune[] = await response.json();
+      const assets = (Array.isArray(runes) ? runes : []).map((r) => {
+        const balance = Number(r.amount) / 10 ** (r.divisibility ?? 0);
+        return this.tokenAsset(address, {
+          id: r.id,
+          name: r.runeName,
+          symbol: r.symbol || r.runeName.split('•')[0],
+          standard: 'Rune',
+          balance,
+          priceUSD: r.currentPrice ?? undefined,
+        });
+      });
+      return { success: true, data: assets, timestamp: new Date() };
+    } catch (error) {
+      return { success: false, error: `Failed to fetch Runes: ${error instanceof Error ? error.message : error}`, timestamp: new Date() };
+    }
+  }
+
+  /**
+   * BRC-20 balances. Needs UNISAT_API_KEY (balances); prices come from Xverse.
+   */
+  async getBrc20(address: string): Promise<APIResponse<Asset[]>> {
+    if (!UNISAT_API_KEY) return { success: true, data: [], timestamp: new Date() };
+
+    try {
+      const [summaryResponse, priceResponse] = await Promise.all([
+        fetchWithRetry(
+          `https://open-api.unisat.io/v1/indexer/address/${address}/brc20/summary?start=0&limit=100`,
+          { headers: { Accept: 'application/json', Authorization: `Bearer ${UNISAT_API_KEY}` } },
+          { maxRetries: 2 }
+        ),
+        fetchWithRetry(
+          `https://api.xverse.app/v1/brc20/tokens?address=${address}&currency=USD`,
+          { headers: { Accept: 'application/json' } },
+          { maxRetries: 1 }
+        ).catch(() => null),
+      ]);
+
+      const summary: UnisatBrc20Summary = await summaryResponse.json();
+      if (summary.code !== 0) throw new Error(summary.msg || `Unisat error ${summary.code}`);
+
+      const priceList: { ticker: string; tokenFiatRate?: string }[] = priceResponse ? await priceResponse.json() : [];
+      const prices = new Map(
+        (Array.isArray(priceList) ? priceList : []).map((p) => [p.ticker.toLowerCase(), Number(p.tokenFiatRate)])
+      );
+
+      const assets = (summary.data?.detail ?? [])
+        .map((t) => ({ t, balance: Number(t.overallBalance) }))
+        .filter(({ balance }) => balance > 0)
+        .map(({ t, balance }) => {
+          const price = prices.get(t.ticker.toLowerCase());
+          return this.tokenAsset(address, {
+            id: t.ticker,
+            name: t.ticker,
+            symbol: t.ticker.toUpperCase(),
+            standard: 'BRC-20',
+            balance,
+            priceUSD: price !== undefined && Number.isFinite(price) ? price : undefined,
+          });
+        });
+      return { success: true, data: assets, timestamp: new Date() };
+    } catch (error) {
+      return { success: false, error: `Failed to fetch BRC-20: ${error instanceof Error ? error.message : error}`, timestamp: new Date() };
+    }
+  }
+
+  /**
+   * Get all Bitcoin assets (BTC + Runes + BRC-20 + Ordinals)
    */
   async getAllAssets(address: string): Promise<APIResponse<Asset[]>> {
-    const [btcResult, ordinalsResult] = await Promise.all([
+    const [btcResult, ordinalsResult, runesResult, brc20Result] = await Promise.all([
       this.getBTCBalance(address),
       this.getOrdinals(address),
+      this.getRunes(address),
+      this.getBrc20(address),
     ]);
 
     if (!btcResult.success) {
       return btcResult as APIResponse<never>;
     }
 
-    const allAssets: Asset[] = [btcResult.data!, ...(ordinalsResult.data ?? [])];
-    const errors = ordinalsResult.success ? undefined : [ordinalsResult.error ?? 'Ordinals unavailable'];
+    const optional = [ordinalsResult, runesResult, brc20Result];
+    const allAssets: Asset[] = [btcResult.data!, ...optional.flatMap((r) => r.data ?? [])];
+    const failures = optional.filter((r) => !r.success).map((r) => r.error ?? 'Unavailable');
+    const errors = failures.length ? failures : undefined;
 
     return {
       success: true,

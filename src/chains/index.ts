@@ -6,6 +6,7 @@ import { EthereumHandler } from './ethereum';
 import { PulsechainHandler } from './pulsechain';
 import { BaseHandler } from './base';
 import { RobinhoodHandler } from './robinhood';
+import { SolanaHandler } from './solana';
 
 /**
  * Chain registry. Server-only: handlers read API keys from the environment,
@@ -22,6 +23,7 @@ const HANDLERS: Record<SupportedChain, () => ChainHandler> = {
   pulsechain: () => new PulsechainHandler(),
   base: () => new BaseHandler(),
   robinhood: () => new RobinhoodHandler(),
+  solana: () => new SolanaHandler(),
 };
 
 export function getHandler(chain: SupportedChain): ChainHandler {

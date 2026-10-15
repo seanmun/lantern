@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { normalizeAddress } from '@/utils/address';
 
 /**
  * Price API
@@ -18,7 +19,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const CACHE_TTL_MS = 60_000;
 const BATCH_SIZE = 30;
-const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const EVM_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const isValidTokenAddress = (chain: string, a: string) => (chain === 'solana' ? SOLANA_ADDRESS_RE : EVM_ADDRESS_RE).test(a);
 
 // chain key → [DexScreener chain id, GeckoTerminal network id]
 const TOKEN_NETWORKS: Record<string, [string, string]> = {
@@ -26,6 +29,7 @@ const TOKEN_NETWORKS: Record<string, [string, string]> = {
   pulsechain: ['pulsechain', 'pulsechain'],
   base: ['base', 'base'],
   robinhood: ['robinhood', 'robinhood'],
+  solana: ['solana', 'solana'],
 };
 
 // Native coin → wrapped token used as a fallback when CoinGecko fails
@@ -33,6 +37,7 @@ const NATIVE_FALLBACKS: Record<string, [string, string]> = {
   bitcoin: ['ethereum', '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'], // WBTC
   ethereum: ['ethereum', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'], // WETH
   pulsechain: ['pulsechain', '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'], // WPLS
+  solana: ['solana', 'So11111111111111111111111111111111111111112'], // wrapped SOL
 };
 
 const cache = new Map<string, { price: number | null; at: number }>();
@@ -65,7 +70,7 @@ async function fromDexScreener(chain: string, addresses: string[]): Promise<Reco
   for (const batch of chunk(addresses, BATCH_SIZE)) {
     const pairs: DexPair[] = await getJSON(`https://api.dexscreener.com/tokens/v1/${TOKEN_NETWORKS[chain][0]}/${batch.join(',')}`);
     for (const pair of pairs) {
-      const address = pair.baseToken.address.toLowerCase();
+      const address = normalizeAddress(chain, pair.baseToken.address);
       const liquidity = pair.liquidity?.usd ?? 0;
       if (pair.priceUsd && liquidity >= (best[address] ?? -1)) {
         best[address] = liquidity;
@@ -81,10 +86,32 @@ async function fromGeckoTerminal(chain: string, addresses: string[]): Promise<Re
   for (const batch of chunk(addresses, BATCH_SIZE)) {
     const data = await getJSON(`https://api.geckoterminal.com/api/v2/simple/networks/${TOKEN_NETWORKS[chain][1]}/token_price/${batch.join(',')}`);
     for (const [address, price] of Object.entries<string | null>(data.data?.attributes?.token_prices ?? {})) {
-      if (price != null) prices[address.toLowerCase()] = Number(price);
+      if (price != null) prices[normalizeAddress(chain, address)] = Number(price);
     }
   }
   return prices;
+}
+
+const ROBINHOOD_QUOTES_TTL_MS = 30_000;
+let robinhoodQuotes: { prices: Record<string, number>; at: number } | null = null;
+
+/** Robinhood Stock Tokens: mid of token bid/ask (already multiplier-adjusted). */
+async function fromRobinhood(chain: string, addresses: string[]): Promise<Record<string, number>> {
+  if (chain !== 'robinhood') return {};
+  if (!robinhoodQuotes || Date.now() - robinhoodQuotes.at > ROBINHOOD_QUOTES_TTL_MS) {
+    const { quotes }: { quotes: { tokenBid?: string; tokenAsk?: string; deployments: { contractAddress: string; chainId: number }[] }[] } =
+      await getJSON('https://api.robinhood.com/rhj/prices');
+    const prices: Record<string, number> = {};
+    for (const q of quotes ?? []) {
+      const bid = Number(q.tokenBid);
+      const ask = Number(q.tokenAsk);
+      const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : bid || ask;
+      if (!(mid > 0)) continue;
+      for (const d of q.deployments) if (d.chainId === 4663) prices[d.contractAddress.toLowerCase()] = mid;
+    }
+    robinhoodQuotes = { prices, at: Date.now() };
+  }
+  return Object.fromEntries(addresses.filter((a) => robinhoodQuotes!.prices[a] !== undefined).map((a) => [a, robinhoodQuotes!.prices[a]]));
 }
 
 async function priceTokens(chain: string, addresses: string[]): Promise<Record<string, number | null>> {
@@ -96,7 +123,7 @@ async function priceTokens(chain: string, addresses: string[]): Promise<Record<s
     else missing.push(address);
   }
 
-  for (const source of [fromDexScreener, fromGeckoTerminal]) {
+  for (const source of [fromRobinhood, fromDexScreener, fromGeckoTerminal]) {
     if (missing.length === 0) break;
     try {
       const prices = await source(chain, missing);
@@ -141,8 +168,8 @@ async function priceNatives(ids: string[]): Promise<Record<string, number | null
   for (const id of missing) {
     if (result[id] === undefined && NATIVE_FALLBACKS[id]) {
       const [chain, address] = NATIVE_FALLBACKS[id];
-      const prices = await priceTokens(chain, [address.toLowerCase()]);
-      result[id] = prices[address.toLowerCase()];
+      const key = normalizeAddress(chain, address);
+      result[id] = (await priceTokens(chain, [key]))[key];
     }
     result[id] ??= null;
     cache.set(`native:${id}`, { price: result[id], at: Date.now() });
@@ -165,7 +192,9 @@ export async function POST(request: NextRequest) {
     .filter(([chain, addresses]) => chain in TOKEN_NETWORKS && Array.isArray(addresses))
     .map(([chain, addresses]) => [
       chain,
-      [...new Set((addresses as unknown[]).filter((a): a is string => typeof a === 'string' && ADDRESS_RE.test(a)).map((a) => a.toLowerCase()))].slice(0, 100),
+      [...new Set((addresses as unknown[])
+        .filter((a): a is string => typeof a === 'string' && isValidTokenAddress(chain, a))
+        .map((a) => normalizeAddress(chain, a)))].slice(0, 250),
     ] as const);
 
   const [nativePrices, ...tokenPrices] = await Promise.all([
