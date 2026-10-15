@@ -2,6 +2,7 @@ import 'server-only';
 import { ethers } from 'ethers';
 import { Asset, APIResponse, HexStakeInfo } from '@/types';
 import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from '@/config/hex';
+import { getHexState, stakeYield } from './hex';
 
 /**
  * Generic EVM Chain Handler
@@ -51,18 +52,27 @@ function errorResponse<T>(message: string, error: unknown): APIResponse<T> {
   return { success: false, error: `${message}: ${error}`, timestamp: new Date() };
 }
 
+export function createProvider(config: EvmChainConfig): ethers.JsonRpcProvider {
+  const rpcUrl = HAS_ALCHEMY && config.alchemyNetwork
+    ? `https://${config.alchemyNetwork}.g.alchemy.com/v2/${ALCHEMY_KEY}`
+    : config.publicRpcUrl;
+  // staticNetwork skips the eth_chainId probe on every request
+  return new ethers.JsonRpcProvider(rpcUrl, config.chainId, {
+    staticNetwork: true,
+    ...(config.rpcBatching === false && { batchMaxCount: 1 }),
+  });
+}
+
+interface RawStake extends HexStakeInfo {
+  stakedHearts: bigint;
+  interestHearts: bigint;
+}
+
 export class EvmHandler {
   protected provider: ethers.JsonRpcProvider;
 
   constructor(protected readonly config: EvmChainConfig) {
-    const rpcUrl = HAS_ALCHEMY && config.alchemyNetwork
-      ? `https://${config.alchemyNetwork}.g.alchemy.com/v2/${ALCHEMY_KEY}`
-      : config.publicRpcUrl;
-    // staticNetwork skips the eth_chainId probe on every request
-    this.provider = new ethers.JsonRpcProvider(rpcUrl, config.chainId, {
-      staticNetwork: true,
-      ...(config.rpcBatching === false && { batchMaxCount: 1 }),
-    });
+    this.provider = createProvider(config);
   }
 
   private baseAsset(address: string): Pick<Asset, 'chain' | 'walletAddress' | 'lastUpdated'> {
@@ -181,8 +191,11 @@ export class EvmHandler {
     }
   }
 
-  private async readStakes(staker: string, hex: ethers.Contract, currentDay: number): Promise<(HexStakeInfo & { stakedHearts: bigint })[]> {
-    const count = Number(await hex.stakeCount(staker));
+  private async readStakes(staker: string, hex: ethers.Contract): Promise<RawStake[]> {
+    const [count, state] = await Promise.all([
+      hex.stakeCount(staker).then(Number),
+      getHexState(this.config.key, this.provider),
+    ]);
     const stakes = await Promise.all(
       Array.from({ length: count }, (_, i) => hex.stakeLists(staker, i))
     );
@@ -191,31 +204,40 @@ export class EvmHandler {
       const lockedDay = Number(s.lockedDay);
       const stakedDays = Number(s.stakedDays);
       const endDay = lockedDay + stakedDays;
+      const stakedHearts = s.stakedHearts as bigint;
+      const stakeShares = s.stakeShares as bigint;
+      const yieldInfo = stakeYield(state, { stakedHearts, stakeShares, lockedDay, stakedDays });
       return {
         stakeId: Number(s.stakeId),
-        stakedHearts: s.stakedHearts as bigint,
-        tShares: Number(ethers.formatUnits(s.stakeShares, 12)),
+        stakedHearts,
+        interestHearts: yieldInfo.interestHearts,
+        tShares: Number(ethers.formatUnits(stakeShares, 12)),
         lockedDay,
         stakedDays,
         endDay,
         endDate: hexDayToDate(endDay).toISOString(),
-        daysRemaining: Math.max(0, endDay - currentDay),
+        daysRemaining: Math.max(0, endDay - state.currentDay),
+        interestHex: yieldInfo.interestHex,
+        projectedInterestHex: yieldInfo.projectedInterestHex,
+        apy: yieldInfo.apy,
+        status: yieldInfo.status,
+        graceDaysLeft: yieldInfo.graceDaysLeft,
       };
     });
   }
 
   /**
-   * HEX stakes owned directly by the wallet. balance = staked principal.
+   * HEX stakes owned directly by the wallet. balance = staked principal;
+   * stake.interestHex carries the interest earned so far.
    */
   async getHEXStakes(address: string): Promise<APIResponse<Asset[]>> {
     if (!this.config.hex) return { success: true, data: [], timestamp: new Date() };
 
     try {
       const hex = new ethers.Contract(HEX_ADDRESS, HEX_ABI, this.provider);
-      const currentDay = Number(await hex.currentDay());
-      const stakes = await this.readStakes(address, hex, currentDay);
+      const stakes = await this.readStakes(address, hex);
 
-      const assets: Asset[] = stakes.map(({ stakedHearts, ...stake }) => ({
+      const assets: Asset[] = stakes.map(({ stakedHearts, interestHearts: _interest, ...stake }) => ({
         ...this.baseAsset(address),
         id: `${this.config.idPrefix}_${address}_stake_${stake.stakeId}`,
         type: 'stake',
@@ -235,8 +257,8 @@ export class EvmHandler {
   }
 
   /**
-   * For Maximus pool tokens the wallet holds, attach the HEX principal backing
-   * their share of the pool and the pool's current stake.
+   * For Maximus pool tokens the wallet holds, attach the HEX (principal and
+   * principal + interest so far) backing their share of the pool.
    */
   async attachPoolBacking(assets: Asset[]): Promise<void> {
     if (!this.config.hex) return;
@@ -252,28 +274,32 @@ export class EvmHandler {
 
     try {
       const hex = new ethers.Contract(HEX_ADDRESS, HEX_ABI, this.provider);
-      const currentDay = Number(await hex.currentDay());
 
       await Promise.all(poolAssets.map(async ({ asset, pool }) => {
         const token = new ethers.Contract(pool.address, ERC20_ABI, this.provider);
         const [supply, stakes] = await Promise.all([
           token.totalSupply() as Promise<bigint>,
-          this.readStakes(pool.address, hex, currentDay),
+          this.readStakes(pool.address, hex),
         ]);
+        const balance = BigInt(asset.balance);
+        const share = (total: bigint) => (supply > BigInt(0) ? (balance * total) / supply : BigInt(0));
+
         const principal = stakes.reduce((sum, s) => sum + s.stakedHearts, BigInt(0));
-        const backingHearts = supply > BigInt(0) ? (BigInt(asset.balance) * principal) / supply : BigInt(0);
+        const interest = stakes.reduce((sum, s) => sum + s.interestHearts, BigInt(0));
         const latest = stakes[stakes.length - 1];
 
         asset.pool = {
           poolName: pool.name,
           cycleDays: pool.cycleDays,
-          backingHex: Number(ethers.formatUnits(backingHearts, HEX_DECIMALS)),
+          principalBackingHex: Number(ethers.formatUnits(share(principal), HEX_DECIMALS)),
+          backingHex: Number(ethers.formatUnits(share(principal + interest), HEX_DECIMALS)),
           currentStake: latest && {
             lockedDay: latest.lockedDay,
             stakedDays: latest.stakedDays,
             endDay: latest.endDay,
             endDate: latest.endDate,
             daysRemaining: latest.daysRemaining,
+            apy: latest.apy,
           },
         };
       }));

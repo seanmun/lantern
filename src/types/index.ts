@@ -83,6 +83,9 @@ export interface Asset {
   lastUpdated: Date;
 }
 
+// pending: starts tomorrow · matured: ended, inside the 14-day grace window · late: late-end penalty accruing
+export type HexStakeStatus = 'pending' | 'active' | 'matured' | 'late';
+
 export interface HexStakeInfo {
   stakeId: number;
   tShares: number;
@@ -91,14 +94,31 @@ export interface HexStakeInfo {
   endDay: number;
   endDate: string; // ISO date
   daysRemaining: number;
+  interestHex: number;          // earned so far, per the contract's payout math
+  projectedInterestHex: number; // at maturity, at the recent payout rate
+  apy: number;                  // realized, annualized %
+  status: HexStakeStatus;
+  graceDaysLeft?: number;       // days until late penalty begins (matured stakes)
 }
 
 export interface HexPoolInfo {
   poolName: string;
   cycleDays: number;
-  backingHex: number;      // HEX principal backing this wallet's balance
+  principalBackingHex: number; // HEX principal behind this wallet's balance
+  backingHex: number;          // principal + interest earned so far
   backingValueUSD?: number;
-  currentStake?: Omit<HexStakeInfo, 'stakeId' | 'tShares'>;
+  currentStake?: Pick<HexStakeInfo, 'lockedDay' | 'stakedDays' | 'endDay' | 'endDate' | 'daysRemaining' | 'apy'>;
+}
+
+export interface HexNetworkStats {
+  chain: string;
+  currentDay: number;
+  tSharePriceHex: number;
+  payoutPerTShareHex: number; // latest day
+  stakedHex: number;
+  liquidHex: number;
+  stakedPercent: number;
+  totalTShares: number;
 }
 
 export interface Portfolio {

@@ -341,11 +341,11 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
           {asset.pool && (
             <div className="mt-2 space-y-1 text-xs text-gray-500">
               <p>
-                Principal backing: {formatAmount(String(asset.pool.backingHex))} HEX
+                Backing: {formatAmount(String(asset.pool.backingHex))} HEX
                 {asset.pool.backingValueUSD !== undefined && ` (${formatUSD(asset.pool.backingValueUSD)})`}
                 {asset.valueUSD !== undefined && asset.pool.backingValueUSD ? (
                   <span className="ml-1 font-medium text-gray-700">
-                    · trades at {((asset.valueUSD / asset.pool.backingValueUSD) * 100).toFixed(0)}% of principal (excludes unrealized yield)
+                    · trades at {((asset.valueUSD / asset.pool.backingValueUSD) * 100).toFixed(0)}% of backing
                   </span>
                 ) : null}
               </p>

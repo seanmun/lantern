@@ -20,6 +20,8 @@ export function hexDayToDate(day: number): Date {
 
 export const HEX_ABI = [
   'function currentDay() view returns (uint256)',
+  'function globalInfo() view returns (uint256[13])',
+  'function dailyDataRange(uint256 beginDay, uint256 endDay) view returns (uint256[] list)',
   'function stakeCount(address stakerAddr) view returns (uint256)',
   'function stakeLists(address, uint256) view returns (uint40 stakeId, uint72 stakedHearts, uint72 stakeShares, uint16 lockedDay, uint16 stakedDays, uint16 unlockedDay, bool isAutoStake)',
 ];

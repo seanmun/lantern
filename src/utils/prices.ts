@@ -65,7 +65,9 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     const priced: Asset = { ...asset };
     if (priceUSD != null) {
       priced.priceUSD = priceUSD;
-      priced.valueUSD = Number(asset.balanceFormatted) * priceUSD;
+      // A stake is worth its principal plus the interest it has earned so far
+      const amount = Number(asset.balanceFormatted) + (asset.stake?.interestHex ?? 0);
+      priced.valueUSD = amount * priceUSD;
     }
 
     const hexPrice = prices.tokens[asset.chain]?.[HEX_ADDRESS.toLowerCase()];
@@ -74,6 +76,21 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     }
     return priced;
   });
+}
+
+/** HEX price per HEX chain (eHEX and pHEX trade separately). */
+export async function fetchHexPrices(chains: string[]): Promise<Record<string, number | null>> {
+  try {
+    const response = await fetch('/api/prices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokens: Object.fromEntries(chains.map((c) => [c, [HEX_ADDRESS]])) }),
+    });
+    const prices: PriceResponse = await response.json();
+    return Object.fromEntries(chains.map((c) => [c, prices.tokens[c]?.[HEX_ADDRESS.toLowerCase()] ?? null]));
+  } catch {
+    return {};
+  }
 }
 
 export function formatUSD(value: number): string {

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useWallets } from '@/hooks/useWallets';
 import { usePortfolio } from '@/hooks/usePortfolio';
+import { useHexStats } from '@/hooks/useHexStats';
 import { CHAIN_DISPLAY } from '@/config/chainDisplay';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 import { WalletList } from '@/components/wallet/WalletList';
@@ -19,6 +20,8 @@ const TEST_WALLETS = [
 export default function DashboardPage() {
   const { wallets, addWallet, removeWallet, renameWallet } = useWallets();
   const { results, assets, isLoading, lastUpdated, refresh, retry } = usePortfolio(wallets);
+
+  const hexStats = useHexStats(wallets.some((w) => w.chains.includes('ethereum') || w.chains.includes('pulsechain')));
 
   const totalUSD = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
@@ -95,7 +98,7 @@ export default function DashboardPage() {
 
       {wallets.length > 0 && (
         <>
-          <HexSummary assets={assets} walletNames={walletNames} />
+          <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} />
 
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {CHAIN_DISPLAY.map((chain) => (
