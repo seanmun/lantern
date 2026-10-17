@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 @theme {
+  /* Pulse: ink on white, one violet accent */
+  --color-ink: #0b0b0f;
+  --color-muted: #5a5a66;
+  --color-line: #ededf0;
+  --color-soft: #f4f4f6;
+  --color-accent: #5b3df5;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
   --color-bitcoin: #f7931a;
   --color-ethereum: #627eea;
   --color-pulsechain: #ff006b;

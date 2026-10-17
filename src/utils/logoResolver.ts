@@ -3,6 +3,7 @@ import { getAddress } from 'ethers';
 import { normalizeAddress } from '@/utils/address';
 import { BLOCKSCOUT_HOSTS } from '@/chains/blockscout';
 import { loadStockTokens } from '@/chains/robinhood';
+import { geckoJSON } from '@/utils/gecko';
 import { BRIDGED_MAXIMUS, MAXIMUS_POOLS } from '@/config/hex';
 
 /**
@@ -101,7 +102,7 @@ async function dexScreenerImages(chain: string, addresses: string[]) {
 async function geckoTerminalImages(chain: string, addresses: string[]) {
   const images: Record<string, string> = {};
   const { data }: { data?: { attributes: { address: string; image_url?: string | null } }[] } =
-    await getJSON(`https://api.geckoterminal.com/api/v2/networks/${NETWORKS[chain][1]}/tokens/multi/${addresses.join(',')}`);
+    await geckoJSON(`https://api.geckoterminal.com/api/v2/networks/${NETWORKS[chain][1]}/tokens/multi/${addresses.join(',')}`);
   for (const t of data ?? []) {
     const url = t.attributes.image_url;
     if (url && !url.includes('missing')) images[normalizeAddress(chain, t.attributes.address)] = url;

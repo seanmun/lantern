@@ -4,6 +4,10 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { PortfolioProvider } from '@/components/app/PortfolioProvider';
 import { AppShell } from '@/components/app/AppShell';
 import type { Metadata, Viewport } from 'next';
+import { Manrope } from 'next/font/google';
+
+// Self-hosted at build time: no request to Google from the browser
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Crypto Portfolio Tracker',
@@ -14,7 +18,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover', // lets the phone tab bar sit above the home indicator
-  themeColor: '#faf5ff',
+  themeColor: '#ffffff',
 };
 
 export default function RootLayout({
@@ -23,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <html lang="en" className={manrope.variable}>
+      <body className="min-h-screen bg-white font-sans text-ink antialiased">
         <ErrorBoundary>
           <ToastProvider>
             <PortfolioProvider>

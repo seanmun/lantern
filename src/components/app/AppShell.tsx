@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useEffect, useState } from 'react';
-import { Hexagon } from '@/components/hex/Hexagon';
 import { usePortfolioContext } from './PortfolioProvider';
 import { assetsToCsv } from '@/utils/csv';
 import { downloadFile } from '@/utils/ics';
@@ -11,17 +10,48 @@ import { downloadFile } from '@/utils/ics';
 interface NavItem {
   href: string;
   label: string;
-  icon: string;
+  icon: keyof typeof ICONS;
+}
+
+// 24px line icons (stroke follows text color)
+const ICONS = {
+  home: 'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
+  hex: 'M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z',
+  activity: 'M7 7h13l-3-3M17 17H4l3 3',
+  tools: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
+  image: 'M4 4h16v16H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
+  wallet: 'M3 7h17a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h12v3M16 13.5h.01',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+  download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
+};
+
+function Icon({ name, className = 'h-5 w-5' }: { name: keyof typeof ICONS; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={name === 'more' ? 3 : 1.8} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d={ICONS[name]} />
+    </svg>
+  );
+}
+
+/** The Pulse mark: a heartbeat line in the accent color. */
+export function PulseMark({ size = 26 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
+      <path d="M3 15h5l3-8 5 14 3-6h6" fill="none" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 const NAV: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: '◈' },
-  { href: '/holdings', label: 'Holdings', icon: '▤' },
-  { href: '/hex', label: 'HEX', icon: '⬡' },
-  { href: '/transactions', label: 'Activity', icon: '⇄' },
-  { href: '/tools', label: 'Tools', icon: '⚙' },
-  { href: '/collectibles', label: 'Collectibles', icon: '🖼' },
-  { href: '/wallets', label: 'Wallets', icon: '👛' },
+  { href: '/', label: 'Dashboard', icon: 'home' },
+  { href: '/holdings', label: 'Holdings', icon: 'list' },
+  { href: '/hex', label: 'HEX', icon: 'hex' },
+  { href: '/transactions', label: 'Activity', icon: 'activity' },
+  { href: '/tools', label: 'Tools', icon: 'tools' },
+  { href: '/collectibles', label: 'Collectibles', icon: 'image' },
+  { href: '/wallets', label: 'Wallets', icon: 'wallet' },
 ];
 // Phone tab bar: four destinations + "More" for the rest
 const TABS = NAV.slice(0, 4);
@@ -52,13 +82,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-white/50 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
-          <Link href="/" className="flex shrink-0 items-center gap-2">
-            <Hexagon size={28} />
-            <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 bg-clip-text text-lg font-bold text-transparent">
-              Portfolio
-            </span>
+      <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-extrabold tracking-tight text-ink">
+            <PulseMark />
+            pulse
           </Link>
 
           <nav aria-label="Main" className="hidden min-w-0 flex-1 md:block">
@@ -68,8 +96,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Link
                     href={item.href}
                     aria-current={isActive(pathname, item.href) ? 'page' : undefined}
-                    className={`block whitespace-nowrap rounded-lg px-3 py-1.5 font-medium transition-colors ${
-                      isActive(pathname, item.href) ? 'bg-purple-100 text-purple-900' : 'text-gray-600 hover:bg-purple-50 hover:text-purple-800'
+                    className={`block whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold transition-colors ${
+                      isActive(pathname, item.href) ? 'bg-soft text-ink' : 'text-muted hover:text-ink'
                     }`}
                   >
                     {item.label}
@@ -80,44 +108,45 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           {wallets.length > 0 && (
-            <div className="ml-auto flex shrink-0 items-center gap-2 text-sm text-gray-500">
-              <span className="hidden lg:inline">{isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}</span>
+            <div className="ml-auto flex shrink-0 items-center gap-2 text-sm text-muted">
+              <span className="hidden xl:inline">{isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : ''}</span>
               <button
                 onClick={exportCsv}
                 disabled={assets.length === 0}
-                className="hidden rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50 sm:block"
+                aria-label="Export CSV"
+                className="hidden h-10 items-center gap-1.5 rounded-full bg-soft px-4 font-semibold text-ink hover:bg-line disabled:opacity-50 sm:flex"
               >
-                ⬇ CSV
+                <Icon name="download" className="h-4 w-4" /> CSV
               </button>
               <button
                 onClick={refresh}
                 disabled={isLoading}
                 aria-label="Refresh balances"
-                className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                className="flex h-10 items-center gap-1.5 rounded-full bg-soft px-3 font-semibold text-ink hover:bg-line disabled:opacity-50 sm:px-4"
               >
-                <span className={isLoading ? 'inline-block animate-spin' : ''}>⟳</span>
-                <span className="ml-1 hidden sm:inline">Refresh</span>
+                <Icon name="refresh" className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
 
       {/* Phone tab bar */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
         <ul className="grid grid-cols-5">
           {TABS.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={isActive(pathname, item.href) ? 'page' : undefined}
-                className={`flex h-16 flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${
-                  isActive(pathname, item.href) ? 'text-purple-700' : 'text-gray-500'
+                className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
+                  isActive(pathname, item.href) ? 'text-accent' : 'text-muted'
                 }`}
               >
-                <span className="text-lg leading-none" aria-hidden="true">{item.icon}</span>
+                <Icon name={item.icon} />
                 {item.label}
               </Link>
             </li>
@@ -126,11 +155,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               onClick={() => setMoreOpen((v) => !v)}
               aria-expanded={moreOpen}
-              className={`flex h-16 w-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${
-                moreOpen || moreActive ? 'text-purple-700' : 'text-gray-500'
+              className={`flex h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-semibold ${
+                moreOpen || moreActive ? 'text-accent' : 'text-muted'
               }`}
             >
-              <span className="text-lg leading-none" aria-hidden="true">⋯</span>
+              <Icon name="more" />
               More
             </button>
           </li>
@@ -149,17 +178,17 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium ${
-                  isActive(pathname, item.href) ? 'bg-purple-50 text-purple-800' : 'text-gray-700 hover:bg-gray-50'
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold ${
+                  isActive(pathname, item.href) ? 'bg-soft text-ink' : 'text-ink hover:bg-soft'
                 }`}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <Icon name={item.icon} />
                 {item.label}
               </Link>
             ))}
             {wallets.length > 0 && (
-              <button onClick={exportCsv} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50">
-                <span aria-hidden="true">⬇</span> Export CSV
+              <button onClick={exportCsv} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-ink hover:bg-soft">
+                <Icon name="download" /> Export CSV
               </button>
             )}
           </div>
@@ -172,9 +201,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 /** Shown on data pages when there are no wallets yet. */
 export function NoWallets({ what }: { what: string }) {
   return (
-    <div className="rounded-2xl border border-white/20 bg-white/70 p-8 text-center shadow-xl backdrop-blur-sm">
-      <p className="text-gray-700">Add a wallet to see {what}.</p>
-      <Link href="/wallets" className="mt-4 inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 font-semibold text-white shadow-lg">
+    <div className="rounded-3xl border border-line p-8 text-center">
+      <p className="text-ink">Add a wallet to see {what}.</p>
+      <Link href="/wallets" className="mt-4 inline-flex h-11 items-center rounded-full bg-ink px-5 font-bold text-white hover:bg-ink/85">
         Add a wallet
       </Link>
     </div>
@@ -186,8 +215,8 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{title}</h1>
-        {subtitle && <p className="mt-1 text-gray-600">{subtitle}</p>}
+        <h1 className="text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{title}</h1>
+        {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
       </div>
       {children}
     </div>
