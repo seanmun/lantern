@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { Asset, APIResponse, HexPoolStats, HexStakeInfo } from '@/types';
 import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from '@/config/hex';
 import { endStakeToday, getHexState, stakeYield } from './hex';
+import { hedronMintable, listHsis } from './hedron';
 import { BLOCKSCOUT_HOSTS, collectionAssets, fetchBlockscoutNfts, fetchBlockscoutTokens, looksLikeSpam, toHttpUrl } from './blockscout';
 
 /**
@@ -74,6 +75,7 @@ export function createProvider(config: EvmChainConfig): ethers.JsonRpcProvider {
 
 interface RawStake extends HexStakeInfo {
   stakedHearts: bigint;
+  stakeShares: bigint;
   interestHearts: bigint;
 }
 
@@ -285,6 +287,7 @@ export class EvmHandler {
       return {
         stakeId: Number(s.stakeId),
         stakedHearts,
+        stakeShares,
         interestHearts: yieldInfo.interestHearts,
         tShares: Number(ethers.formatUnits(stakeShares, 12)),
         lockedDay,
@@ -306,27 +309,47 @@ export class EvmHandler {
   }
 
   /**
-   * HEX stakes owned directly by the wallet. balance = staked principal;
-   * stake.interestHex carries the interest earned so far.
+   * HEX stakes the wallet controls: its own stakes plus HEX Stake Instances
+   * (Hedron HSIs, plain or tokenized), each with the HDRN it can mint.
+   * balance = staked principal; stake.interestHex carries interest earned so far.
    */
   async getHEXStakes(address: string): Promise<APIResponse<Asset[]>> {
     if (!this.config.hex) return { success: true, data: [], timestamp: new Date() };
 
     try {
       const hex = new ethers.Contract(HEX_ADDRESS, HEX_ABI, this.provider);
-      const stakes = await this.readStakes(address, hex);
+      const [native, hsis, state] = await Promise.all([
+        this.readStakes(address, hex),
+        listHsis(this.provider, address).catch((error) => {
+          console.warn(`⚠️ ${this.config.key} HSI lookup failed:`, error instanceof Error ? error.message : error);
+          return [];
+        }),
+        getHexState(this.config.key, this.provider),
+      ]);
+      const instanced = (await Promise.all(hsis.map(async (hsi) => (await this.readStakes(hsi.address, hex)).map((s) => ({ ...s, hsi })))))
+        .flat();
 
-      const assets: Asset[] = stakes.map(({ stakedHearts, interestHearts: _interest, ...stake }) => ({
+      const all: (RawStake & { hsi?: { address: string; tokenId?: string } })[] = [...native, ...instanced];
+      const mint = await Promise.all(all.map((s) =>
+        hedronMintable(this.config.key, this.provider, s, state.currentDay).catch(() => undefined)
+      ));
+
+      const assets: Asset[] = all.map(({ stakedHearts, stakeShares: _shares, interestHearts: _interest, hsi, ...stake }, i) => ({
         ...this.baseAsset(address),
-        id: `${this.config.idPrefix}_${address}_stake_${stake.stakeId}`,
+        id: hsi ? `${this.config.idPrefix}_${address}_hsi_${hsi.address}` : `${this.config.idPrefix}_${address}_stake_${stake.stakeId}`,
         type: 'stake',
-        name: `HEX Stake #${stake.stakeId}`,
+        name: hsi ? `HSI ${hsi.tokenId ? `#${hsi.tokenId}` : hsi.address.slice(0, 8)} (stake #${stake.stakeId})` : `HEX Stake #${stake.stakeId}`,
         symbol: 'HEX',
         decimals: HEX_DECIMALS,
         balance: stakedHearts.toString(),
         balanceFormatted: ethers.formatUnits(stakedHearts, HEX_DECIMALS),
         contractAddress: HEX_ADDRESS,
-        stake,
+        stake: {
+          ...stake,
+          hdrnMintable: mint[i]?.mintableHdrn,
+          hdrnLoaned: mint[i]?.loaned,
+          hsi,
+        },
       }));
 
       return { success: true, data: assets, timestamp: new Date() };

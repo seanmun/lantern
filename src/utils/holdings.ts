@@ -48,7 +48,8 @@ function classify(a: Asset): { key: string; kind: Holding['kind']; label: string
     return { key: 'collectibles', kind: 'collectibles', label: `${a.name} (${a.balanceFormatted})`, amount: Number(a.balanceFormatted) };
   }
   if (a.type === 'stake' && a.stake) {
-    return { key: 'hex', kind: 'hex', label: `stake #${a.stake.stakeId}`, amount: balance + a.stake.interestHex };
+    const label = a.stake.hsi ? `HSI ${a.stake.hsi.tokenId ? `#${a.stake.hsi.tokenId}` : ''} (stake #${a.stake.stakeId})`.replace('  ', ' ') : `stake #${a.stake.stakeId}`;
+    return { key: 'hex', kind: 'hex', label, amount: balance + a.stake.interestHex };
   }
   if (a.type === 'token' && a.pool) {
     return { key: 'hex', kind: 'hex', label: `${a.symbol} pool (${balance.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${a.symbol})`, amount: a.pool.backingHex };

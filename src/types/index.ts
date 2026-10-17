@@ -105,6 +105,9 @@ export interface HexStakeInfo {
     returnHex: number;
     penaltyHex: number;
   };
+  hdrnMintable?: number;        // Hedron HDRN this stake can mint now
+  hdrnLoaned?: boolean;         // HSI is collateral for an HDRN loan
+  hsi?: { address: string; tokenId?: string }; // set for HEX Stake Instances
 }
 
 export interface HexPoolInfo {

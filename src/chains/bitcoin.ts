@@ -261,7 +261,7 @@ export class BitcoinHandler {
           collectionName: c.collection_name,
           inscriptionId: sample?.id,
           contentType: sample?.content_type,
-          imageUrl: sample ? `/api/ordinals/content/${sample.id}` : undefined,
+          imageUrl: sample ? `/content/${sample.id}` : undefined,
           floorPrice: floor,
           floorCurrency: floor !== undefined ? 'USD' : undefined,
           valueUSD: floor !== undefined ? floor * c.total_inscriptions : undefined,
@@ -351,7 +351,7 @@ export class BitcoinHandler {
       inscriptionNumber: inscription.number,
       contentType: inscription.contentType,
       // Served through our proxy to avoid CORS and sandbox untrusted content
-      imageUrl: `/api/ordinals/content/${inscription.id}`,
+      imageUrl: `/content/${inscription.id}`,
       collectionName: inscription.collectionName || 'Bitcoin Ordinals',
       floorPrice: inscription.floorPrice,
       lastUpdated: new Date()

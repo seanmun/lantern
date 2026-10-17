@@ -87,16 +87,21 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
   });
 }
 
-/** HEX price per HEX chain (eHEX and pHEX trade separately). */
-export async function fetchHexPrices(chains: string[]): Promise<Record<string, number | null>> {
+const HDRN_ADDRESS = '0x3819f64f282bf135d62168c1e513280daf905e06';
+
+/** HEX and HDRN price per HEX chain (eHEX and pHEX trade separately). */
+export async function fetchHexPrices(chains: string[]): Promise<Record<string, { hex: number | null; hdrn: number | null }>> {
   try {
     const response = await fetch('/api/prices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokens: Object.fromEntries(chains.map((c) => [c, [HEX_ADDRESS]])) }),
+      body: JSON.stringify({ tokens: Object.fromEntries(chains.map((c) => [c, [HEX_ADDRESS, HDRN_ADDRESS]])) }),
     });
     const prices: PriceResponse = await response.json();
-    return Object.fromEntries(chains.map((c) => [c, prices.tokens[c]?.[HEX_ADDRESS.toLowerCase()] ?? null]));
+    return Object.fromEntries(chains.map((c) => [c, {
+      hex: prices.tokens[c]?.[HEX_ADDRESS.toLowerCase()] ?? null,
+      hdrn: prices.tokens[c]?.[HDRN_ADDRESS] ?? null,
+    }]));
   } catch {
     return {};
   }

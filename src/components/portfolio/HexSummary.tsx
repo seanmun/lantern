@@ -77,6 +77,11 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
   const nextEnd = stakes.find((a) => a.stake.status === 'active');
   const needsAction = stakes.filter((a) => a.stake.status === 'matured' || a.stake.status === 'late');
   const interestUSD = stakes.reduce((sum, a) => sum + (a.priceUSD ?? 0) * a.stake.interestHex, 0);
+  const hdrnPrices = Object.fromEntries(hexStats.map((x) => [x.chain, x.hdrnPriceUSD]));
+  const hdrnMintable = stakes.reduce((sum, a) => sum + (a.stake.hdrnMintable ?? 0), 0);
+  const hdrnMintableUSD = stakes.reduce((sum, a) => sum + (a.stake.hdrnMintable ?? 0) * (hdrnPrices[a.chain] ?? 0), 0);
+  const hsiCount = stakes.filter((a) => a.stake.hsi).length;
+  const compactHex = (v: number) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : formatHex(v));
 
   const exportCalendar = () => {
     const events = stakes
@@ -119,6 +124,7 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
         { label: 'value', value: a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—' },
         { label: 'T-Shares', value: a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 }) },
         { label: 'APY', value: formatPct(a.stake.apy) },
+        ...(a.stake.hdrnMintable ? [{ label: 'HDRN mintable', value: compactHex(a.stake.hdrnMintable) }] : []),
         {
           label: a.stake.endNow.penaltyHex > 0 ? `if ended today (−${formatHex(a.stake.endNow.penaltyHex)} penalty)` : 'if ended today',
           value: `${formatHex(a.stake.endNow.returnHex)} HEX`,
@@ -168,13 +174,24 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
             <HeroStat label="Principal" value={`${formatHex(principal)} HEX`} />
             <HeroStat label="Interest earned" value={`${formatHex(interest)} HEX`} sub={interestUSD ? formatUSD(interestUSD) : undefined} />
             <HeroStat label="At maturity (est.)" value={`${formatHex(principal + projected)} HEX`} sub="at recent payout rate" />
-            <HeroStat label="T-Shares" value={tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })} sub={`avg APY ${formatPct(weightedApy)}`} />
+            <HeroStat label="T-Shares" value={tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })} sub={`avg APY ${formatPct(weightedApy)}${hsiCount ? ` · ${hsiCount} HSI${hsiCount === 1 ? '' : 's'}` : ''}`} />
             <HeroStat
               label="Next maturity"
               value={nextEnd ? `${nextEnd.stake.daysRemaining.toLocaleString()} days` : '—'}
               sub={nextEnd ? formatDate(nextEnd.stake.endDate) : undefined}
             />
           </dl>
+
+          {hdrnMintable > 0 && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900">
+              <span>
+                ⬡ <strong className="tabular-nums">{compactHex(hdrnMintable)} HDRN</strong> mintable from your stakes
+                {hdrnMintableUSD > 0 && <span className="tabular-nums"> (≈ {formatUSD(hdrnMintableUSD)})</span>}
+                {hsiCount > 0 && <span className="text-indigo-700"> · includes {hsiCount} Hedron HSI{hsiCount === 1 ? '' : 's'}</span>}
+              </span>
+              <span className="text-xs text-indigo-700">Hedron pays 1,000 HDRN per T-Share per day served. Not counted in your total until minted.</span>
+            </div>
+          )}
 
           {needsAction.length > 0 && (
             <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -238,6 +255,14 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
                     <div className="flex items-center gap-2 font-medium text-gray-900">
                       <span className="h-2 w-2 rounded-full" style={{ background: HEX_CHAIN_COLORS[a.chain] }} />
                       #{a.stake.stakeId}
+                      {a.stake.hsi && (
+                        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-800" title={`HEX Stake Instance ${a.stake.hsi.address}`}>
+                          HSI{a.stake.hsi.tokenId ? ` #${a.stake.hsi.tokenId}` : ''}
+                        </span>
+                      )}
+                      {a.stake.hdrnLoaned && (
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800" title="This HSI is collateral for an HDRN loan">LOANED</span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500">{chainLabel(a.chain)} · {walletName(a)}</div>
                   </td>
@@ -259,7 +284,10 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
                       );
                     })()}
                   </td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}</td>
+                  <td className="py-2 pr-4 text-right tabular-nums">
+                    {a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}
+                    {a.stake.hdrnMintable ? <div className="text-xs text-indigo-700">mint {compactHex(a.stake.hdrnMintable)} HDRN</div> : null}
+                  </td>
                   <td className="py-2 pr-4 text-right tabular-nums">{formatPct(a.stake.apy)}</td>
                   <td className="py-2 pr-4"><StatusBadge status={a.stake.status} graceDaysLeft={a.stake.graceDaysLeft} /></td>
                   <td className="py-2 text-right">

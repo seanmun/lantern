@@ -6,6 +6,7 @@ import { fetchHexPrices } from '@/utils/prices';
 
 export interface HexStatsWithPrice extends HexNetworkStats {
   hexPriceUSD: number | null;
+  hdrnPriceUSD: number | null;
   payoutHistory?: number[]; // daily payout per T-Share, index = HEX day
 }
 
@@ -26,7 +27,7 @@ export function useHexStats(enabled: boolean) {
         const { stats: network }: { stats: HexNetworkStats[] } = await response.json();
         const prices = await fetchHexPrices(network.map((s) => s.chain));
         if (cancelled) return;
-        setStats(network.map((s) => ({ ...s, hexPriceUSD: prices[s.chain] ?? null })));
+        setStats(network.map((s) => ({ ...s, hexPriceUSD: prices[s.chain]?.hex ?? null, hdrnPriceUSD: prices[s.chain]?.hdrn ?? null })));
 
         // History is larger and only needed by the estimator chart; load it second
         const historyResponse = await fetch('/api/hex/history');
