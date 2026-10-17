@@ -5,7 +5,8 @@ import { useWallets } from '@/hooks/useWallets';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useHexStats } from '@/hooks/useHexStats';
 import { useStakeHistory } from '@/hooks/useStakeHistory';
-import { tokenKey, useHiddenTokens } from '@/hooks/useHiddenTokens';
+import { tokenKey, useHiddenTokens, useTrustedTokens } from '@/hooks/useHiddenTokens';
+import { useTokenRisk } from '@/hooks/useTokenRisk';
 import { useFeaturedArt } from '@/hooks/useFeaturedArt';
 import { Asset } from '@/types';
 import { assetsToCsv } from '@/utils/csv';
@@ -33,10 +34,17 @@ export default function DashboardPage() {
   const portfolio = usePortfolio(wallets);
   const { isLoading, lastUpdated, refresh, retry } = portfolio;
 
-  // Hidden (spam) tokens are removed here, so every total and section skips them
+  // Hidden tokens (by the viewer, or auto-hidden by the risk check) are removed
+  // here, so every total and section skips them
   const { hidden, hide, unhide } = useHiddenTokens();
+  const { trusted, trust, untrust } = useTrustedTokens();
+  const risk = useTokenRisk(portfolio.assets);
+  const autoHidden = useMemo(
+    () => [...risk].filter(([key, r]) => r.verdict === 'scam' && !trusted.includes(key) && !hidden.includes(key)).map(([key]) => key),
+    [risk, trusted, hidden]
+  );
   const { results, assets, hiddenAssets } = useMemo(() => {
-    const hiddenSet = new Set(hidden);
+    const hiddenSet = new Set([...hidden, ...autoHidden]);
     const isHidden = (a: Asset) => a.type === 'token' && hiddenSet.has(tokenKey(a));
     const visibleResults = portfolio.results.map((r) => ({ ...r, assets: r.assets.filter((a) => !isHidden(a)) }));
     return {
@@ -44,7 +52,7 @@ export default function DashboardPage() {
       assets: visibleResults.flatMap((r) => r.assets),
       hiddenAssets: portfolio.assets.filter(isHidden),
     };
-  }, [portfolio.results, portfolio.assets, hidden]);
+  }, [portfolio.results, portfolio.assets, hidden, autoHidden]);
 
   // Which collectibles hang in the Overview frame (gallery checkboxes)
   const featuredArt = useFeaturedArt(assets);
@@ -201,7 +209,19 @@ export default function DashboardPage() {
 
       {wallets.length > 0 && (
         <div id="holdings" className="scroll-mt-16">
-          <Holdings assets={assets} walletNames={walletNames} hiddenAssets={hiddenAssets} hiddenKeys={hidden} onHide={hide} onUnhide={unhide} />
+          <Holdings
+            assets={assets}
+            walletNames={walletNames}
+            hiddenAssets={hiddenAssets}
+            hiddenKeys={hidden}
+            onHide={hide}
+            onUnhide={unhide}
+            risk={risk}
+            autoHiddenKeys={autoHidden}
+            trustedKeys={trusted}
+            onTrust={(key) => { trust(key); unhide(key); }}
+            onUntrust={untrust}
+          />
         </div>
       )}
 
