@@ -66,7 +66,9 @@ function classify(a: Asset): { key: string; kind: Holding['kind']; label: string
   }
   if (a.type === 'token') {
     const id = contract ?? `${a.chain}:${a.tokenStandard}:${a.symbol}`;
-    return { key: `token:${id}`, kind: 'token', label: a.symbol, amount: balance };
+    // Staked / reward / unstaking positions share the token's contract, so they roll into its row
+    const label = a.tokenStandard && ['Staked', 'Rewards', 'Unstaking'].includes(a.tokenStandard) ? a.tokenStandard.toLowerCase() : a.symbol;
+    return { key: `token:${id}`, kind: 'token', label, amount: balance };
   }
   return null; // NFTs and Ordinals are shown in the gallery, not summed
 }

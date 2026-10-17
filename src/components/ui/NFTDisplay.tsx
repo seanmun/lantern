@@ -14,6 +14,9 @@ const TOKEN_BADGES: Record<string, string> = {
   'Stock Token': 'STOCK',
   Rune: 'RUNE',
   'BRC-20': 'BRC-20',
+  Staked: 'STAKED',
+  Rewards: 'REWARDS',
+  Unstaking: 'UNSTAKING',
 };
 
 /** Hash-style token IDs (70+ digits) don't fit a card; keep the ends. */

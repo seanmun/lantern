@@ -41,6 +41,8 @@ export interface EvmChainConfig {
   hex?: boolean;          // chain has HEX staking + Maximus pools
   rpcBatching?: boolean;  // default true; some public RPCs answer JSON-RPC batches very slowly
   loadExtraTokens?: () => Promise<EvmToken[]>; // dynamic token lists (e.g. an official registry)
+  // Protocol positions not visible as token balances (staking, rewards, cooldowns)
+  loadPositions?: (provider: ethers.JsonRpcProvider, address: string, chain: string, idPrefix: string) => Promise<Asset[]>;
 }
 
 // Multicall3 is deployed at this address on Ethereum, Base, Robinhood Chain and Pulsechain
@@ -410,6 +412,15 @@ export class EvmHandler {
     }
   }
 
+  async getPositions(address: string): Promise<APIResponse<Asset[]>> {
+    if (!this.config.loadPositions) return { success: true, data: [], timestamp: new Date() };
+    try {
+      return { success: true, data: await this.config.loadPositions(this.provider, address, this.config.key, this.config.idPrefix), timestamp: new Date() };
+    } catch (error) {
+      return errorResponse(`Failed to fetch ${this.config.key} staking positions`, error);
+    }
+  }
+
   /** Current cycle of every Maximus pool on this chain (whether or not the viewer holds it). */
   async getPoolStats(): Promise<HexPoolStats[]> {
     if (!this.config.hex) return [];
@@ -445,6 +456,7 @@ export class EvmHandler {
         this.getTokenBalances(address),
         this.getHEXStakes(address),
         this.getNFTs(address),
+        this.getPositions(address),
       ]);
 
       const allAssets: Asset[] = [];
