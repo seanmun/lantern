@@ -124,6 +124,22 @@ export interface IcosaStakeInfo {
   stakeCount?: number;     // NFT stakes are aggregated per wallet
 }
 
+export interface ValidatorNetworkStats {
+  chain: 'ethereum' | 'pulsechain';
+  symbol: string;
+  coinId: string;            // CoinGecko id
+  minStake: number;          // coins to run one validator
+  maxEffective: number;      // most a single validator earns on
+  validators: number;        // active
+  totalStaked: number;
+  totalStakedEstimated: boolean;
+  consensusApr: number;      // %, a perfectly online validator today
+  executionApr: number | null; // %, tips / MEV on top
+  consensusHistory: { t: number; apr: number }[]; // ms timestamps; empty when the node keeps no history
+  priceHistory: { t: number; price: number }[];   // daily USD, past year
+  updatedAt: string;
+}
+
 export interface HexPoolInfo {
   poolName: string;
   cycleDays: number;
