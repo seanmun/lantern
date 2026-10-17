@@ -8,6 +8,7 @@ import { groupHoldings } from '@/utils/holdings';
 import { tokenKey } from '@/hooks/useHiddenTokens';
 import { TokenRiskReport } from '@/hooks/useTokenRisk';
 import { formatUSD } from '@/utils/prices';
+import { TokenLogo } from '@/components/ui/TokenLogo';
 
 interface HoldingsProps {
   assets: Asset[];
@@ -117,10 +118,9 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
                     <td className="py-2.5 pr-4">
                       <div className="flex items-center gap-2">
                         <span className={`text-[10px] text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} aria-hidden="true">▶</span>
-                        {h.imageUrl && h.kind === 'token' && (
-                          // eslint-disable-next-line @next/next/no-img-element -- remote token logos
-                          <img src={h.imageUrl} alt="" width={20} height={20} loading="lazy" className="h-5 w-5 rounded-full" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        )}
+                        {h.kind === 'collectibles'
+                          ? <span aria-hidden className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 text-xs ring-1 ring-amber-200">🖼</span>
+                          : <TokenLogo src={h.imageUrl} symbol={h.symbol} size={24} />}
                         <div className="min-w-0">
                           <div className="truncate font-medium text-gray-900">
                             {h.symbol} <span className="font-normal text-gray-500">{h.name !== h.symbol ? h.name : ''}</span>

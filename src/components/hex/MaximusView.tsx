@@ -7,6 +7,7 @@ import { formatUSD } from '@/utils/prices';
 import { HexStatsWithPrice } from '@/hooks/useHexStats';
 import { PoolWithPrice, useMaximusPools } from '@/hooks/useMaximusPools';
 import { HEX_CHAIN_COLORS } from './colors';
+import { TokenLogo } from '@/components/ui/TokenLogo';
 
 interface MaximusViewProps {
   assets: Asset[];
@@ -159,7 +160,7 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
             ) : (
               <ul className="divide-y divide-gray-100">
                 {col.held.map((r) => <PerpRow key={r.pool.symbol} row={r} showRewards={significant(r.rewards, r.amount)} />)}
-                {col.team.amount > 0 && <TeamRow team={col.team} />}
+                {col.team.amount > 0 && <TeamRow team={col.team} chain={col.chain} />}
               </ul>
             )}
           </section>
@@ -187,9 +188,10 @@ function PerpRow({ row: r, showRewards }: { row: PerpRow; showRewards: boolean }
   return (
     <li className="py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <TokenLogo src={`/api/logos/${r.pool.chain}/${r.pool.address}`} symbol={r.pool.symbol} />
           <span className="font-bold text-gray-900">{r.pool.symbol}</span>
-          <span className="ml-2 tabular-nums text-sm text-gray-600">{fmt(r.amount, r.amount >= 100 ? 0 : 2)}</span>
+          <span className="tabular-nums text-sm text-gray-600">{fmt(r.amount, r.amount >= 100 ? 0 : 2)}</span>
         </div>
         <div className="shrink-0 text-right tabular-nums">
           <span className="text-sm text-gray-700" title={r.priced ? 'Market value' : 'No market price: HEX backing today'}>
@@ -216,7 +218,7 @@ function PerpRow({ row: r, showRewards }: { row: PerpRow; showRewards: boolean }
   );
 }
 
-function TeamRow({ team }: { team: Holding }) {
+function TeamRow({ team, chain }: { team: Holding; chain: string }) {
   const notes = [
     team.staked > 0 && `${fmt(team.staked, 0)} staked`,
     team.rewards > 0 && `${fmt(team.rewards, 0)} unclaimed rewards`,
@@ -224,9 +226,10 @@ function TeamRow({ team }: { team: Holding }) {
   return (
     <li className="py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <TokenLogo src={`/api/logos/${chain}/${MAXIMUS_TEAM_ADDRESS}`} symbol="TEAM" />
           <span className="font-bold text-gray-900">TEAM</span>
-          <span className="ml-2 tabular-nums text-sm text-gray-600">{fmt(team.amount, team.amount >= 100 ? 0 : 2)}</span>
+          <span className="tabular-nums text-sm text-gray-600">{fmt(team.amount, team.amount >= 100 ? 0 : 2)}</span>
         </div>
         <span className="shrink-0 text-sm tabular-nums text-gray-700">{team.value !== null ? formatUSD(team.value) : 'no market price'}</span>
       </div>

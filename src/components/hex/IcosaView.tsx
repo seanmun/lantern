@@ -4,6 +4,8 @@ import { Asset, IcosaStakeInfo } from '@/types';
 import { chainLabel } from '@/config/chainDisplay';
 import { formatUSD } from '@/utils/prices';
 import { HEX_CHAIN_COLORS } from './colors';
+import { TokenLogo } from '@/components/ui/TokenLogo';
+import { logoUrl } from '@/utils/logos';
 
 const COLUMNS = ['pulsechain', 'ethereum'] as const;
 const POOLS: { key: IcosaStakeInfo['pool']; label: string; earns: string }[] = [
@@ -109,9 +111,10 @@ function PoolRow({ pool, assets }: { pool: (typeof POOLS)[number]; assets: Icosa
   return (
     <li className="py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
+          <TokenLogo src={logoUrl(assets.find((a) => a.icosa.role === 'principal') ?? assets[0])} symbol={pool.key === 'NFT' ? 'ICSA' : pool.key} />
           <span className="font-bold text-gray-900">{pool.key === 'NFT' ? `${nftCount} WAATSA` : pool.label}</span>
-          <span className="ml-2 text-xs text-gray-500">{pool.key === 'NFT' ? `NFT stake${nftCount === 1 ? '' : 's'} · ` : ''}{pool.earns}</span>
+          <span className="text-xs text-gray-500">{pool.key === 'NFT' ? `NFT stake${nftCount === 1 ? '' : 's'} · ` : ''}{pool.earns}</span>
         </div>
         <span className="shrink-0 text-sm font-semibold tabular-nums text-gray-900">{value > 0 ? formatUSD(value) : '—'}</span>
       </div>

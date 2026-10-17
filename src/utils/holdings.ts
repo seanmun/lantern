@@ -2,6 +2,10 @@ import { Asset } from '@/types';
 import { HEX_ADDRESS } from '@/config/hex';
 import { NATIVE_COIN } from '@/utils/prices';
 import { normalizeAddress } from '@/utils/address';
+import { logoUrl } from '@/utils/logos';
+
+// Position labels like "Icosa (staked)" describe a part, not the token itself
+const baseName = (a: Asset) => (a.tokenStandard === 'Staked' || a.tokenStandard === 'Rewards' ? a.name.replace(/\s*\([^)]*\)$/, '') : a.name);
 
 export interface Holding {
   key: string;
@@ -86,12 +90,16 @@ export function groupHoldings(assets: Asset[]): Holding[] {
       h = {
         key: c.key,
         kind: c.kind,
-        name: c.kind === 'hex' ? 'HEX (liquid + staked + pools)' : c.kind === 'collectibles' ? 'NFTs & Ordinals (floor value)' : c.kind === 'native' ? NATIVE_NAMES[c.key === 'native:ethereum' ? 'ethereum' : coin] ?? a.name : a.name,
+        name: c.kind === 'hex' ? 'HEX (liquid + staked + pools)' : c.kind === 'collectibles' ? 'NFTs & Ordinals (floor value)' : c.kind === 'native' ? NATIVE_NAMES[c.key === 'native:ethereum' ? 'ethereum' : coin] ?? a.name : baseName(a),
         symbol: c.kind === 'hex' ? 'HEX' : c.kind === 'collectibles' ? 'Collectibles' : c.key === 'native:ethereum' ? 'ETH' : a.symbol,
         chains: [],
         balance: 0,
         blendedPrice: false,
-        imageUrl: c.kind === 'token' ? a.imageUrl : undefined,
+        imageUrl: c.kind === 'hex'
+          ? `/api/logos/pulsechain/${HEX_ADDRESS}`
+          : c.kind === 'native'
+            ? `/api/logos/native/${c.key.slice('native:'.length)}`
+            : c.kind === 'token' ? logoUrl(a) : undefined,
         parts: [],
       };
       groups.set(c.key, h);

@@ -3,6 +3,8 @@
 import { Asset, HexStakeInfo } from '@/types';
 import { useState } from 'react';
 import { formatUSD } from '@/utils/prices';
+import { TokenLogo } from './TokenLogo';
+import { logoUrl } from '@/utils/logos';
 
 // HTML, SVG, text and JSON inscriptions can't render in <img>; show them in a sandboxed frame
 function rendersInFrame(asset: Asset): boolean {
@@ -311,17 +313,8 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h3 className="flex min-w-0 items-center gap-2 font-medium text-gray-900">
-              {asset.type === 'token' && asset.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- remote token logos, not optimizable assets
-                <img
-                  src={asset.imageUrl}
-                  alt=""
-                  width={20}
-                  height={20}
-                  loading="lazy"
-                  className="h-5 w-5 shrink-0 rounded-full"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
+              {(asset.type === 'token' || asset.type === 'native' || asset.type === 'stake') && (
+                <TokenLogo src={logoUrl(asset)} symbol={asset.symbol} />
               )}
               <span className="truncate">{asset.name} ({asset.symbol})</span>
             </h3>
