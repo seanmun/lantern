@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useWallets } from '@/hooks/useWallets';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useHexStats } from '@/hooks/useHexStats';
@@ -15,6 +15,7 @@ import { WalletList } from '@/components/wallet/WalletList';
 import { ChainSection } from '@/components/portfolio/ChainSection';
 import { HexSummary } from '@/components/portfolio/HexSummary';
 import { Holdings } from '@/components/portfolio/Holdings';
+import { Overview } from '@/components/overview/Overview';
 import { StakeEstimator } from '@/components/hex/StakeEstimator';
 import { PoolComparison } from '@/components/hex/PoolComparison';
 import { HEX_ADDRESS } from '@/config/hex';
@@ -46,10 +47,9 @@ export default function DashboardPage() {
 
   // Always loaded: the stake estimator works even before any wallet is added
   const hexStats = useHexStats(true);
+  const [walletsOpen, setWalletsOpen] = useState(false);
   const stakeHistory = useStakeHistory(wallets);
 
-  const totalUSD = assets.reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
-  const collectiblesUSD = assets.filter((a) => a.type === 'collection').reduce((sum, a) => sum + (a.valueUSD ?? 0), 0);
 
   const { walletNames, walletTotals, walletLoading } = useMemo(() => {
     const names = new Map<string, string>();
@@ -77,6 +77,16 @@ export default function DashboardPage() {
   }, [assets]);
 
 
+  const sections = [
+    { id: 'overview', label: 'Overview', show: wallets.length > 0 },
+    { id: 'holdings', label: 'Holdings', show: wallets.length > 0 },
+    { id: 'hex', label: 'HEX', show: wallets.length > 0 },
+    { id: 'tools', label: 'Tools', show: hexStats.length > 0 },
+    { id: 'chains', label: 'Chains', show: wallets.length > 0 },
+    { id: 'collectibles', label: 'Collectibles', show: assets.some((a) => a.type === 'nft' || a.type === 'ordinal') },
+    { id: 'wallets', label: 'Wallets', show: true },
+  ].filter((x) => x.show);
+
   return (
     <main className="mx-auto max-w-7xl space-y-8">
       {/* Header */}
@@ -88,75 +98,125 @@ export default function DashboardPage() {
           <p className="mt-2 text-gray-600">Bitcoin, Ethereum, Pulsechain, Base, Robinhood Chain & Solana. Your data stays in your browser.</p>
         </div>
         {wallets.length > 0 && (
-          <div className="sm:text-right">
-            <div className="text-4xl font-bold tabular-nums text-gray-900">{formatUSD(totalUSD)}</div>
-            {collectiblesUSD > 0 && (
-              <div className="text-xs text-gray-500">incl. {formatUSD(collectiblesUSD)} collectibles at floor value</div>
-            )}
-            <div className="mt-1 flex items-center gap-3 text-sm text-gray-500 sm:justify-end">
-              <span>
-                {isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}
-              </span>
-              <button
-                onClick={() => downloadFile(
-                  `portfolio-${new Date().toISOString().slice(0, 10)}.csv`,
-                  assetsToCsv(assets, (address) => walletNames.get(address.toLowerCase()) ?? ''),
-                  'text/csv;charset=utf-8'
-                )}
-                disabled={assets.length === 0}
-                className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
-              >
-                ⬇ CSV
-              </button>
-              <button
-                onClick={refresh}
-                disabled={isLoading}
-                className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
-              >
-                ⟳ Refresh
-              </button>
-            </div>
+          <div className="flex items-center gap-3 text-sm text-gray-500 sm:justify-end">
+            <span>{isLoading ? 'Updating…' : lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : ''}</span>
+            <button
+              onClick={() => downloadFile(
+                `portfolio-${new Date().toISOString().slice(0, 10)}.csv`,
+                assetsToCsv(assets, (address) => walletNames.get(address.toLowerCase()) ?? ''),
+                'text/csv;charset=utf-8'
+              )}
+              disabled={assets.length === 0}
+              className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+            >
+              ⬇ CSV
+            </button>
+            <button
+              onClick={refresh}
+              disabled={isLoading}
+              className="rounded-lg bg-white px-3 py-1 font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50 disabled:opacity-50"
+            >
+              ⟳ Refresh
+            </button>
           </div>
         )}
       </header>
 
-      {/* Wallets */}
-      <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
-        <h2 className="mb-4 text-xl font-bold text-gray-800">Wallets</h2>
-        {wallets.length > 0 && (
-          <div className="mb-6">
-            <WalletList
-              wallets={wallets}
-              totals={walletTotals}
-              loading={walletLoading}
-              onRename={renameWallet}
-              onRemove={removeWallet}
-            />
-          </div>
+      {/* Section menu */}
+      {wallets.length > 0 && (
+        <nav aria-label="Sections" className="sticky top-0 z-30 -mx-4 overflow-x-auto border-b border-white/40 bg-white/75 px-4 py-2 backdrop-blur-md">
+          <ul className="flex gap-1 text-sm">
+            {sections.map((x) => (
+              <li key={x.id}>
+                <a href={`#${x.id}`} className="block whitespace-nowrap rounded-lg px-3 py-1.5 font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-800">
+                  {x.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+
+      {wallets.length > 0 && (
+        <div id="overview" className="scroll-mt-16">
+          <Overview assets={assets} isLoading={isLoading} />
+        </div>
+      )}
+
+      {/* Wallets: open until set up, then tucked away */}
+      <section id="wallets" className="scroll-mt-16 rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold text-gray-800">
+            Wallets{wallets.length > 0 && <span className="ml-2 text-base font-normal text-gray-500">{wallets.length}</span>}
+          </h2>
+          {wallets.length > 0 && (
+            <button
+              onClick={() => setWalletsOpen(!walletsOpen)}
+              aria-expanded={walletsOpen}
+              className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+            >
+              {walletsOpen ? 'Done' : 'Manage wallets'}
+            </button>
+          )}
+        </div>
+        {wallets.length > 0 && !walletsOpen && (
+          <ul className="mt-3 flex flex-wrap gap-2 text-sm">
+            {wallets.map((w) => (
+              <li key={w.id} className="rounded-full bg-white/80 px-3 py-1 shadow-sm ring-1 ring-gray-200">
+                <span className="font-medium text-gray-800">{w.name}</span>
+                <span className="ml-2 tabular-nums text-gray-500">{walletLoading.has(w.id) ? '…' : formatUSD(walletTotals.get(w.id) ?? 0)}</span>
+              </li>
+            ))}
+          </ul>
         )}
-        <AddWalletForm onAdd={addWallet} />
-        {wallets.length === 0 && TEST_WALLETS.length > 0 && (
-          <button
-            onClick={() => TEST_WALLETS.forEach((w) => addWallet(w.address, w.name))}
-            className="mt-4 text-sm font-medium text-purple-700 hover:text-purple-900"
-          >
-            Load test wallets from .env.local →
-          </button>
+        {(walletsOpen || wallets.length === 0) && (
+          <div className="mt-4">
+            {wallets.length > 0 && (
+              <div className="mb-6">
+                <WalletList
+                  wallets={wallets}
+                  totals={walletTotals}
+                  loading={walletLoading}
+                  onRename={renameWallet}
+                  onRemove={removeWallet}
+                />
+              </div>
+            )}
+            <AddWalletForm onAdd={addWallet} />
+            {wallets.length === 0 && TEST_WALLETS.length > 0 && (
+              <button
+                onClick={() => TEST_WALLETS.forEach((w) => addWallet(w.address, w.name))}
+                className="mt-4 text-sm font-medium text-purple-700 hover:text-purple-900"
+              >
+                Load test wallets from .env.local →
+              </button>
+            )}
+          </div>
         )}
       </section>
 
-      {wallets.length > 0 && <Holdings assets={assets} walletNames={walletNames} hiddenAssets={hiddenAssets} hiddenKeys={hidden} onHide={hide} onUnhide={unhide} />}
+      {wallets.length > 0 && (
+        <div id="holdings" className="scroll-mt-16">
+          <Holdings assets={assets} walletNames={walletNames} hiddenAssets={hiddenAssets} hiddenKeys={hidden} onHide={hide} onUnhide={unhide} />
+        </div>
+      )}
 
-      {wallets.length > 0 && <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} endedStakes={stakeHistory.stakes} historyUnavailable={stakeHistory.unavailable} />}
+      {wallets.length > 0 && (
+        <div id="hex" className="scroll-mt-16 empty:hidden">
+          <HexSummary assets={assets} walletNames={walletNames} hexStats={hexStats} endedStakes={stakeHistory.stakes} historyUnavailable={stakeHistory.unavailable} />
+        </div>
+      )}
 
-      {hexStats.length > 0 && <StakeEstimator stats={hexStats} liquidHex={liquidHex} />}
-
-      {hexStats.length > 0 && <PoolComparison stats={hexStats} />}
+      {hexStats.length > 0 && (
+        <div id="tools" className="scroll-mt-16 space-y-8">
+          <StakeEstimator stats={hexStats} liquidHex={liquidHex} />
+          <PoolComparison stats={hexStats} />
+        </div>
+      )}
 
       {wallets.length > 0 && (
         <>
-
-          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <div id="chains" className="grid scroll-mt-16 gap-6 lg:grid-cols-2 xl:grid-cols-3">
             {CHAIN_DISPLAY.map((chain) => (
               <ChainSection
                 key={chain.key}
@@ -169,7 +229,9 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <CollectiblesGallery assets={assets} />
+          <div id="collectibles" className="scroll-mt-16">
+            <CollectiblesGallery assets={assets} />
+          </div>
         </>
       )}
     </main>

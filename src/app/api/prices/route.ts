@@ -43,6 +43,8 @@ const NATIVE_FALLBACKS: Record<string, [string, string]> = {
 };
 
 const cache = new Map<string, { price: number | null; at: number }>();
+// 24h % change per cache key, recorded by sources that report it (CoinGecko, DexScreener)
+const changes = new Map<string, number>();
 
 function cached(key: string): number | null | undefined {
   const hit = cache.get(key);
@@ -63,6 +65,7 @@ interface DexPair {
   baseToken: { address: string };
   priceUsd?: string;
   liquidity?: { usd?: number };
+  priceChange?: { h24?: number };
 }
 
 /** DexScreener: price from the deepest-liquidity pair where the token is the base. */
@@ -77,6 +80,8 @@ async function fromDexScreener(chain: string, addresses: string[]): Promise<Reco
       if (pair.priceUsd && liquidity >= MIN_LIQUIDITY_USD && liquidity >= (best[address] ?? -1)) {
         best[address] = liquidity;
         prices[address] = Number(pair.priceUsd);
+        if (typeof pair.priceChange?.h24 === 'number') changes.set(`${chain}:${address}`, pair.priceChange.h24);
+        else changes.delete(`${chain}:${address}`);
       }
     }
   }
@@ -159,11 +164,12 @@ async function priceNatives(ids: string[]): Promise<Record<string, number | null
   try {
     const key = process.env.COINGECKO_API_KEY;
     const data = await getJSON(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${missing.join(',')}&vs_currencies=usd`,
+      `https://api.coingecko.com/api/v3/simple/price?ids=${missing.join(',')}&vs_currencies=usd&include_24hr_change=true`,
       key ? { 'x-cg-demo-api-key': key } : {}
     );
     for (const id of missing) {
       if (data[id]?.usd != null) result[id] = data[id].usd;
+      if (typeof data[id]?.usd_24h_change === 'number') changes.set(`native:${id}`, data[id].usd_24h_change);
     }
   } catch (error) {
     console.warn('⚠️ CoinGecko failed, falling back to wrapped tokens:', error);
@@ -174,6 +180,8 @@ async function priceNatives(ids: string[]): Promise<Record<string, number | null
       const [chain, address] = NATIVE_FALLBACKS[id];
       const key = normalizeAddress(chain, address);
       result[id] = (await priceTokens(chain, [key]))[key];
+      const fallbackChange = changes.get(`${chain}:${key}`);
+      if (fallbackChange !== undefined) changes.set(`native:${id}`, fallbackChange);
     }
     result[id] ??= null;
     cache.set(`native:${id}`, { price: result[id], at: Date.now() });
@@ -206,8 +214,15 @@ export async function POST(request: NextRequest) {
     ...tokenRequests.map(([chain, addresses]) => priceTokens(chain, addresses)),
   ]);
 
+  const pick = (keys: [string, string][]) =>
+    Object.fromEntries(keys.filter(([, key]) => changes.has(key)).map(([id, key]) => [id, changes.get(key)!]));
+
   return NextResponse.json({
     natives: nativePrices,
     tokens: Object.fromEntries(tokenRequests.map(([chain], i) => [chain, tokenPrices[i]])),
+    changes24h: {
+      natives: pick(natives.map((id) => [id, `native:${id}`])),
+      tokens: Object.fromEntries(tokenRequests.map(([chain, addresses]) => [chain, pick(addresses.map((a) => [a, `${chain}:${a}`]))])),
+    },
   });
 }

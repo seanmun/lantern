@@ -57,6 +57,7 @@ export interface Asset {
   // Pricing
   priceUSD?: number;
   valueUSD?: number;
+  change24hPct?: number; // price change over 24h, when the price source reports it
   
   // Token specific
   contractAddress?: string;

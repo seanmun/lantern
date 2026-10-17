@@ -15,6 +15,7 @@ export const NATIVE_COIN: Record<string, string> = {
 interface PriceResponse {
   natives: Record<string, number | null>;
   tokens: Record<string, Record<string, number | null>>;
+  changes24h?: { natives: Record<string, number>; tokens: Record<string, Record<string, number>> };
 }
 
 /**
@@ -66,6 +67,10 @@ export async function applyPrices(assets: Asset[]): Promise<Asset[]> {
     }
 
     const priced: Asset = { ...asset };
+    const change = asset.type === 'native'
+      ? prices.changes24h?.natives[NATIVE_COIN[asset.chain]]
+      : asset.contractAddress ? prices.changes24h?.tokens[asset.chain]?.[normalizeAddress(asset.chain, asset.contractAddress)] : undefined;
+    if (change !== undefined) priced.change24hPct = change;
     if (priceUSD != null) {
       priced.priceUSD = priceUSD;
       // A stake is worth its principal plus the interest it has earned so far
