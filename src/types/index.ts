@@ -83,6 +83,9 @@ export interface Asset {
   // Maximus perpetual pool token specific
   pool?: HexPoolInfo;
 
+  // Icosa stake specific (HDRN, ICSA or WAATSA NFT stakes)
+  icosa?: IcosaStakeInfo;
+
   lastUpdated: Date;
 }
 
@@ -109,6 +112,16 @@ export interface HexStakeInfo {
   hdrnMintable?: number;        // Hedron HDRN this stake can mint now
   hdrnLoaned?: boolean;         // HSI is collateral for an HDRN loan
   hsi?: { address: string; tokenId?: string }; // set for HEX Stake Instances
+}
+
+export interface IcosaStakeInfo {
+  pool: 'HDRN' | 'ICSA' | 'NFT';
+  role: 'principal' | 'yield';
+  minStakeDays: number;
+  daysServed: number;
+  daysUntilMature: number; // 0: can end without penalty
+  endNowPenalty: number;   // tokens of this asset lost if ended today
+  stakeCount?: number;     // NFT stakes are aggregated per wallet
 }
 
 export interface HexPoolInfo {

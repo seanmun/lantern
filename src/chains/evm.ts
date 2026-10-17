@@ -45,6 +45,19 @@ export interface EvmChainConfig {
   loadPositions?: (provider: ethers.JsonRpcProvider, address: string, chain: string, idPrefix: string) => Promise<Asset[]>;
 }
 
+type PositionLoader = NonNullable<EvmChainConfig['loadPositions']>;
+
+/** Run several position loaders; one protocol failing doesn't hide the others. */
+export function combinePositions(...loaders: PositionLoader[]): PositionLoader {
+  return async (...args) => {
+    const results = await Promise.allSettled(loaders.map((load) => load(...args)));
+    const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    if (failed.length === results.length && failed.length) throw failed[0].reason;
+    failed.forEach((r) => console.warn(`⚠️ ${args[2]} position loader failed:`, r.reason));
+    return results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
+  };
+}
+
 // Multicall3 is deployed at this address on Ethereum, Base, Robinhood Chain and Pulsechain
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const MULTICALL3_ABI = ['function aggregate3((address target, bool allowFailure, bytes callData)[] calls) view returns ((bool success, bytes returnData)[])'];
