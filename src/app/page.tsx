@@ -6,6 +6,7 @@ import { usePortfolio } from '@/hooks/usePortfolio';
 import { useHexStats } from '@/hooks/useHexStats';
 import { useStakeHistory } from '@/hooks/useStakeHistory';
 import { tokenKey, useHiddenTokens } from '@/hooks/useHiddenTokens';
+import { useFeaturedArt } from '@/hooks/useFeaturedArt';
 import { Asset } from '@/types';
 import { assetsToCsv } from '@/utils/csv';
 import { downloadFile } from '@/utils/ics';
@@ -44,6 +45,9 @@ export default function DashboardPage() {
       hiddenAssets: portfolio.assets.filter(isHidden),
     };
   }, [portfolio.results, portfolio.assets, hidden]);
+
+  // Which collectibles hang in the Overview frame (gallery checkboxes)
+  const featuredArt = useFeaturedArt(assets);
 
   // Always loaded: the stake estimator works even before any wallet is added
   const hexStats = useHexStats(true);
@@ -139,7 +143,7 @@ export default function DashboardPage() {
 
       {wallets.length > 0 && (
         <div id="overview" className="scroll-mt-16">
-          <Overview assets={assets} isLoading={isLoading} />
+          <Overview assets={assets} isLoading={isLoading} isFeatured={featuredArt.isFeatured} />
         </div>
       )}
 
@@ -230,7 +234,13 @@ export default function DashboardPage() {
           </div>
 
           <div id="collectibles" className="scroll-mt-16">
-            <CollectiblesGallery assets={assets} />
+            <CollectiblesGallery
+              assets={assets}
+              isFeatured={featuredArt.isFeatured}
+              onFeaturedChange={featuredArt.setFeatured}
+              onResetFeatured={featuredArt.reset}
+              featuredCustomized={featuredArt.customized}
+            />
           </div>
         </>
       )}

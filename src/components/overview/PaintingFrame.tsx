@@ -15,6 +15,7 @@ export interface Artwork {
 interface PaintingFrameProps {
   artworks: Artwork[];
   intervalMs?: number;
+  emptyMessage?: string;
 }
 
 const FADE_MS = 1200;
@@ -47,7 +48,7 @@ function Corner({ gradientId, className }: { gradientId: string; className: stri
  * A gilded museum frame that cross-fades through the viewer's collectibles.
  * Pauses on hover/focus; no auto-rotation when the OS asks for reduced motion.
  */
-export function PaintingFrame({ artworks, intervalMs = 10_000 }: PaintingFrameProps) {
+export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'Add a wallet that holds NFTs or Ordinals to hang art here' }: PaintingFrameProps) {
   const [index, setIndex] = useState(0);
   const [previous, setPrevious] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
@@ -198,7 +199,7 @@ export function PaintingFrame({ artworks, intervalMs = 10_000 }: PaintingFramePr
             <div className="relative aspect-square w-full overflow-hidden bg-[#ebe4d4]" style={{ boxShadow: '0 0 0 1px rgba(90,70,35,0.35), 0 2px 6px rgba(40,25,5,0.35)' }}>
               {count === 0 ? (
                 <div className="flex h-full items-center justify-center p-6 text-center font-serif text-sm italic text-[#7a6845]">
-                  Add a wallet that holds NFTs or Ordinals to hang art here
+                  {emptyMessage}
                 </div>
               ) : (
                 <>

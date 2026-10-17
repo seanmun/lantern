@@ -6,47 +6,37 @@ import { chainLabel } from '@/config/chainDisplay';
 import { groupHoldings } from '@/utils/holdings';
 import { formatUSD } from '@/utils/prices';
 import { Artwork, PaintingFrame } from './PaintingFrame';
+import { artByFloor } from '@/hooks/useFeaturedArt';
 
 interface OverviewProps {
   assets: Asset[];
   isLoading: boolean;
+  isFeatured: (a: Asset) => boolean;
 }
 
 // Categorical slots 1-4 in fixed order (validated palette), neutral gray for "Other"
 const ALLOCATION_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'];
 const OTHER_COLOR = '#a8a29e';
 const TOP_N = 4;
-const MAX_ARTWORKS = 24;
 
-const isTextInscription = (a: Asset) => /^text\/plain|json/i.test(a.contentType ?? '');
 const pct = (v: number) => `${v >= 10 ? v.toFixed(0) : v.toFixed(1)}%`;
 
 /** Pieces worth hanging: has an image, not a BRC-20 text record, best floors first. */
-function pickArtworks(assets: Asset[]): Artwork[] {
-  const floors = new Map<string, number>();
-  for (const c of assets.filter((a) => a.type === 'collection')) {
-    const key = c.contractAddress ? `c:${c.contractAddress.toLowerCase()}` : `n:${c.collectionName}`;
-    const count = Number(c.balanceFormatted) || 1;
-    if (c.valueUSD !== undefined) floors.set(key, Math.max(floors.get(key) ?? 0, c.valueUSD / count));
-  }
-  const keyOf = (a: Asset) => (a.contractAddress ? `c:${a.contractAddress.toLowerCase()}` : `n:${a.collectionName}`);
-
-  return assets
-    .filter((a) => (a.type === 'nft' || a.type === 'ordinal') && a.imageUrl && !isTextInscription(a))
-    .map((a) => ({ a, floor: floors.get(keyOf(a)) ?? 0 }))
-    .sort((x, y) => y.floor - x.floor)
-    .slice(0, MAX_ARTWORKS)
-    .map(({ a, floor }) => {
+/** Featured pieces for the frame, best floors first. */
+function pickArtworks(assets: Asset[], isFeatured: (a: Asset) => boolean): Artwork[] {
+  return artByFloor(assets)
+    .filter(({ asset }) => isFeatured(asset))
+    .map(({ asset: a, floor }) => {
       // "Inscription 1a2b…" says nothing on a plaque; lead with the collection instead
       const generic = /^Inscription\b/.test(a.name) && a.collectionName && a.collectionName !== 'Bitcoin Ordinals';
       return {
-      id: a.id,
-      title: generic ? a.collectionName! : a.name,
-      subtitle: (generic ? [a.name, chainLabel(a.chain)] : [a.collectionName, chainLabel(a.chain)]).filter(Boolean).join(' · '),
-      detail: floor > 0 ? `Floor ${formatUSD(floor)}` : undefined,
-      imageUrl: a.imageUrl!,
-      live: a.type === 'ordinal' && /html|svg|javascript/i.test(a.contentType ?? ''),
-      pixelated: a.type === 'ordinal',
+        id: a.id,
+        title: generic ? a.collectionName! : a.name,
+        subtitle: (generic ? [a.name, chainLabel(a.chain)] : [a.collectionName, chainLabel(a.chain)]).filter(Boolean).join(' · '),
+        detail: floor > 0 ? `Floor ${formatUSD(floor)}` : undefined,
+        imageUrl: a.imageUrl!,
+        live: a.type === 'ordinal' && /html|svg|javascript|text\/plain|json/i.test(a.contentType ?? ''),
+        pixelated: a.type === 'ordinal',
       };
     });
 }
@@ -55,9 +45,9 @@ function pickArtworks(assets: Asset[]): Artwork[] {
  * Top-of-page summary: the framed collectibles on the left; net worth, 24h
  * change, headline stats, allocation and chain split on the right.
  */
-export function Overview({ assets, isLoading }: OverviewProps) {
+export function Overview({ assets, isLoading, isFeatured }: OverviewProps) {
   const [hoverSlice, setHoverSlice] = useState<number | null>(null);
-  const artworks = useMemo(() => pickArtworks(assets), [assets]);
+  const artworks = useMemo(() => pickArtworks(assets, isFeatured), [assets, isFeatured]);
   const holdings = useMemo(() => groupHoldings(assets), [assets]);
 
   const total = assets.reduce((s, a) => s + (a.valueUSD ?? 0), 0);
@@ -98,7 +88,12 @@ export function Overview({ assets, isLoading }: OverviewProps) {
 
   return (
     <section className="grid gap-6 overflow-hidden rounded-2xl border border-white/20 bg-white/70 p-4 shadow-xl backdrop-blur-sm sm:p-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <PaintingFrame artworks={artworks} />
+      <PaintingFrame
+        artworks={artworks}
+        emptyMessage={assets.some((a) => (a.type === 'nft' || a.type === 'ordinal') && a.imageUrl)
+          ? 'Tick “In frame” on pieces in Collectibles to hang them here'
+          : undefined}
+      />
 
       <div className="flex min-w-0 flex-col gap-6 py-2">
         {/* Net worth */}

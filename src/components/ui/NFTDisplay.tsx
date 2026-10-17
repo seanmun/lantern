@@ -46,9 +46,11 @@ function StakeProgress({ lockedDay, stakedDays, endDate, daysRemaining }: Pick<H
 interface NFTCardProps {
   asset: Asset;
   variant?: 'default' | 'compact' | 'large';
+  featured?: boolean;                         // shown in the Overview frame
+  onFeaturedChange?: (featured: boolean) => void;
 }
 
-export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
+export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange }: NFTCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
@@ -68,7 +70,22 @@ export function NFTCard({ asset, variant = 'default' }: NFTCardProps) {
   if (!isNFT && !isOrdinal) return null;
 
   return (
-    <div className="group w-full min-w-0 rounded-xl border border-white/40 bg-white/90 p-2 backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl sm:p-4">
+    <div className={`group relative w-full min-w-0 rounded-xl border bg-white/90 p-2 backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl sm:p-4 ${featured ? 'border-amber-400 ring-1 ring-amber-300' : 'border-white/40'}`}>
+      {onFeaturedChange && (
+        <label
+          className="absolute left-1.5 top-1.5 z-20 flex cursor-pointer items-center gap-1 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 sm:left-2 sm:top-2"
+          title="Show this piece in the Overview frame"
+        >
+          <input
+            type="checkbox"
+            checked={!!featured}
+            onChange={(e) => onFeaturedChange(e.target.checked)}
+            className="h-3 w-3 accent-amber-600"
+            aria-label={`Show ${asset.name} in the frame`}
+          />
+          In frame
+        </label>
+      )}
       {/* NFT Image: square, fills the column up to 160px so 2 columns fit on a phone */}
       <div className="relative mx-auto mb-3 aspect-square w-full max-w-40 overflow-hidden rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 transition-shadow group-hover:shadow-lg">
         {isHTMLOrdinal && asset.imageUrl ? (
