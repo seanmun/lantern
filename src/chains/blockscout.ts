@@ -97,7 +97,11 @@ export interface DiscoveredToken {
 
 // Mass-airdrop scams reach 1M+ wallets but never get listed; real tokens with
 // that many holders have a CoinGecko-backed exchange rate on the explorer.
+// Only trusted where the explorer has exchange rates at all (Ethereum's does;
+// Pulsechain's has none, and its holder counts include every wallet copied at
+// the fork), so legitimate unlisted or Pulsechain-native tokens aren't dropped.
 const AIRDROP_HOLDERS = 100_000;
+const HAS_EXCHANGE_RATES: Record<string, boolean> = { ethereum: true };
 const MAX_TOKEN_PAGES = 6;      // 50 per page; Ethereum's explorer returns the most valuable first
 const TOKEN_BUDGET_MS = 20_000; // stop paging (keeping what we have) after this long
 
@@ -118,7 +122,8 @@ interface BlockscoutTokenItem {
   };
 }
 
-function isMassAirdrop(token: BlockscoutTokenItem['token']): boolean {
+function isMassAirdrop(chain: string, token: BlockscoutTokenItem['token']): boolean {
+  if (!HAS_EXCHANGE_RATES[chain]) return false;
   const holders = Number(token.holders_count ?? token.holders ?? 0);
   return holders > AIRDROP_HOLDERS && !token.exchange_rate;
 }
@@ -150,7 +155,7 @@ export async function fetchBlockscoutTokens(chain: string, address: string): Pro
   }
 
   return items
-    .filter((b) => b.token.type === 'ERC-20' && b.token.reputation !== 'scam' && !isMassAirdrop(b.token) && !looksLikeSpam(b.token.name, b.token.symbol))
+    .filter((b) => b.token.type === 'ERC-20' && b.token.reputation !== 'scam' && !isMassAirdrop(chain, b.token) && !looksLikeSpam(b.token.name, b.token.symbol))
     .map((b) => ({
       address: b.token.address_hash ?? b.token.address ?? '',
       symbol: b.token.symbol ?? '?',
