@@ -14,6 +14,7 @@ import { ForkComparison } from '@/components/hex/ForkComparison';
 import { buildIcs, downloadFile } from '@/utils/ics';
 import { StakeHistory } from '@/components/hex/StakeHistory';
 import { StakeAlerts } from '@/components/hex/StakeAlerts';
+import { StakeCard } from '@/components/hex/StakeCard';
 import { hexDayToDate } from '@/config/hex';
 
 interface HexSummaryProps {
@@ -50,7 +51,7 @@ function StatusBadge({ status, graceDaysLeft }: { status: HexStakeStatus; graceD
  * HEX-specific view: network stats, portfolio-level stake totals, the stake
  * ladder timeline, and detail tables for stakes and Maximus pools.
  */
-const STAKE_ROWS_COLLAPSED = 10;
+const STAKE_ROWS_COLLAPSED = 9; // three rows of cards on wide screens
 
 export function HexSummary({ assets, walletNames, hexStats, endedStakes, historyUnavailable }: HexSummaryProps) {
   const [showAllStakes, setShowAllStakes] = useState(false);
@@ -221,9 +222,9 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
       </div>
 
       {stakes.length > 0 && (
-        <div className="mb-8 overflow-x-auto">
+        <div className="mb-8">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold text-gray-800">Stakes</h3>
+            <h3 className="text-lg font-semibold text-gray-800">Stakes <span className="text-sm font-normal text-gray-500">by end date</span></h3>
             <div className="flex flex-wrap gap-2">
             <StakeAlerts stakes={stakes} />
             <button
@@ -234,70 +235,17 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
             </button>
             </div>
           </div>
-          <table className="w-full min-w-[880px] text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-2 pr-4 font-medium">Stake</th>
-                <th className="py-2 pr-4 text-right font-medium">Principal</th>
-                <th className="py-2 pr-4 text-right font-medium">Interest</th>
-                <th className="py-2 pr-4 text-right font-medium">Value</th>
-                <th className="py-2 pr-4 text-right font-medium">If ended today</th>
-                <th className="py-2 pr-4 text-right font-medium">T-Shares</th>
-                <th className="py-2 pr-4 text-right font-medium">APY</th>
-                <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 text-right font-medium">Ends</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(showAllStakes ? stakes : stakes.slice(0, STAKE_ROWS_COLLAPSED)).map((a) => (
-                <tr key={a.id} className="border-b border-gray-100 last:border-0">
-                  <td className="py-2 pr-4">
-                    <div className="flex items-center gap-2 font-medium text-gray-900">
-                      <span className="h-2 w-2 rounded-full" style={{ background: HEX_CHAIN_COLORS[a.chain] }} />
-                      #{a.stake.stakeId}
-                      {a.stake.hsi && (
-                        <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-800" title={`HEX Stake Instance ${a.stake.hsi.address}`}>
-                          HSI{a.stake.hsi.tokenId ? ` #${a.stake.hsi.tokenId}` : ''}
-                        </span>
-                      )}
-                      {a.stake.hdrnLoaned && (
-                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800" title="This HSI is collateral for an HDRN loan">LOANED</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500">{chainLabel(a.chain)} · {walletName(a)}</div>
-                  </td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{formatHex(Number(a.balanceFormatted))}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums">
-                    {formatHex(a.stake.interestHex)}
-                    <div className="text-xs text-gray-500">est. {formatHex(a.stake.projectedInterestHex)} at end</div>
-                  </td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—'}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums">
-                    {formatHex(a.stake.endNow.returnHex)}
-                    {(() => {
-                      const net = a.stake.endNow.returnHex - Number(a.balanceFormatted);
-                      if (a.stake.endNow.penaltyHex === 0) return <div className="text-xs text-gray-500">no penalty</div>;
-                      return (
-                        <div className={`text-xs ${net < 0 ? 'font-medium text-red-700' : 'text-gray-500'}`}>
-                          −{formatHex(a.stake.endNow.penaltyHex)} penalty{net < 0 ? ` · loses ${formatHex(-net)} principal` : ''}
-                        </div>
-                      );
-                    })()}
-                  </td>
-                  <td className="py-2 pr-4 text-right tabular-nums">
-                    {a.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}
-                    {a.stake.hdrnMintable ? <div className="text-xs text-indigo-700">mint {compactHex(a.stake.hdrnMintable)} HDRN</div> : null}
-                  </td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{formatPct(a.stake.apy)}</td>
-                  <td className="py-2 pr-4"><StatusBadge status={a.stake.status} graceDaysLeft={a.stake.graceDaysLeft} /></td>
-                  <td className="py-2 text-right">
-                    <div className="text-gray-900">{a.stake.daysRemaining > 0 ? `${a.stake.daysRemaining.toLocaleString()}d` : 'Ended'}</div>
-                    <div className="text-xs text-gray-500">{formatDate(a.stake.endDate)}</div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Soonest end date first, so matured stakes that need ending lead */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {(showAllStakes ? stakes : stakes.slice(0, STAKE_ROWS_COLLAPSED)).map((a) => (
+              <StakeCard
+                key={a.id}
+                asset={a}
+                walletName={walletName(a)}
+                statusBadge={<StatusBadge status={a.stake.status} graceDaysLeft={a.stake.graceDaysLeft} />}
+              />
+            ))}
+          </div>
           {stakes.length > STAKE_ROWS_COLLAPSED && (
             <button
               onClick={() => setShowAllStakes((v) => !v)}
