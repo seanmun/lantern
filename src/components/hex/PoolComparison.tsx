@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { HexPoolStats } from '@/types';
+import { useMaximusPools } from '@/hooks/useMaximusPools';
 import { HexStatsWithPrice } from '@/hooks/useHexStats';
 import { chainLabel } from '@/config/chainDisplay';
 import { hexDayToDate } from '@/config/hex';
@@ -30,41 +30,13 @@ interface Row {
  * date? Compares both in HEX terms, from today to the pool's cycle end.
  */
 export function PoolComparison({ stats }: { stats: HexStatsWithPrice[] }) {
-  const [pools, setPools] = useState<HexPoolStats[] | null>(null);
-  const [prices, setPrices] = useState<Record<string, Record<string, number | null>>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { pools: list }: { pools: HexPoolStats[] } = await (await fetch('/api/hex/pools')).json();
-        if (cancelled || !list?.length) return;
-        const byChain: Record<string, string[]> = {};
-        for (const p of list) (byChain[p.chain] ??= []).push(p.address);
-        const response = await fetch('/api/prices', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tokens: byChain }),
-        });
-        const body: { tokens: Record<string, Record<string, number | null>> } = await response.json();
-        if (!cancelled) {
-          setPrices(body.tokens ?? {});
-          setPools(list);
-        }
-      } catch (error) {
-        console.warn('⚠️ Pool comparison unavailable:', error);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const pools = useMaximusPools();
 
   if (!pools || stats.length === 0) return null;
 
   const rows: Row[] = pools.map((pool) => {
     const s = stats.find((x) => x.chain === pool.chain);
-    const priceUSD = prices[pool.chain]?.[pool.address.toLowerCase()] ?? null;
+    const priceUSD = pool.priceUSD;
     const priceHex = priceUSD != null && s?.hexPriceUSD ? priceUSD / s.hexPriceUSD : null;
     const backingNow = (pool.principalHex + pool.interestHex) / pool.supply;
     const backingAtEnd = (pool.principalHex + pool.projectedInterestHex) / pool.supply;

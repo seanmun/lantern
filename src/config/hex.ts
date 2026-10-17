@@ -41,3 +41,12 @@ export const MAXIMUS_POOLS: MaximusPool[] = [
   { symbol: 'TRIO', name: 'Maximus Trio', address: '0xF55cD1e399e1cc3D95303048897a680be3313308', cycleDays: 1111 },
   { symbol: 'BASE', name: 'Maximus Base', address: '0xe9f84d418B008888A992Ff8c6D22389C2C3504e0', cycleDays: 369 },
 ];
+
+// Ethereum pool tokens bridged to Pulsechain: no stake of their own; each is
+// backed by its Ethereum pool, so it counts toward that pool's holdings
+export const BRIDGED_MAXIMUS = [
+  { symbol: 'eDECI', name: 'Maximus Decimus from Ethereum', address: '0x189a3CA3cC1337e85c7bC0a43b8d3457FD5AaE89', poolSymbol: 'DECI' },
+  { symbol: 'eLUCKY', name: 'Maximus Lucky from Ethereum', address: '0x8924f56df76CA9e7babB53489D7bEF4fb7caFF19', poolSymbol: 'LUCKY' },
+  { symbol: 'eTRIO', name: 'Maximus Trio from Ethereum', address: '0x0f3C6134F4022D85127476BC4d3787860E5C5569', poolSymbol: 'TRIO' },
+  { symbol: 'eBASE', name: 'Maximus Base from Ethereum', address: '0xda073388422065Fe8D3B5921Ec2AE475Bae57BED', poolSymbol: 'BASE' },
+];

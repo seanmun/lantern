@@ -1,5 +1,5 @@
 import { EvmHandler, EvmChainConfig } from './evm';
-import { HEX_ADDRESS, MAXIMUS_POOLS } from '@/config/hex';
+import { BRIDGED_MAXIMUS, HEX_ADDRESS, MAXIMUS_POOLS } from '@/config/hex';
 
 /**
  * Pulsechain Handler - HEX-Focused Portfolio Tracker
@@ -37,10 +37,7 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
     { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'pDAI', name: 'Dai (Pulsechain fork copy)', decimals: 18 },
     ...MAXIMUS_POOLS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
     // Ethereum pool tokens bridged to Pulsechain (no stake of their own)
-    { address: '0x189a3CA3cC1337e85c7bC0a43b8d3457FD5AaE89', symbol: 'eDECI', name: 'Maximus Decimus from Ethereum', decimals: 8 },
-    { address: '0x8924f56df76CA9e7babB53489D7bEF4fb7caFF19', symbol: 'eLUCKY', name: 'Maximus Lucky from Ethereum', decimals: 8 },
-    { address: '0x0f3C6134F4022D85127476BC4d3787860E5C5569', symbol: 'eTRIO', name: 'Maximus Trio from Ethereum', decimals: 8 },
-    { address: '0xda073388422065Fe8D3B5921Ec2AE475Bae57BED', symbol: 'eBASE', name: 'Maximus Base from Ethereum', decimals: 8 },
+    ...BRIDGED_MAXIMUS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
   ],
 };
 

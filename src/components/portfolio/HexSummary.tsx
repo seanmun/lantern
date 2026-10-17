@@ -8,13 +8,13 @@ import { HexStatsWithPrice } from '@/hooks/useHexStats';
 import { Hexagon } from '@/components/hex/Hexagon';
 import { HexNetworkStrip } from '@/components/hex/HexNetworkStrip';
 import { LadderRow, StakeLadder } from '@/components/hex/StakeLadder';
-import { HEX_CHAIN_COLORS } from '@/components/hex/colors';
 import { MaturityCalendar } from '@/components/hex/MaturityCalendar';
 import { ForkComparison } from '@/components/hex/ForkComparison';
 import { buildIcs, downloadFile } from '@/utils/ics';
 import { StakeHistory } from '@/components/hex/StakeHistory';
 import { StakeAlerts } from '@/components/hex/StakeAlerts';
 import { StakeCard } from '@/components/hex/StakeCard';
+import { MaximusView } from '@/components/hex/MaximusView';
 import { hexDayToDate } from '@/config/hex';
 
 interface HexSummaryProps {
@@ -257,67 +257,10 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
         </div>
       )}
 
+      {/* Maximus perps, Pulsechain beside Ethereum (shown when any are held) */}
       {pools.length > 0 && (
-        <div className="overflow-x-auto">
-          <h3 className="mb-3 text-lg font-semibold text-gray-800">Maximus perpetual pools</h3>
-          <table className="w-full min-w-[760px] text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-2 pr-4 font-medium">Pool</th>
-                <th className="py-2 pr-4 text-right font-medium">Balance</th>
-                <th className="py-2 pr-4 text-right font-medium">HEX backing</th>
-                <th className="py-2 pr-4 text-right font-medium">Market value</th>
-                <th className="py-2 pr-4 text-right font-medium">vs. backing</th>
-                <th className="py-2 pr-4 text-right font-medium">Pool APY</th>
-                <th className="py-2 text-right font-medium">Cycle ends</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pools.map((a) => {
-                const p = a.pool;
-                const ratio = a.valueUSD !== undefined && p.backingValueUSD ? (a.valueUSD / p.backingValueUSD) * 100 : null;
-                return (
-                  <tr key={a.id} className="border-b border-gray-100 last:border-0">
-                    <td className="py-2 pr-4">
-                      <div className="flex items-center gap-2 font-medium text-gray-900">
-                        <span className="h-2 w-2 rounded-full" style={{ background: HEX_CHAIN_COLORS[a.chain] }} />
-                        {a.symbol}
-                      </div>
-                      <div className="text-xs text-gray-500">{chainLabel(a.chain)} · {p.cycleDays.toLocaleString()}-day cycle · {walletName(a)}</div>
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{formatHex(Number(a.balanceFormatted))}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
-                      {formatHex(p.backingHex)} HEX
-                      <div className="text-xs text-gray-500">
-                        {formatHex(p.principalBackingHex)} principal{p.backingValueUSD !== undefined && ` · ${formatUSD(p.backingValueUSD)}`}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{a.valueUSD !== undefined ? formatUSD(a.valueUSD) : '—'}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
-                      {ratio !== null ? (
-                        <span className={ratio < 100 ? 'font-medium text-green-700' : 'text-gray-900'}>
-                          {ratio < 100 ? `${(100 - ratio).toFixed(0)}% discount` : `${(ratio - 100).toFixed(0)}% premium`}
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{p.currentStake ? formatPct(p.currentStake.apy) : '—'}</td>
-                    <td className="py-2 text-right">
-                      {p.currentStake ? (
-                        <>
-                          <div className="text-gray-900">{p.currentStake.daysRemaining.toLocaleString()}d</div>
-                          <div className="text-xs text-gray-500">{formatDate(p.currentStake.endDate)}</div>
-                        </>
-                      ) : '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <p className="mt-3 text-xs text-gray-500">
-            HEX backing is the pool&apos;s staked principal plus interest earned so far, divided by token supply, so the
-            premium or discount compares like with like.
-          </p>
+        <div className="mb-2">
+          <MaximusView assets={assets} hexStats={hexStats} />
         </div>
       )}
 
