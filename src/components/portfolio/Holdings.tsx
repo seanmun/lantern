@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useState } from 'react';
+import Link from 'next/link';
 import { Asset } from '@/types';
 import { chainLabel } from '@/config/chainDisplay';
 import { groupHoldings } from '@/utils/holdings';
@@ -20,12 +21,14 @@ interface HoldingsProps {
   trustedKeys: string[];
   onTrust: (key: string) => void;
   onUntrust: (key: string) => void;
+  compact?: boolean; // dashboard preview: top rows only, links to the full page
 }
 
 /** Evidence worth showing a person (skip neutral/positive bookkeeping). */
 const evidence = (r?: TokenRiskReport) => (r?.signals ?? []).filter((s) => s.strength !== 'good');
 
 const ROWS_COLLAPSED = 15;
+const ROWS_COMPACT = 8;
 const DUST_USD = 1;
 
 const CHAIN_DOT: Record<string, string> = {
@@ -47,7 +50,7 @@ function formatAmount(value: number): string {
  * Every wallet combined: one row per asset with total balance, price, value
  * and share of the portfolio. Click a row for the per-wallet breakdown.
  */
-export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide, onUnhide, risk, autoHiddenKeys, trustedKeys, onTrust, onUntrust }: HoldingsProps) {
+export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide, onUnhide, risk, autoHiddenKeys, trustedKeys, onTrust, onUntrust, compact = false }: HoldingsProps) {
   const [showAutoHidden, setShowAutoHidden] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showHidden, setShowHidden] = useState(false);
@@ -75,13 +78,13 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
   const main = holdings.filter((h) => (h.valueUSD ?? 0) >= DUST_USD || h.kind === 'native' || h.kind === 'hex');
   const dust = holdings.length - main.length;
   const pool = showDust ? holdings : main;
-  const rows = showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
+  const rows = compact ? pool.slice(0, ROWS_COMPACT) : showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
   const walletName = (address: string) => walletNames.get(address.toLowerCase()) ?? address;
 
   return (
     <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-xl font-bold text-gray-800">All holdings</h2>
+        <h2 className="text-xl font-bold text-gray-800">{compact ? 'Top holdings' : 'All holdings'}</h2>
         <span className="text-sm text-gray-500">
           {holdings.length} assets across all wallets · {formatUSD(total)}
         </span>
@@ -227,6 +230,11 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
         </table>
       </div>
 
+      {compact ? (
+        <div className="mt-3 text-sm">
+          <Link href="/holdings" className="font-medium text-purple-700 hover:text-purple-900">View all {holdings.length} holdings →</Link>
+        </div>
+      ) : (
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
         {pool.length > ROWS_COLLAPSED && (
           <button onClick={() => setShowAll((v) => !v)} className="font-medium text-purple-700 hover:text-purple-900">
@@ -253,7 +261,8 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
           backing, on both chains; values use each part&apos;s own price, so its price is an average. Other tokens stay per chain.
         </span>
       </div>
-      {showAutoHidden && autoHiddenList.length > 0 && (
+      )}
+      {!compact && showAutoHidden && autoHiddenList.length > 0 && (
         <ul className="mt-3 divide-y divide-gray-100 rounded-xl bg-white/60 text-sm">
           {autoHiddenList.map((h) => (
             <li key={h.key} className="px-4 py-2">
@@ -276,7 +285,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
         </ul>
       )}
 
-      {showHidden && hiddenList.length > 0 && (
+      {!compact && showHidden && hiddenList.length > 0 && (
         <ul className="mt-3 divide-y divide-gray-100 rounded-xl bg-white/60 text-sm">
           {hiddenList.map((h) => (
             <li key={h.key} className="flex items-center justify-between gap-3 px-4 py-2">
