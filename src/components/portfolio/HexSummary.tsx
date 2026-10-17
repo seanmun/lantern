@@ -15,7 +15,7 @@ import { StakeHistory } from '@/components/hex/StakeHistory';
 import { StakeAlerts } from '@/components/hex/StakeAlerts';
 import { StakeCard } from '@/components/hex/StakeCard';
 import { MaximusView } from '@/components/hex/MaximusView';
-import { hexDayToDate } from '@/config/hex';
+import { MAXIMUS_TEAM_ADDRESS, hexDayToDate } from '@/config/hex';
 
 interface HexSummaryProps {
   assets: Asset[];
@@ -62,8 +62,9 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
     .filter((a): a is Asset & { pool: NonNullable<Asset['pool']> } => !!a.pool)
     .sort((a, b) => (b.valueUSD ?? 0) - (a.valueUSD ?? 0));
   const hasLiquidHex = assets.some((a) => a.type === 'token' && a.symbol === 'HEX');
+  const hasMaximus = pools.length > 0 || assets.some((a) => a.contractAddress?.toLowerCase() === MAXIMUS_TEAM_ADDRESS.toLowerCase());
 
-  if (stakes.length === 0 && pools.length === 0 && !hasLiquidHex && endedStakes.length === 0) return null;
+  if (stakes.length === 0 && !hasMaximus && !hasLiquidHex && endedStakes.length === 0) return null;
 
   const hexPrices = Object.fromEntries(hexStats.map((x) => [x.chain, x.hexPriceUSD]));
   const walletName = (a: Asset) => walletNames.get(a.walletAddress.toLowerCase()) ?? '';
@@ -257,8 +258,8 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
         </div>
       )}
 
-      {/* Maximus perps, Pulsechain beside Ethereum (shown when any are held) */}
-      {pools.length > 0 && (
+      {/* Maximus perps + TEAM, Pulsechain beside Ethereum (shown when any are held) */}
+      {hasMaximus && (
         <div className="mb-2">
           <MaximusView assets={assets} hexStats={hexStats} />
         </div>

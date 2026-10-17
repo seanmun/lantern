@@ -42,6 +42,10 @@ export const MAXIMUS_POOLS: MaximusPool[] = [
   { symbol: 'BASE', name: 'Maximus Base', address: '0xe9f84d418B008888A992Ff8c6D22389C2C3504e0', cycleDays: 369 },
 ];
 
+// Maximus TEAM: minted 1:1 for MAXI, staked to earn a share of the pools'
+// bonus yield (same address on both chains)
+export const MAXIMUS_TEAM_ADDRESS = '0xB7c9E99Da8A857cE576A830A9c19312114d9dE02';
+
 // Ethereum pool tokens bridged to Pulsechain: no stake of their own; each is
 // backed by its Ethereum pool, so it counts toward that pool's holdings
 export const BRIDGED_MAXIMUS = [

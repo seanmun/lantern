@@ -1,5 +1,6 @@
 import { EvmHandler, EvmChainConfig } from './evm';
-import { BRIDGED_MAXIMUS, HEX_ADDRESS, MAXIMUS_POOLS } from '@/config/hex';
+import { BRIDGED_MAXIMUS, HEX_ADDRESS, MAXIMUS_POOLS, MAXIMUS_TEAM_ADDRESS } from '@/config/hex';
+import { maximusTeamPositions } from './maximusTeam';
 
 /**
  * Pulsechain Handler - HEX-Focused Portfolio Tracker
@@ -22,6 +23,7 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
   rpcBatching: false, // batched calls take ~7s here vs ~0.5s unbatched
   tokenStandard: 'PRC-20',
   hex: true,
+  loadPositions: maximusTeamPositions, // staked TEAM + unclaimed TEAM rewards
   tokens: [
     { address: HEX_ADDRESS, symbol: 'HEX', name: 'HEX', decimals: 8 },
     { address: '0x95B303987A60C71504D99Aa1b13B4DA07b0790ab', symbol: 'PLSX', name: 'PulseX', decimals: 18 },
@@ -36,6 +38,7 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
     { address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', symbol: 'pWBTC', name: 'Wrapped BTC (Pulsechain fork copy)', decimals: 8 },
     { address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'pDAI', name: 'Dai (Pulsechain fork copy)', decimals: 18 },
     ...MAXIMUS_POOLS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
+    { address: MAXIMUS_TEAM_ADDRESS, symbol: 'TEAM', name: 'Maximus Team', decimals: 8 },
     // Ethereum pool tokens bridged to Pulsechain (no stake of their own)
     ...BRIDGED_MAXIMUS.map(({ address, symbol, name }) => ({ address, symbol, name, decimals: 8 })),
   ],
