@@ -68,7 +68,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
   const color = HEX_CHAIN_COLORS[s.chain];
 
   return (
-    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section id="estimator" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Hexagon size={36} />

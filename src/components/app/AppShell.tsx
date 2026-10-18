@@ -52,34 +52,76 @@ export function LanternMark({ size = 26 }: { size?: number }) {
   );
 }
 
-const NAV: NavItem[] = [
-  { href: '/', label: 'Dashboard', icon: 'home' },
-  { href: '/check', label: 'Check', icon: 'search' },
-  { href: '/holdings', label: 'Holdings', icon: 'list' },
-  { href: '/hex', label: 'HEX', icon: 'hex' },
-  { href: '/transactions', label: 'Activity', icon: 'activity' },
-  { href: '/tools', label: 'Tools', icon: 'tools' },
-  { href: '/collectibles', label: 'Collectibles', icon: 'image' },
-  { href: '/wallets', label: 'Wallets', icon: 'wallet' },
-  { href: '/status', label: 'Status', icon: 'pulse' },
-  { href: '/about', label: 'About', icon: 'info' },
-];
-// Phone tab bar: four destinations + "More" for the rest
-const TABS = NAV.slice(0, 4);
-const MORE = NAV.slice(4);
+interface NavGroup { id: string; label: string; items: (NavItem & { description: string })[] }
 
-const isActive = (pathname: string, href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
+const GROUPS: NavGroup[] = [
+  {
+    id: 'portfolio',
+    label: 'Portfolio',
+    items: [
+      { href: '/', label: 'Dashboard', icon: 'home', description: 'Net worth, the chart and your morning brief' },
+      { href: '/holdings', label: 'Holdings', icon: 'list', description: 'Every asset across your wallets' },
+      { href: '/hex', label: 'HEX & staking', icon: 'hex', description: 'Stakes, Maximus, Hedron and Icosa' },
+      { href: '/transactions', label: 'Activity', icon: 'activity', description: 'Transactions, filtered by wallet and type' },
+      { href: '/collectibles', label: 'Collectibles', icon: 'image', description: 'NFTs and Ordinals, and the frame' },
+      { href: '/wallets', label: 'Wallets', icon: 'wallet', description: 'Add, rename or remove addresses' },
+    ],
+  },
+  {
+    id: 'safety',
+    label: 'Safety',
+    items: [
+      { href: '/check', label: 'Check anything', icon: 'search', description: 'Wallets, tokens, transactions and websites' },
+      { href: '/status', label: 'Network status', icon: 'pulse', description: 'Is PulseChain down, or just one service?' },
+    ],
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    items: [
+      { href: '/tools#estimator', label: 'HEX stake estimator', icon: 'tools', description: 'What a new stake could pay' },
+      { href: '/tools#pools', label: 'Pools vs staking', icon: 'hex', description: 'Buy a Maximus perp or stake HEX yourself?' },
+      { href: '/tools#validators', label: 'Validator calculator', icon: 'pulse', description: 'Is running an ETH or PLS validator worth it?' },
+    ],
+  },
+];
+// Phone tab bar: three destinations + "More", which opens the grouped menu
+const TABS: NavItem[] = [
+  { href: '/', label: 'Dashboard', icon: 'home' },
+  { href: '/holdings', label: 'Holdings', icon: 'list' },
+  { href: '/check', label: 'Check', icon: 'search' },
+];
+
+const pathOf = (href: string) => href.split('#')[0];
+const isActive = (pathname: string, href: string) => (pathOf(href) === '/' ? pathname === '/' : pathname.startsWith(pathOf(href)));
+const groupActive = (pathname: string, g: NavGroup) => g.items.some((i) => isActive(pathname, i.href));
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const { wallets, assets, isLoading, lastUpdated, refresh, walletNames } = usePortfolioContext();
 
   // Close the "More" sheet on navigation
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reacting to route changes
     setMoreOpen(false);
+    setOpenMenu(null);
   }, [pathname]);
+
+  // Close an open dropdown on outside click or Escape
+  useEffect(() => {
+    if (!openMenu) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !(e.target as HTMLElement).closest('[data-nav-menu]')) setOpenMenu(null);
+    };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [openMenu]);
 
   const exportCsv = () =>
     downloadFile(
@@ -88,7 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       'text/csv;charset=utf-8'
     );
 
-  const moreActive = MORE.some((m) => isActive(pathname, m.href));
+  const moreActive = !TABS.some((t) => isActive(pathname, t.href));
 
   return (
     <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
@@ -101,18 +143,40 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav aria-label="Main" className="hidden min-w-0 flex-1 md:block">
-            <ul className="flex gap-1 overflow-x-auto text-sm">
-              {NAV.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={isActive(pathname, item.href) ? 'page' : undefined}
-                    className={`block whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold transition-colors ${
-                      isActive(pathname, item.href) ? 'bg-soft text-ink' : 'text-muted hover:text-ink'
+            <ul className="flex gap-1">
+              {GROUPS.map((g) => (
+                <li key={g.id} className="relative" data-nav-menu>
+                  <button
+                    type="button"
+                    onClick={() => setOpenMenu((m) => (m === g.id ? null : g.id))}
+                    aria-expanded={openMenu === g.id}
+                    aria-haspopup="true"
+                    className={`flex items-center gap-1 whitespace-nowrap rounded-full px-3.5 py-2 text-[15px] font-semibold transition-colors ${
+                      groupActive(pathname, g) || openMenu === g.id ? 'bg-soft text-ink' : 'text-muted hover:text-ink'
                     }`}
                   >
-                    {item.label}
-                  </Link>
+                    {g.label}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform ${openMenu === g.id ? 'rotate-180' : ''}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                  </button>
+                  {openMenu === g.id && (
+                    <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line bg-white p-2 shadow-xl">
+                      {g.items.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setOpenMenu(null)}
+                          aria-current={isActive(pathname, item.href) && !item.href.includes('#') ? 'page' : undefined}
+                          className="flex gap-3 rounded-xl px-3 py-2.5 hover:bg-soft"
+                        >
+                          <span className="mt-0.5 text-muted"><Icon name={item.icon} /></span>
+                          <span>
+                            <span className="block text-[15px] font-semibold text-ink">{item.label}</span>
+                            <span className="block text-[13px] text-muted">{item.description}</span>
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -159,7 +223,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Phone tab bar */}
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
-        <ul className="grid grid-cols-5">
+        <ul className="grid grid-cols-4">
           {TABS.map((item) => (
             <li key={item.href}>
               <Link
@@ -194,21 +258,31 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/20" />
           <div
-            className="absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] rounded-2xl bg-white p-2 shadow-2xl"
+            className="absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] max-h-[75vh] overflow-y-auto rounded-2xl bg-white p-2 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {MORE.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold ${
-                  isActive(pathname, item.href) ? 'bg-soft text-ink' : 'text-ink hover:bg-soft'
-                }`}
-              >
-                <Icon name={item.icon} />
-                {item.label}
-              </Link>
+            {GROUPS.map((g) => (
+              <div key={g.id} className="py-1">
+                <div className="px-4 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-muted">{g.label}</div>
+                {g.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMoreOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-base font-semibold ${
+                      isActive(pathname, item.href) && !item.href.includes('#') ? 'bg-soft text-ink' : 'text-ink hover:bg-soft'
+                    }`}
+                  >
+                    <Icon name={item.icon} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             ))}
+            <Link href="/about" onClick={() => setMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-base font-semibold text-ink hover:bg-soft">
+              <Icon name="info" />
+              About &amp; privacy
+            </Link>
             {wallets.length > 0 && (
               <button onClick={exportCsv} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-base font-semibold text-ink hover:bg-soft">
                 <Icon name="download" /> Export CSV

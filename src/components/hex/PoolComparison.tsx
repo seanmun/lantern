@@ -54,7 +54,7 @@ export function PoolComparison({ stats }: { stats: HexStatsWithPrice[] }) {
   }).sort((a, b) => a.pool.daysRemaining - b.pool.daysRemaining || a.pool.chain.localeCompare(b.pool.chain));
 
   return (
-    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section id="pools" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-5 flex items-center gap-3">
         <Hexagon size={36} />
         <div>

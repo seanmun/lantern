@@ -76,7 +76,7 @@ export function ValidatorSimulator({ holdings }: { holdings: Record<string, numb
 
   if (failed) return null;
   return (
-    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section id="validators" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-ink">Run a validator?</h2>
