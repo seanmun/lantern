@@ -33,6 +33,13 @@
   --color-info-line: #bfd0f2;
   --color-info-solid: #2f6fe4;
 
+  /* Categorical slots for part-to-whole charts (validated: CVD-separated, fixed order) */
+  --color-cat-1: #2a78d6;
+  --color-cat-2: #eb6834;
+  --color-cat-3: #1baf7a;
+  --color-cat-4: #eda100;
+  --color-cat-other: #a8a29e;
+
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
   --color-bitcoin: #f7931a;
@@ -58,6 +65,11 @@
   --color-on-accent: #09090b;
   --color-on-ink: #09090b;
   --color-mark: #8c7dff;
+  --color-cat-1: #3987e5;
+  --color-cat-2: #d95926;
+  --color-cat-3: #199e70;
+  --color-cat-4: #c98500;
+  --color-cat-other: #6f6e78;
 
   --color-good: #6fe3a8;
   --color-good-soft: #6fe3a81f;

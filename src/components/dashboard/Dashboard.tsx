@@ -305,7 +305,7 @@ function AssetRail({ holdings, total, perKey }: { holdings: Holding[]; total: nu
         </div>
         {total > 0 && <AllocationBar rows={rows} total={total} />}
         <ul>
-          {rows.map((h) => <AssetRow key={h.key} h={h} perKey={perKey} showChain={(seen.get(h.symbol) ?? 0) > 1} />)}
+          {rows.map((h, i) => <AssetRow key={h.key} h={h} color={slotColor(i)} perKey={perKey} showChain={(seen.get(h.symbol) ?? 0) > 1} />)}
         </ul>
         <Link href="/holdings" className="mx-5 mb-2 mt-1 flex h-11 items-center justify-center rounded-full bg-soft text-sm font-bold text-ink hover:bg-line">
           See all {holdings.length} holdings
@@ -316,19 +316,49 @@ function AssetRail({ holdings, total, perKey }: { holdings: Holding[]; total: nu
   );
 }
 
+// Top four holdings get their own color; everything else is "Other"
+const SLOTS = ['var(--color-cat-1)', 'var(--color-cat-2)', 'var(--color-cat-3)', 'var(--color-cat-4)'];
+const OTHER = 'var(--color-cat-other)';
+const slotColor = (i: number) => SLOTS[i] ?? OTHER;
+
 function AllocationBar({ rows, total }: { rows: Holding[]; total: number }) {
-  const top = rows.slice(0, 4);
-  const shades = ['bg-accent', 'bg-accent/70', 'bg-accent/45', 'bg-accent/25'];
+  const [hover, setHover] = useState<number | null>(null);
+  const top = rows.slice(0, SLOTS.length);
+  const rest = total - top.reduce((s, h) => s + (h.valueUSD ?? 0), 0);
+  const segments = [
+    ...top.map((h, i) => ({ key: h.key, label: h.symbol, value: h.valueUSD ?? 0, color: SLOTS[i] })),
+    ...(rest / total > 0.001 ? [{ key: 'other', label: 'Other', value: rest, color: OTHER }] : []),
+  ];
+  const share = (v: number) => `${((v / total) * 100).toFixed(v / total < 0.1 ? 1 : 0)}%`;
+  const hovered = hover !== null ? segments[hover] : null;
   return (
-    <div className="px-5 pb-3">
-      <div className="flex h-2 gap-[2px] overflow-hidden rounded-full bg-line" role="img" aria-label={`Allocation: ${top.map((h) => `${h.symbol} ${(((h.valueUSD ?? 0) / total) * 100).toFixed(0)}%`).join(', ')}`}>
-        {top.map((h, i) => <div key={h.key} className={shades[i]} style={{ width: `${((h.valueUSD ?? 0) / total) * 100}%` }} />)}
+    <div className="relative px-5 pb-3">
+      <div
+        className="flex h-2.5 gap-[2px]"
+        role="img"
+        aria-label={`Allocation: ${segments.map((g) => `${g.label} ${share(g.value)}`).join(', ')}`}
+        onPointerLeave={() => setHover(null)}
+      >
+        {segments.map((g, i) => (
+          <div
+            key={g.key}
+            className={`h-full transition-opacity first:rounded-l-full last:rounded-r-full ${hover !== null && hover !== i ? 'opacity-40' : ''}`}
+            style={{ width: `${(g.value / total) * 100}%`, minWidth: 3, background: g.color }}
+            onPointerEnter={() => setHover(i)}
+          />
+        ))}
       </div>
+      {hovered && (
+        <div role="tooltip" className="pointer-events-none absolute -top-9 left-5 z-10 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs shadow-lg">
+          <span className="font-bold text-ink">{hovered.label}</span>
+          <span className="ml-2 tabular-nums text-muted">{share(hovered.value)} · {formatUSD(hovered.value)}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-function AssetRow({ h, perKey, showChain }: { h: Holding; perKey: Map<string, [number, number][]>; showChain: boolean }) {
+function AssetRow({ h, color, perKey, showChain }: { h: Holding; color: string; perKey: Map<string, [number, number][]>; showChain: boolean }) {
   // 24h move of the whole holding, from its parts
   let delta = 0;
   let before = 0;
@@ -358,7 +388,11 @@ function AssetRow({ h, perKey, showChain }: { h: Holding; perKey: Map<string, [n
           ? <span aria-hidden className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft text-xs font-bold text-muted">NFT</span>
           : <TokenLogo src={h.imageUrl} symbol={h.symbol} size={36} />}
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-bold text-ink">{h.symbol}</span>
+          <span className="flex items-center gap-1.5 text-[15px] font-bold text-ink">
+            {/* Matches this holding's slice of the allocation bar */}
+            <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+            {h.symbol}
+          </span>
           <span className="block truncate text-[13px] text-muted">{amount}</span>
         </span>
         {spark && (
