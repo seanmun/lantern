@@ -6,6 +6,7 @@ import { PULSECHAIN_CONFIG } from './pulsechain';
 import { BASE_CONFIG } from './base';
 import { ROBINHOOD_CONFIG } from './robinhood';
 import { HEX_ADDRESS } from '@/config/hex';
+import { simulateTrade } from './honeypot';
 
 /**
  * Token risk check. Principles (agreed with the user):
@@ -149,6 +150,29 @@ async function marketEvidence(chain: string, address: string, signals: RiskSigna
   return cleared;
 }
 
+const pct = (v: number) => (v < 0.0005 ? '0%' : `${(v * 100).toFixed(v < 0.1 ? 1 : 0)}%`);
+
+/** PulseChain: Lantern's own buy-and-sell simulation (scanners don't cover the chain). */
+async function simulationEvidence(chain: string, address: string, signals: RiskSignal[]) {
+  if (chain !== 'pulsechain') return;
+  const r = await simulateTrade(address);
+  if (r.outcome === 'sell-failed' || r.outcome === 'approve-failed') {
+    signals.push({ id: 'sim-cant-sell', strength: 'strong', label: 'Simulated sale failed: you could buy this token but not sell it (honeypot)' });
+    return;
+  }
+  if (r.outcome === 'buy-failed') {
+    signals.push({ id: 'sim-cant-buy', strength: 'weak', label: 'A simulated purchase failed: trading may be switched off or restricted' });
+    return;
+  }
+  if (r.outcome === 'no-pool') return; // nothing to test against; not a risk in itself
+  const buy = r.buyTax ?? 0;
+  const sell = r.sellTax ?? 0;
+  if (sell >= 0.5) signals.push({ id: 'sim-sell-tax', strength: 'strong', label: `Simulated sell lost ${pct(sell)} to a hidden tax` });
+  else if (sell >= 0.1 || buy >= 0.1) signals.push({ id: 'sim-high-tax', strength: 'weak', label: `High trading tax: ${pct(buy)} on buys, ${pct(sell)} on sells (simulated)` });
+  else if (sell >= 0.005 || buy >= 0.005) signals.push({ id: 'sim-tax', strength: 'info', label: `Trading tax: ${pct(buy)} on buys, ${pct(sell)} on sells (simulated)` });
+  else signals.push({ id: 'sim-ok', strength: 'good', label: 'A simulated buy and sell on PulseX both went through, with no hidden tax' });
+}
+
 async function scannerEvidence(chain: string, address: string, signals: RiskSignal[]) {
   const lower = address.toLowerCase();
   const [goplus, honeypot] = await Promise.all([
@@ -184,7 +208,8 @@ function decide(signals: RiskSignal[], cleared: boolean, hadData: boolean): Risk
   // A balance for a never-used wallet is direct proof of fakery, whatever the market looks like.
   // Everything else, even "owner can change balances" (legitimately true of mint/burn-by-protocol
   // tokens like Venice's DIEM), can be outweighed by real two-way trading.
-  if (signals.some((s) => s.id === 'ghost-balance')) return 'scam';
+  // A failed sell simulation is the same kind of proof: trading volume can be the scammer's own buys.
+  if (signals.some((s) => s.id === 'ghost-balance' || s.id === 'sim-cant-sell')) return 'scam';
   if (cleared) return 'ok'; // thousands of people successfully selling outweighs scanner opinions
   if (signals.some((s) => s.strength === 'strong')) return 'scam';
   const weak = signals.filter((s) => s.strength === 'weak').length;
@@ -206,6 +231,7 @@ export async function checkToken(chain: string, address: string, extraSignals: R
     contractEvidence(chain, address, signals),
     marketEvidence(chain, address, signals),
     scannerEvidence(chain, address, signals),
+    simulationEvidence(chain, address, signals),
   ]);
   const cleared = results[1].status === 'fulfilled' && results[1].value;
   const hadData = results.some((r) => r.status === 'fulfilled') && signals.length > 0;

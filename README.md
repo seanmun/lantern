@@ -22,7 +22,7 @@ Lantern is an independent project. It is not affiliated with PulseChain, HEX or 
 - **HEX, done properly:** contract-exact interest and penalties, stake ladder and maturity calendar, a stake estimator with payout scenarios, .ics calendar export and stake alerts, and HSIs with mintable HDRN.
 - **Maximus DAO:** perps worth now versus at cycle end, TEAM staking with unclaimed rewards, and pools compared with staking directly.
 - **Hedron and Icosa:** HDRN, ICSA and WAATSA NFT stakes with earnings and penalty-free progress.
-- **Scam detection:** behavior-based token risk checks (ghost balances, honeypot-style sells, owner-controlled balances) that never flag core PulseChain tokens just for being PulseChain.
+- **Scam detection:** behavior-based token risk checks (ghost balances, owner-controlled balances, and on PulseChain a simulated buy-and-sell through PulseX that catches honeypots and hidden taxes) that never flag core PulseChain tokens just for being PulseChain. The simulator's source is in [contracts/SellSimulator.sol](contracts/SellSimulator.sol); it only ever runs inside a read-only call.
 - **Validator calculator:** what running an ETH or PLS validator pays compared with pooled staking, backtested on real data.
 - **Collectibles:** NFTs and Ordinals (including recursive inscriptions such as Quantum Cats) with floor prices, and a framed gallery on the dashboard.
 
