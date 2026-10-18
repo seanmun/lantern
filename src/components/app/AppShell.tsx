@@ -24,6 +24,7 @@ const ICONS = {
   image: 'M4 4h16v16H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
   wallet: 'M3 7h17a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h12v3M16 13.5h.01',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
@@ -52,6 +53,7 @@ export function LanternMark({ size = 26 }: { size?: number }) {
 
 const NAV: NavItem[] = [
   { href: '/', label: 'Dashboard', icon: 'home' },
+  { href: '/check', label: 'Check', icon: 'search' },
   { href: '/holdings', label: 'Holdings', icon: 'list' },
   { href: '/hex', label: 'HEX', icon: 'hex' },
   { href: '/transactions', label: 'Activity', icon: 'activity' },
