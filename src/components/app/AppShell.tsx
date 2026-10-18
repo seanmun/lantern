@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const moreActive = !TABS.some((t) => isActive(pathname, t.href));
 
   return (
-    <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="flex min-h-screen flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Dark theme: the lantern light; embers follow the day (±5% = full mood) */}
       {theme === 'dark' && <LanternLight mood={(dayChange(assets)?.pct ?? 0) / 5} />}
       {/* Top bar */}
@@ -205,9 +205,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">{children}</main>
 
-      <footer className="mx-auto mt-8 max-w-7xl border-t border-line px-4 py-6 text-sm text-muted sm:px-6">
+      <footer className="mx-auto mt-8 w-full max-w-7xl border-t border-line px-4 py-6 text-sm text-muted sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <span className="flex items-center gap-2 font-semibold text-ink"><LanternMark size={20} /> {SITE.name}</span>
           <span className="font-semibold text-ink">We will never DM you or ask for your seed phrase.</span>
