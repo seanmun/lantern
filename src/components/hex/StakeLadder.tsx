@@ -121,7 +121,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
               key={r}
               onClick={() => setRange(r)}
               aria-pressed={range === r}
-              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               {RANGE_LABEL[r]}
             </button>
@@ -134,9 +134,9 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
           </span>
         ))}
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-4 rounded-[3px] bg-gray-500" />
+          <span className="inline-block h-2.5 w-4 rounded-[3px] bg-muted" />
           served
-          <span className="ml-2 inline-block h-2.5 w-4 rounded-[3px] bg-gray-500/25" />
+          <span className="ml-2 inline-block h-2.5 w-4 rounded-[3px] bg-muted/25" />
           remaining
         </span>
       </div>
@@ -149,7 +149,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
               {ticks.map((t) => (
                 <div key={t.day} className="absolute inset-y-0 w-px bg-line" style={{ left: `${pct(t.day)}%` }} />
               ))}
-              <div className="absolute inset-y-0 w-px bg-gray-900" style={{ left: `${todayPct}%` }} />
+              <div className="absolute inset-y-0 w-px bg-ink" style={{ left: `${todayPct}%` }} />
             </div>
 
             {rows.map((row) => {
@@ -168,7 +168,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
                 <div key={row.id} className="contents">
                   <div className="flex min-w-0 flex-col justify-center py-1.5 pr-2">
                     <span className="truncate text-xs font-medium text-ink">{row.label}</span>
-                    <span className={`truncate text-[11px] ${row.status === 'late' ? 'font-medium text-amber-700' : 'text-muted'}`}>
+                    <span className={`truncate text-[11px] ${row.status === 'late' ? 'font-medium text-warn' : 'text-muted'}`}>
                       {statusLabel ?? row.sub}
                     </span>
                   </div>
@@ -203,7 +203,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
                             width: `${served * 100}%`,
                             background: color,
                             // 2px surface gap where served meets remaining
-                            boxShadow: served < 1 ? '2px 0 0 #fcfcfb' : undefined,
+                            boxShadow: served < 1 ? '2px 0 0 var(--color-surface)' : undefined,
                           }}
                         />
                       )}
@@ -225,7 +225,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
               </span>
             ))}
             <span
-              className="absolute -top-5 -translate-x-1/2 rounded bg-gray-900 px-1.5 py-0.5 text-[10px] font-medium text-white"
+              className="absolute -top-5 -translate-x-1/2 rounded bg-ink px-1.5 py-0.5 text-[10px] font-medium text-white"
               style={{ left: `${todayPct}%` }}
             >
               Today
@@ -237,7 +237,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
         {hover && (
           <div
             role="tooltip"
-            className="pointer-events-none absolute z-20 w-60 rounded-lg border border-line bg-white p-3 text-xs"
+            className="pointer-events-none absolute z-20 w-60 rounded-lg border border-line bg-surface p-3 text-xs"
             style={{
               left: Math.max(0, Math.min(hover.x + 14, hover.width - 248)),
               top: hover.y + 14,

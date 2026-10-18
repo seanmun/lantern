@@ -41,7 +41,7 @@ export function TSharePriceChart({ currentPrice }: { currentPrice: number }) {
   if (failed) return null;
   if (!history) {
     return (
-      <div className="flex h-[240px] items-center justify-center rounded-xl bg-white/50 text-sm text-muted">
+      <div className="flex h-[240px] items-center justify-center rounded-xl bg-surface/50 text-sm text-muted">
         Loading T-Share price history…
       </div>
     );

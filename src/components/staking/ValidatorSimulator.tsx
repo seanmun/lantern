@@ -76,7 +76,7 @@ export function ValidatorSimulator({ holdings }: { holdings: Record<string, numb
 
   if (failed) return null;
   return (
-    <section id="validators" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section id="validators" className="scroll-mt-24 rounded-3xl border border-line bg-surface p-6 sm:p-8">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-ink">Run a validator?</h2>
@@ -89,7 +89,7 @@ export function ValidatorSimulator({ holdings }: { holdings: Record<string, numb
               role="tab"
               aria-selected={chain === c}
               onClick={() => setChain(c)}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${chain === c ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${chain === c ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               <TokenLogo src={`/api/logos/native/${c}`} symbol={c === 'ethereum' ? 'ETH' : 'PLS'} size={16} />
               {c === 'ethereum' ? 'Ethereum' : 'PulseChain'}
@@ -227,15 +227,15 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
                 inputMode="decimal"
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-line bg-white px-3 py-2 tabular-nums"
+                className="min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 py-2 tabular-nums"
               />
               {held > 0 && (
-                <button onClick={() => setAmountInput(fmt(held, 4))} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-medium text-ink/85 ring-1 ring-line hover:bg-soft/60">
+                <button onClick={() => setAmountInput(fmt(held, 4))} className="shrink-0 rounded-lg bg-surface px-3 py-2 text-xs font-medium text-ink/85 ring-1 ring-line hover:bg-soft/60">
                   Use my {fmt(held, 2)}
                 </button>
               )}
             </div>
-            <p className={`mt-1 text-xs ${short ? 'text-amber-700' : 'text-muted'}`}>
+            <p className={`mt-1 text-xs ${short ? 'text-warn' : 'text-muted'}`}>
               {short
                 ? `Solo needs ${fmt(n.minStake)} ${n.symbol}; below that only pooled staking works.`
                 : validators > 0
@@ -339,7 +339,7 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
         </div>
       )}
 
-      <details className="group rounded-xl bg-white p-4 ring-1 ring-line">
+      <details className="group rounded-xl bg-surface p-4 ring-1 ring-line">
         <summary className="cursor-pointer select-none text-sm font-medium text-accent">What running {n.chain === 'ethereum' ? 'an ETH' : 'a PLS'} validator takes</summary>
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-ink/85">
           {n.chain === 'ethereum' ? (
@@ -367,11 +367,11 @@ function Verdict({ validators, soloNet, pooledNet, breakEvenPrice, breakEvenStak
   validators: number; soloNet: number; pooledNet: number; breakEvenPrice: number | null; breakEvenStake: number | null; price: number; symbol: string; years: number;
 }) {
   if (validators === 0) {
-    return <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Not enough for a validator of your own. Pooled staking is the way to earn on this amount.</p>;
+    return <p className="rounded-xl bg-warn-soft p-3 text-sm text-warn">Not enough for a validator of your own. Pooled staking is the way to earn on this amount.</p>;
   }
   const soloWins = soloNet > pooledNet;
   return (
-    <div className={`rounded-xl p-3 text-sm ${soloWins ? 'bg-green-50 text-green-900 ring-1 ring-green-200' : 'bg-accent/10 text-ink ring-1 ring-accent/25'}`}>
+    <div className={`rounded-xl p-3 text-sm ${soloWins ? 'bg-good-soft text-good ring-1 ring-good-line' : 'bg-accent/10 text-ink ring-1 ring-accent/25'}`}>
       <p className="font-semibold">
         {soloWins
           ? `Running your own validator comes out ${formatUSD(soloNet - pooledNet)} ahead over ${years} year${years === 1 ? '' : 's'}.`
@@ -389,7 +389,7 @@ function Option({ title, rate, earned, symbol, value, costs, net }: {
   title: string; rate: number | null; earned: number; symbol: string; value: number; costs: number; net: number | null;
 }) {
   return (
-    <div className="min-w-0 rounded-xl bg-white p-3 ring-1 ring-line">
+    <div className="min-w-0 rounded-xl bg-surface p-3 ring-1 ring-line">
       <div className="text-xs font-medium uppercase tracking-wide text-muted">{title}</div>
       <div className="mt-1 text-xl font-bold tabular-nums text-ink">{net !== null ? formatUSD(net) : '—'}</div>
       <div className="text-[11px] text-muted">net, after costs</div>
@@ -405,7 +405,7 @@ function Option({ title, rate, earned, symbol, value, costs, net }: {
 
 function Tile({ label, value, sub, emphasis }: { label: string; value: string; sub?: string; emphasis?: boolean }) {
   return (
-    <div className={`min-w-0 rounded-xl p-3 ring-1 ${emphasis ? 'bg-accent/5 ring-accent/25' : 'bg-white ring-line'}`}>
+    <div className={`min-w-0 rounded-xl p-3 ring-1 ${emphasis ? 'bg-accent/5 ring-accent/25' : 'bg-surface ring-line'}`}>
       <dt className="text-xs font-medium uppercase tracking-wide text-muted">{label}</dt>
       <dd className={`truncate text-lg font-bold tabular-nums ${emphasis ? 'text-accent' : 'text-ink'}`}>{value}</dd>
       {sub && <dd className="text-xs tabular-nums text-muted">{sub}</dd>}
@@ -430,7 +430,7 @@ function NumberField({ label, value, onChange }: { label: string; value: number;
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(Number(e.target.value.replace(/[^0-9.]/g, '')) || 0)}
-        className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm tabular-nums"
+        className="w-full rounded-lg border border-line bg-surface px-2 py-1.5 text-sm tabular-nums"
       />
     </label>
   );
@@ -444,7 +444,7 @@ function Segmented<T extends string | number>({ options, value, onChange }: { op
           key={o.value}
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
-          className={`rounded-md px-3 py-1 text-xs font-medium tabular-nums ${value === o.value ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+          className={`rounded-md px-3 py-1 text-xs font-medium tabular-nums ${value === o.value ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
         >
           {o.label}
         </button>

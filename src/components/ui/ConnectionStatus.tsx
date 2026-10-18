@@ -17,28 +17,28 @@ const statusConfig = {
     color: 'green',
     icon: '✅',
     text: 'Connected',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    textColor: 'text-green-800',
-    dotColor: 'bg-green-500'
+    bgColor: 'bg-good-soft',
+    borderColor: 'border-good-line',
+    textColor: 'text-good',
+    dotColor: 'bg-up'
   },
   connecting: {
     color: 'blue',
     icon: '🔄',
     text: 'Connecting',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-800',
-    dotColor: 'bg-blue-500'
+    bgColor: 'bg-info-soft',
+    borderColor: 'border-info-line',
+    textColor: 'text-info',
+    dotColor: 'bg-info-solid'
   },
   error: {
     color: 'red',
     icon: '❌',
     text: 'Error',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-800',
-    dotColor: 'bg-red-500'
+    bgColor: 'bg-bad-soft',
+    borderColor: 'border-bad-line',
+    textColor: 'text-bad',
+    dotColor: 'bg-down'
   },
   disconnected: {
     color: 'gray',
@@ -47,16 +47,16 @@ const statusConfig = {
     bgColor: 'bg-soft/60',
     borderColor: 'border-line',
     textColor: 'text-ink',
-    dotColor: 'bg-gray-500'
+    dotColor: 'bg-muted'
   },
   rate_limited: {
     color: 'yellow',
     icon: '⚠️',
     text: 'Rate Limited',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
-    textColor: 'text-yellow-800',
-    dotColor: 'bg-yellow-500'
+    bgColor: 'bg-warn-soft',
+    borderColor: 'border-warn-line',
+    textColor: 'text-warn',
+    dotColor: 'bg-warn-solid'
   }
 };
 
@@ -80,7 +80,7 @@ export function ConnectionStatus({ chain, status, error, lastUpdated, onRetry }:
         {status === 'error' && onRetry && (
           <button
             onClick={onRetry}
-            className="text-sm px-2 py-1 bg-white border border-red-200 rounded hover:bg-red-50 transition-colors"
+            className="text-sm px-2 py-1 bg-surface border border-bad-line rounded hover:bg-bad-soft transition-colors"
           >
             Retry
           </button>

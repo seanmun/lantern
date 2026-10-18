@@ -15,7 +15,7 @@ export default function WalletsPage() {
   return (
     <>
       <PageHeader title="Wallets" subtitle="Public addresses only. Saved in this browser, never on a server." />
-      <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+      <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
         {wallets.length > 0 && (
           <div className="mb-6">
             <WalletList wallets={wallets} totals={walletTotals} loading={walletLoading} onRename={renameWallet} onRemove={removeWallet} />

@@ -54,7 +54,7 @@ export function PoolComparison({ stats }: { stats: HexStatsWithPrice[] }) {
   }).sort((a, b) => a.pool.daysRemaining - b.pool.daysRemaining || a.pool.chain.localeCompare(b.pool.chain));
 
   return (
-    <section id="pools" className="scroll-mt-24 rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section id="pools" className="scroll-mt-24 rounded-3xl border border-line bg-surface p-6 sm:p-8">
       <div className="mb-5 flex items-center gap-3">
         <Hexagon size={36} />
         <div>
@@ -106,7 +106,7 @@ export function PoolComparison({ stats }: { stats: HexStatsWithPrice[] }) {
                   <td className="py-2 pr-4 text-right tabular-nums">{fmtPct(r.directReturn)}</td>
                   <td className="py-2 text-right tabular-nums">
                     {edge === null ? '—' : (
-                      <span className={edge >= 0 ? 'font-medium text-green-700' : 'text-ink/85'}>
+                      <span className={edge >= 0 ? 'font-medium text-good' : 'text-ink/85'}>
                         {edge >= 0 ? `Pool ${fmt(edge, 1)} pts` : `Stake ${fmt(-edge, 1)} pts`}
                       </span>
                     )}

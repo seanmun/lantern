@@ -42,7 +42,7 @@ export default function AboutPage() {
         <ul className="mt-4 space-y-3">
           {NEVER.map((line) => (
             <li key={line} className="flex gap-3 text-[17px] leading-snug text-ink">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#C92A2A" strokeWidth={2.2} strokeLinecap="round" className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--color-down)" strokeWidth={2.2} strokeLinecap="round" className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
               {line}
             </li>
           ))}
@@ -68,8 +68,8 @@ export default function AboutPage() {
           want to help? Contributions are welcome.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <a href={SITE.repoUrl} className="inline-flex h-11 items-center rounded-full bg-ink px-5 font-bold text-white hover:bg-ink/85">View the code on GitHub</a>
-          <Link href="/" className="inline-flex h-11 items-center rounded-full bg-white px-5 font-bold text-ink ring-1 ring-line hover:bg-line">Open the dashboard</Link>
+          <a href={SITE.repoUrl} className="inline-flex h-11 items-center rounded-full bg-ink px-5 font-bold text-on-ink hover:bg-ink/85">View the code on GitHub</a>
+          <Link href="/" className="inline-flex h-11 items-center rounded-full bg-surface px-5 font-bold text-ink ring-1 ring-line hover:bg-line">Open the dashboard</Link>
         </div>
       </section>
 

@@ -16,8 +16,8 @@ const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day
 const BAR: Record<string, string> = {
   active: 'bg-accent',
   pending: 'bg-muted/40',
-  matured: 'bg-[#0B7A4B]',
-  late: 'bg-amber-500',
+  matured: 'bg-up',
+  late: 'bg-warn-solid',
 };
 
 /**
@@ -37,7 +37,7 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
   const net = s.endNow.returnHex - principal;
 
   return (
-    <article className="flex min-w-0 flex-col rounded-3xl border border-line bg-white p-4 transition-colors hover:border-[#D6D6DE] sm:p-5">
+    <article className="flex min-w-0 flex-col rounded-3xl border border-line bg-surface p-4 transition-colors hover:border-line-strong sm:p-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -49,7 +49,7 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
                 HSI{s.hsi.tokenId ? ` #${s.hsi.tokenId}` : ''}
               </span>
             )}
-            {s.hdrnLoaned && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800" title="Collateral for an HDRN loan">LOANED</span>}
+            {s.hdrnLoaned && <span className="rounded bg-warn-soft px-1.5 py-0.5 text-[10px] font-semibold text-warn" title="Collateral for an HDRN loan">LOANED</span>}
           </div>
           <div className="mt-0.5 truncate text-xs text-muted">{chainLabel(asset.chain)} · {walletName}</div>
         </div>
@@ -84,7 +84,7 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
       {/* What it's worth */}
       <dl className="mt-4 grid grid-cols-2 gap-2">
         <Metric label="Principal" hex={principal} usd={usd(principal)} />
-        <Metric label="Interest earned" hex={s.interestHex} usd={usd(s.interestHex)} accent="text-green-700" prefix="+" />
+        <Metric label="Interest earned" hex={s.interestHex} usd={usd(s.interestHex)} accent="text-good" prefix="+" />
         <Metric label="Current total" hex={current} usd={usd(current)} strong />
         <Metric label="Est. total at end" hex={atEnd} usd={usd(atEnd)} note="at today's price" />
       </dl>
@@ -96,7 +96,7 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
           <span><span className="text-muted/70">APY</span> {s.apy.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</span>
           {s.hdrnMintable ? <span className="text-accent"><span className="text-accent/70">Mint</span> {fmtHex(s.hdrnMintable)} HDRN</span> : null}
         </div>
-        <div className={`mt-1.5 text-xs ${s.endNow.penaltyHex > 0 && net < 0 ? 'text-red-700' : 'text-muted'}`}>
+        <div className={`mt-1.5 text-xs ${s.endNow.penaltyHex > 0 && net < 0 ? 'text-bad' : 'text-muted'}`}>
           <span className="text-muted/70">If ended today</span> {fmtHex(s.endNow.returnHex)} HEX
           {s.endNow.penaltyHex > 0
             ? ` (−${fmtHex(s.endNow.penaltyHex)} penalty${net < 0 ? `, loses ${fmtHex(-net)} principal` : ''})`

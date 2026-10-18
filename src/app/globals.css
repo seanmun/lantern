@@ -1,12 +1,38 @@
 @import "tailwindcss";
 
 @theme {
-  /* Pulse: ink on white, one violet accent */
+  /* Light theme values; dark overrides below. Components use these tokens, never raw colors. */
+  --color-page: #ffffff;
+  --color-surface: #ffffff;
   --color-ink: #0b0b0f;
   --color-muted: #5a5a66;
   --color-line: #ededf0;
+  --color-line-strong: #d6d6de;
   --color-soft: #f4f4f6;
   --color-accent: #5b3df5;
+  --color-on-accent: #ffffff;
+  --color-on-ink: #ffffff;
+  --color-mark: #4c2bf0;
+  --color-flame: #f2a93b;
+
+  /* Status: text, soft fill, outline, solid */
+  --color-good: #0b5a38;
+  --color-good-soft: #e3f5ec;
+  --color-good-line: #b9e4cd;
+  --color-up: #0b7a4b;
+  --color-bad: #8a1c1c;
+  --color-bad-soft: #fdecec;
+  --color-bad-line: #f3bdbd;
+  --color-down: #c92a2a;
+  --color-warn: #7a4b00;
+  --color-warn-soft: #fff4db;
+  --color-warn-line: #f5d78e;
+  --color-warn-solid: #d9930d;
+  --color-info: #1e4fa8;
+  --color-info-soft: #e7eefb;
+  --color-info-line: #bfd0f2;
+  --color-info-solid: #2f6fe4;
+
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 
   --color-bitcoin: #f7931a;
@@ -15,4 +41,68 @@
   --color-base: #0052ff;
   --color-solana: #9945ff;
   --color-robinhood: #00c805;
+}
+
+/* Dark: a dark place where the lantern gives the light */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-page: #09090b;
+  /* Slightly translucent so the lantern light glows through cards */
+  --color-surface: #131318eb;
+  --color-ink: #f2f1ee;
+  --color-muted: #a6a5ae;
+  --color-line: #2a2a32;
+  --color-line-strong: #3b3b45;
+  --color-soft: #1c1c22;
+  --color-accent: #8c7dff;
+  --color-on-accent: #09090b;
+  --color-on-ink: #09090b;
+  --color-mark: #8c7dff;
+
+  --color-good: #6fe3a8;
+  --color-good-soft: #6fe3a81f;
+  --color-good-line: #6fe3a845;
+  --color-up: #3dd68c;
+  --color-bad: #ff9a9a;
+  --color-bad-soft: #ff6b6b1f;
+  --color-bad-line: #ff6b6b45;
+  --color-down: #ff6b6b;
+  --color-warn: #f5c96f;
+  --color-warn-soft: #f5c96f1f;
+  --color-warn-line: #f5c96f45;
+  --color-warn-solid: #e0a21b;
+  --color-info: #9cc0ff;
+  --color-info-soft: #8fb8ff1f;
+  --color-info-line: #8fb8ff45;
+  --color-info-solid: #4c8dff;
+}
+
+/* Lantern flames (see components/ui/Flame.tsx) and the Check page's scanning light */
+@keyframes flame-flicker {
+  0%, 100% { transform: scale(1, 1); opacity: 1; }
+  30% { transform: scale(0.97, 1.04); opacity: 0.93; }
+  60% { transform: scale(1.03, 0.97); opacity: 1; }
+}
+@keyframes flame-nervous {
+  0%, 100% { transform: scale(1, 1); opacity: 1; }
+  20% { transform: scale(0.94, 1.06); opacity: 0.8; }
+  45% { transform: scale(1.04, 0.95); opacity: 1; }
+  70% { transform: scale(0.96, 1.03); opacity: 0.85; }
+}
+@keyframes flame-gutter {
+  0%, 100% { opacity: 1; }
+  18% { opacity: 0.45; }
+  24% { opacity: 0.95; }
+  58% { opacity: 0.6; }
+}
+@keyframes lantern-sweep {
+  from { transform: translateX(-60%); }
+  to { transform: translateX(160%); }
+}
+.flame-lit { transform-origin: 50% 90%; animation: flame-flicker 2.6s ease-in-out infinite; }
+.flame-warn { transform-origin: 50% 90%; animation: flame-nervous 1.1s ease-in-out infinite; }
+.flame-danger { transform-origin: 50% 90%; animation: flame-gutter 1.6s steps(1, end) infinite; }
+.lantern-sweep { animation: lantern-sweep 1.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .flame-lit, .flame-warn, .flame-danger, .lantern-sweep { animation: none; }
 }

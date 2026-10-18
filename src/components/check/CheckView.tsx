@@ -12,6 +12,7 @@ import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
 import { groupHoldings } from '@/utils/holdings';
 import { TokenLogo } from '@/components/ui/TokenLogo';
+import { Flame } from '@/components/ui/Flame';
 import { usePortfolioContext } from '@/components/app/PortfolioProvider';
 
 const EXPLORERS: Record<string, { tx: (h: string) => string; address: (a: string) => string }> = {
@@ -21,10 +22,10 @@ const EXPLORERS: Record<string, { tx: (h: string) => string; address: (a: string
 };
 
 const VERDICT: Record<CheckVerdict, { title: string; body: string; tone: string; icon: 'check' | 'alert' | 'x' | 'question' }> = {
-  trusted: { title: 'Core coin', body: 'One of the chain’s core tokens. Lantern never flags these.', tone: 'bg-[#E3F5EC] text-[#0B5A38] ring-[#B9E4CD]', icon: 'check' },
-  ok: { title: 'No red flags found', body: 'The contract and its trading look normal. This is a safety check, not a judgement on whether it’s a good investment.', tone: 'bg-[#E3F5EC] text-[#0B5A38] ring-[#B9E4CD]', icon: 'check' },
-  suspicious: { title: 'Warning signs', body: 'Several things about this token look off. Be careful before buying, approving or interacting with it.', tone: 'bg-[#FFF4DB] text-[#7A4B00] ring-[#F5D78E]', icon: 'alert' },
-  scam: { title: 'Likely a scam', body: 'Lantern found strong evidence this token is fake or a trap. Don’t buy it, approve it, or try to sell it on a site it links to.', tone: 'bg-[#FDECEC] text-[#8A1C1C] ring-[#F3BDBD]', icon: 'x' },
+  trusted: { title: 'Core coin', body: 'One of the chain’s core tokens. Lantern never flags these.', tone: 'bg-good-soft text-good ring-good-line', icon: 'check' },
+  ok: { title: 'No red flags found', body: 'The contract and its trading look normal. This is a safety check, not a judgement on whether it’s a good investment.', tone: 'bg-good-soft text-good ring-good-line', icon: 'check' },
+  suspicious: { title: 'Warning signs', body: 'Several things about this token look off. Be careful before buying, approving or interacting with it.', tone: 'bg-warn-soft text-warn ring-warn-line', icon: 'alert' },
+  scam: { title: 'Likely a scam', body: 'Lantern found strong evidence this token is fake or a trap. Don’t buy it, approve it, or try to sell it on a site it links to.', tone: 'bg-bad-soft text-bad ring-bad-line', icon: 'x' },
   unknown: { title: 'Not enough data', body: 'There isn’t enough trading or contract information to judge this token either way.', tone: 'bg-soft text-ink ring-line', icon: 'question' },
 };
 
@@ -84,9 +85,9 @@ export function CheckView() {
           placeholder="Address, token, transaction or website"
           autoComplete="off"
           spellCheck={false}
-          className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-white px-5 font-mono text-[15px] text-ink placeholder:font-sans placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
+          className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-5 font-mono text-[15px] text-ink placeholder:font-sans placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
         />
-        <button type="submit" className="h-14 rounded-2xl bg-ink px-7 text-base font-bold text-white hover:bg-ink/85">Check</button>
+        <button type="submit" className="h-14 rounded-2xl bg-ink px-7 text-base font-bold text-on-ink hover:bg-ink/85">Check</button>
       </form>
 
       {!q && (
@@ -98,7 +99,14 @@ export function CheckView() {
         </div>
       )}
 
-      {state.loading && <div className="rounded-3xl bg-soft p-8 text-center text-muted">Looking across PulseChain, Ethereum, Base and more…</div>}
+      {state.loading && (
+        <div className="relative overflow-hidden rounded-3xl bg-soft p-8 text-center text-muted" role="status">
+          {/* The lantern's light sweeping over the chains while we look */}
+          <div aria-hidden="true" className="lantern-sweep pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-transparent via-flame/25 to-transparent" />
+          <Flame state="lit" size={40} className="mx-auto mb-3" />
+          Looking across PulseChain, Ethereum, Base and more…
+        </div>
+      )}
       {!state.loading && state.result && state.q === q && <Result result={state.result} />}
     </div>
   );
@@ -120,19 +128,20 @@ function Result({ result }: { result: CheckResult }) {
   }
 }
 
+// Verdicts wear the lantern's flame: lit when safe, nervous when unsure, red and guttering when not
+const FLAME_FOR = { check: 'lit', alert: 'warn', x: 'danger', question: 'out' } as const;
 function VerdictIcon({ icon }: { icon: 'check' | 'alert' | 'x' | 'question' }) {
-  const d = { check: 'M5 12.5l4.5 4.5L19 7.5', alert: 'M12 8v5M12 16.5h.01M10.3 3.9L2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z', x: 'M6 6l12 12M18 6L6 18', question: 'M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01' }[icon];
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7 shrink-0" aria-hidden="true"><path d={d} /></svg>;
+  return <Flame state={FLAME_FOR[icon]} size={34} />;
 }
 
-const SIGNAL_DOT: Record<CheckSignal['strength'], string> = { strong: 'bg-[#C92A2A]', weak: 'bg-amber-500', info: 'bg-muted/50', good: 'bg-[#0B7A4B]' };
+const SIGNAL_DOT: Record<CheckSignal['strength'], string> = { strong: 'bg-down', weak: 'bg-warn-solid', info: 'bg-muted/50', good: 'bg-up' };
 
 function TokenCard({ t }: { t: TokenCheck }) {
   const isCore = t.verdict === 'trusted';
   // A non-core fork copy leads with "not the original"; the contract check becomes the second line
   const copy = t.forkCopy && !isCore && t.verdict !== 'scam';
   const v = copy
-    ? { title: `Not the real ${t.forkCopy!.ethereumSymbol}`, body: `This is PulseChain’s copy of an Ethereum token. Contract check: ${VERDICT[t.verdict].title.toLowerCase()}.`, tone: 'bg-[#FFF4DB] text-[#7A4B00] ring-[#F5D78E]', icon: 'alert' as const }
+    ? { title: `Not the real ${t.forkCopy!.ethereumSymbol}`, body: `This is PulseChain’s copy of an Ethereum token. Contract check: ${VERDICT[t.verdict].title.toLowerCase()}.`, tone: 'bg-warn-soft text-warn ring-warn-line', icon: 'alert' as const }
     : VERDICT[t.verdict];
   return (
     <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-label={`${t.symbol} on ${chainLabel(t.chain)}`}>
@@ -233,7 +242,7 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
         </div>
         {tracked
           ? <Link href="/" className="inline-flex h-11 items-center rounded-full bg-soft px-5 text-sm font-bold text-ink hover:bg-line">In your wallets · open dashboard</Link>
-          : <button type="button" onClick={() => addWallet(address)} className="h-11 rounded-full bg-ink px-5 text-sm font-bold text-white hover:bg-ink/85">Track this wallet</button>}
+          : <button type="button" onClick={() => addWallet(address)} className="h-11 rounded-full bg-ink px-5 text-sm font-bold text-on-ink hover:bg-ink/85">Track this wallet</button>}
       </div>
       {stakes.length > 0 && (
         <p className="rounded-2xl bg-soft p-4 text-[15px] text-ink">
@@ -271,9 +280,9 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
 }
 
 const BAND = {
-  exposed: { label: 'Exposed', tone: 'text-[#8A1C1C]', ring: '#C92A2A' },
-  partial: { label: 'Partly private', tone: 'text-[#7A4B00]', ring: '#D9930D' },
-  private: { label: 'Private', tone: 'text-[#0B5A38]', ring: '#0B7A4B' },
+  exposed: { label: 'Exposed', tone: 'text-bad', ring: 'var(--color-down)' },
+  partial: { label: 'Partly private', tone: 'text-warn', ring: 'var(--color-warn-solid)' },
+  private: { label: 'Private', tone: 'text-good', ring: 'var(--color-up)' },
 };
 
 /** How identifiable this wallet is, and what would improve it. */
@@ -319,7 +328,7 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
             <ul className="space-y-3">
               {result.factors.map((f) => (
                 <li key={f.id} className="flex gap-3 border-t border-line pt-3">
-                  <span className={`w-12 shrink-0 text-right font-extrabold tabular-nums ${f.impact < 0 ? 'text-[#8A1C1C]' : 'text-[#0B5A38]'}`}>{f.impact > 0 ? '+' : '−'}{Math.abs(f.impact)}</span>
+                  <span className={`w-12 shrink-0 text-right font-extrabold tabular-nums ${f.impact < 0 ? 'text-bad' : 'text-good'}`}>{f.impact > 0 ? '+' : '−'}{Math.abs(f.impact)}</span>
                   <div className="min-w-0 text-[15px]">
                     <p className="text-ink">{f.label}</p>
                     {f.fix && <p className="mt-0.5 text-muted"><span className="font-semibold text-ink">Improve: </span>{f.fix}</p>}
@@ -336,8 +345,8 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
 }
 
 const RISK_STYLE: Record<ApprovalItem['risk'], { label: string; tone: string }> = {
-  high: { label: 'High risk', tone: 'bg-[#FDECEC] text-[#8A1C1C]' },
-  medium: { label: 'Worth a look', tone: 'bg-[#FFF4DB] text-[#7A4B00]' },
+  high: { label: 'High risk', tone: 'bg-bad-soft text-bad' },
+  medium: { label: 'Worth a look', tone: 'bg-warn-soft text-warn' },
   low: { label: 'Low risk', tone: 'bg-soft text-muted' },
 };
 
@@ -369,7 +378,7 @@ function ApprovalsPanel({ address }: { address: string }) {
       {!report && <div className="rounded-2xl bg-soft p-5 text-center text-muted">Reading this wallet&apos;s approval history on PulseChain and Ethereum…</div>}
       {report && (
         <>
-          <div className={`rounded-2xl p-4 text-[15px] ${flagged.some((i) => i.risk === 'high') ? 'bg-[#FDECEC] text-[#8A1C1C]' : flagged.length ? 'bg-[#FFF4DB] text-[#7A4B00]' : 'bg-[#E3F5EC] text-[#0B5A38]'}`}>
+          <div className={`rounded-2xl p-4 text-[15px] ${flagged.some((i) => i.risk === 'high') ? 'bg-bad-soft text-bad' : flagged.length ? 'bg-warn-soft text-warn' : 'bg-good-soft text-good'}`}>
             <strong>{items.length} open approval{items.length === 1 ? '' : 's'}</strong>
             {items.length > 0 && <>, {unlimited} unlimited. </>}
             {flagged.length === 0 ? ' Nothing looks dangerous.' : ` ${flagged.length} worth reviewing.`}
@@ -419,9 +428,9 @@ function ApprovalsPanel({ address }: { address: string }) {
 }
 
 const SITE_VERDICT: Record<SiteCheck['verdict'], { title: (s: SiteCheck) => string; tone: string; icon: 'check' | 'alert' | 'x' | 'question' }> = {
-  official: { title: (s) => `The real ${s.brand}`, tone: 'bg-[#E3F5EC] text-[#0B5A38] ring-[#B9E4CD]', icon: 'check' },
-  phishing: { title: (s) => (s.brand ? `Fake ${s.brand} site` : 'Known phishing site'), tone: 'bg-[#FDECEC] text-[#8A1C1C] ring-[#F3BDBD]', icon: 'x' },
-  caution: { title: () => 'Be careful', tone: 'bg-[#FFF4DB] text-[#7A4B00] ring-[#F5D78E]', icon: 'alert' },
+  official: { title: (s) => `The real ${s.brand}`, tone: 'bg-good-soft text-good ring-good-line', icon: 'check' },
+  phishing: { title: (s) => (s.brand ? `Fake ${s.brand} site` : 'Known phishing site'), tone: 'bg-bad-soft text-bad ring-bad-line', icon: 'x' },
+  caution: { title: () => 'Be careful', tone: 'bg-warn-soft text-warn ring-warn-line', icon: 'alert' },
   unknown: { title: () => 'No warnings found', tone: 'bg-soft text-ink ring-line', icon: 'question' },
 };
 
@@ -449,9 +458,9 @@ function SiteCard({ s }: { s: SiteCheck }) {
 }
 
 const STATUS = {
-  success: { label: 'Succeeded', tone: 'bg-[#E3F5EC] text-[#0B5A38] ring-[#B9E4CD]', icon: 'check' as const },
-  failed: { label: 'Failed', tone: 'bg-[#FDECEC] text-[#8A1C1C] ring-[#F3BDBD]', icon: 'x' as const },
-  pending: { label: 'Pending', tone: 'bg-[#FFF4DB] text-[#7A4B00] ring-[#F5D78E]', icon: 'question' as const },
+  success: { label: 'Succeeded', tone: 'bg-good-soft text-good ring-good-line', icon: 'check' as const },
+  failed: { label: 'Failed', tone: 'bg-bad-soft text-bad ring-bad-line', icon: 'x' as const },
+  pending: { label: 'Pending', tone: 'bg-warn-soft text-warn ring-warn-line', icon: 'question' as const },
 };
 
 function TxCard({ tx }: { tx: TxCheck }) {

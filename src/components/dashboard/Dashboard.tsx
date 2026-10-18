@@ -7,6 +7,7 @@ import { chainLabel } from '@/config/chainDisplay';
 import { Holding, groupHoldings } from '@/utils/holdings';
 import { formatUSD } from '@/utils/prices';
 import { morningBrief } from '@/utils/brief';
+import { dayChange } from '@/utils/dayChange';
 import { HistoryRange, PortfolioPoint, priceKeyOf, usePortfolioHistory } from '@/hooks/usePortfolioHistory';
 import { artByFloor } from '@/hooks/useFeaturedArt';
 import { Artwork, PaintingFrame } from '@/components/overview/PaintingFrame';
@@ -26,8 +27,8 @@ const RANGES: { key: HistoryRange; label: string; since: string; days: number }[
   { key: '1Y', label: '1Y', since: 'Past year', days: 365 },
   { key: 'ALL', label: 'All', since: 'All time', days: Infinity },
 ];
-const UP = '#0B7A4B';
-const DOWN = '#C92A2A';
+const UP = 'var(--color-up)';
+const DOWN = 'var(--color-down)';
 const RAIL_ROWS = 8;
 
 const signed = (v: number) => `${v >= 0 ? '+' : '−'}${formatUSD(Math.abs(v))}`;
@@ -52,18 +53,6 @@ function pickArtworks(assets: Asset[], isFeatured: (a: Asset) => boolean): Artwo
     });
 }
 
-/** 24h move in USD from assets whose price source reports it. */
-function dayChange(assets: Asset[]) {
-  let delta = 0;
-  let previous = 0;
-  for (const a of assets) {
-    if (a.valueUSD === undefined || a.change24hPct === undefined || a.change24hPct <= -100) continue;
-    const before = a.valueUSD / (1 + a.change24hPct / 100);
-    delta += a.valueUSD - before;
-    previous += before;
-  }
-  return previous > 0 ? { delta, pct: (delta / previous) * 100 } : null;
-}
 
 /**
  * The dashboard: one number, one chart, a short brief, what's earning, and
@@ -136,7 +125,7 @@ export function Dashboard({ assets, isLoading, isFeatured, autoHiddenCount }: Da
                   type="button"
                   onClick={() => setRange(r.key)}
                   aria-pressed={range === r.key}
-                  className={`h-10 rounded-full px-4 text-sm font-bold transition-colors ${range === r.key ? 'bg-accent text-white' : 'bg-soft text-ink hover:bg-line'}`}
+                  className={`h-10 rounded-full px-4 text-sm font-bold transition-colors ${range === r.key ? 'bg-accent text-on-accent' : 'bg-soft text-ink hover:bg-line'}`}
                 >
                   {r.label}
                 </button>
@@ -218,12 +207,12 @@ function ValueChart({ points, color, loading, hover, onHover }: {
       onPointerDown={move}
       onPointerLeave={() => onHover(null)}
     >
-      <line x1="0" x2={W} y1={geometry.baseY} y2={geometry.baseY} stroke="#C9C9D1" strokeWidth="1.5" strokeDasharray="2 6" vectorEffect="non-scaling-stroke" />
+      <line x1="0" x2={W} y1={geometry.baseY} y2={geometry.baseY} stroke="var(--color-line-strong)" strokeWidth="1.5" strokeDasharray="2 6" vectorEffect="non-scaling-stroke" />
       <path d={geometry.d} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       {hp && (
         <>
-          <line x1={geometry.x(hp.t)} x2={geometry.x(hp.t)} y1="0" y2={H} stroke="#9A9AA6" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <circle cx={geometry.x(hp.t)} cy={geometry.y(hp.value)} r="5" fill={color} stroke="#fff" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <line x1={geometry.x(hp.t)} x2={geometry.x(hp.t)} y1="0" y2={H} stroke="var(--color-muted)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <circle cx={geometry.x(hp.t)} cy={geometry.y(hp.value)} r="5" fill={color} stroke="var(--color-surface)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
         </>
       )}
     </svg>
@@ -283,7 +272,7 @@ function Earning({ assets }: { assets: Asset[] }) {
 
 function EarnCard({ href, title, value, gain, progress, note }: { href: string; title: string; value: string; gain: string; progress?: number; note: string }) {
   return (
-    <Link href={href} className="block rounded-[20px] border border-line p-5 transition-colors hover:border-[#D6D6DE] hover:bg-soft/40">
+    <Link href={href} className="block rounded-[20px] border border-line p-5 transition-colors hover:border-line-strong hover:bg-soft/40">
       <div className="text-sm font-semibold text-muted">{title}</div>
       <div className="mt-1.5 text-3xl font-extrabold tracking-tight tabular-nums text-ink">{value}</div>
       <div className="mt-0.5 text-sm font-semibold" style={{ color: UP }}>{gain}</div>
@@ -379,7 +368,7 @@ function AssetRow({ h, perKey, showChain }: { h: Holding; perKey: Map<string, [n
           {change !== null && (
             <span
               className="mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-bold tabular-nums"
-              style={{ background: up ? '#E3F5EC' : '#FDECEC', color: up ? UP : DOWN }}
+              style={{ background: up ? 'var(--color-good-soft)' : 'var(--color-bad-soft)', color: up ? UP : DOWN }}
             >
               {up ? '+' : '−'}{Math.abs(change).toFixed(1)}%
             </span>

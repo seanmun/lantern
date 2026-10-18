@@ -124,7 +124,7 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
                 key={r}
                 onClick={() => setRange(r)}
                 aria-pressed={range === r}
-                className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+                className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
               >
                 {r === 'all' ? 'All' : r.toUpperCase()}
               </button>
@@ -138,14 +138,14 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
           <svg width={width} height={HEIGHT} role="img" aria-label={`${title}, ${fmtDate(startDay)} to ${fmtDate(endDay)}`}>
             {yTicks.map((t) => (
               <g key={t}>
-                <line x1={M.left} x2={width - M.right} y1={y(t)} y2={y(t)} stroke="#e5e7eb" strokeWidth={1} />
-                <text x={M.left - 6} y={y(t)} dy="0.32em" textAnchor="end" className="fill-gray-500 text-[10px] tabular-nums">
+                <line x1={M.left} x2={width - M.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeWidth={1} />
+                <text x={M.left - 6} y={y(t)} dy="0.32em" textAnchor="end" className="fill-muted text-[10px] tabular-nums">
                   {formatAxis(t)}
                 </text>
               </g>
             ))}
             {xTicks.map((t) => (
-              <text key={t.label} x={x(t.day)} y={HEIGHT - 6} textAnchor="middle" className="fill-gray-500 text-[10px] tabular-nums">
+              <text key={t.label} x={x(t.day)} y={HEIGHT - 6} textAnchor="middle" className="fill-muted text-[10px] tabular-nums">
                 {t.label}
               </text>
             ))}
@@ -165,15 +165,15 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
                   {single && !hasGap && <path d={`${d}L${x(last.day).toFixed(1)},${y(0)}L${x(s.points[0].day).toFixed(1)},${y(0)}Z`} fill={s.color} fillOpacity={0.1} />}
                   <path d={d} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
                   {/* End marker: the latest value, visible even when isolated after a gap */}
-                  <circle cx={x(last.day)} cy={y(last.value)} r={4} fill={s.color} stroke="#fcfcfb" strokeWidth={2} />
+                  <circle cx={x(last.day)} cy={y(last.value)} r={4} fill={s.color} stroke="var(--color-surface)" strokeWidth={2} />
                 </g>
               );
             })}
 
             {reference && (
               <>
-                <line x1={M.left} x2={width - M.right} y1={y(reference.value)} y2={y(reference.value)} stroke="#111827" strokeWidth={1} strokeDasharray="4 3" />
-                <text x={width - M.right} y={y(reference.value) - 5} textAnchor="end" className="fill-gray-900 text-[10px] font-semibold">
+                <line x1={M.left} x2={width - M.right} y1={y(reference.value)} y2={y(reference.value)} stroke="var(--color-ink)" strokeWidth={1} strokeDasharray="4 3" />
+                <text x={width - M.right} y={y(reference.value) - 5} textAnchor="end" className="fill-muted text-[10px] font-semibold">
                   {reference.label}
                 </text>
               </>
@@ -181,11 +181,11 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
 
             {hoverDay !== null && (
               <>
-                <line x1={x(hoverDay)} x2={x(hoverDay)} y1={M.top} y2={M.top + plotH} stroke="#9ca3af" strokeWidth={1} />
+                <line x1={x(hoverDay)} x2={x(hoverDay)} y1={M.top} y2={M.top + plotH} stroke="var(--color-muted)" strokeWidth={1} />
                 {visible.map((s) => {
                   const v = valueAt(s.points, hoverDay);
                   return v === undefined ? null : (
-                    <circle key={s.key} cx={x(hoverDay)} cy={y(v)} r={4} fill={s.color} stroke="#fcfcfb" strokeWidth={2} />
+                    <circle key={s.key} cx={x(hoverDay)} cy={y(v)} r={4} fill={s.color} stroke="var(--color-surface)" strokeWidth={2} />
                   );
                 })}
               </>
@@ -198,7 +198,7 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
         {hoverDay !== null && (
           <div
             role="tooltip"
-            className="pointer-events-none absolute top-2 z-10 rounded-lg border border-line bg-white px-3 py-2 text-xs shadow-lg"
+            className="pointer-events-none absolute top-2 z-10 rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-lg"
             style={{ left: Math.max(0, Math.min(x(hoverDay) + 10, width - 190)) }}
           >
             <div className="text-muted">{fmtDate(hoverDay)} · day {hoverDay.toLocaleString()}</div>

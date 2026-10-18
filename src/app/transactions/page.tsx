@@ -12,11 +12,11 @@ const TYPE_LABEL: Record<TxType, string> = {
   receive: 'Received', send: 'Sent', swap: 'Swap', stake: 'Staking', approval: 'Approval', contract: 'Contract', nft: 'NFT',
 };
 const TYPE_STYLE: Record<TxType, { icon: string; className: string }> = {
-  receive: { icon: '↓', className: 'bg-green-100 text-green-800' },
-  send: { icon: '↑', className: 'bg-orange-100 text-orange-800' },
-  swap: { icon: '⇄', className: 'bg-blue-100 text-blue-800' },
-  stake: { icon: '⬡', className: 'bg-pink-100 text-pink-800' },
-  approval: { icon: '✓', className: 'bg-amber-100 text-amber-800' },
+  receive: { icon: '↓', className: 'bg-good-soft text-good' },
+  send: { icon: '↑', className: 'bg-warn-soft text-warn' },
+  swap: { icon: '⇄', className: 'bg-info-soft text-info' },
+  stake: { icon: '⬡', className: 'bg-accent/15 text-accent' },
+  approval: { icon: '✓', className: 'bg-warn-soft text-warn' },
   contract: { icon: '⚙', className: 'bg-soft text-ink/85' },
   nft: { icon: '▣', className: 'bg-accent/10 text-accent' },
 };
@@ -117,7 +117,7 @@ export default function TransactionsPage() {
     );
   }
 
-  const select = 'w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto';
+  const select = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto';
 
   return (
     <>
@@ -137,7 +137,7 @@ export default function TransactionsPage() {
           <option value="all">All types</option>
           {(Object.keys(TYPE_LABEL) as TxType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
         </select>
-        <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-ink/85 ring-1 ring-line">
+        <label className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm text-ink/85 ring-1 ring-line">
           <input type="checkbox" checked={hideSpam} onChange={(e) => setHideSpam(e.target.checked)} className="accent-accent" />
           Hide airdrop spam
         </label>
@@ -149,7 +149,7 @@ export default function TransactionsPage() {
         </ul>
       )}
 
-      <section className="rounded-2xl border border-line bg-white">
+      <section className="rounded-2xl border border-line bg-surface">
         {initialLoading && txs.length === 0 ? (
           <p className="p-6 text-sm text-muted">Loading transactions…</p>
         ) : groups.length === 0 ? (
@@ -157,7 +157,7 @@ export default function TransactionsPage() {
         ) : (
           groups.map((g) => (
             <div key={g.day}>
-              <h2 className="sticky top-16 z-10 border-b border-line bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted backdrop-blur sm:px-6">{g.day}</h2>
+              <h2 className="sticky top-16 z-10 border-b border-line bg-surface/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted backdrop-blur sm:px-6">{g.day}</h2>
               <ul className="divide-y divide-line">
                 {g.items.map((tx) => <TxRow key={`${tx.walletId}:${tx.id}`} tx={tx} walletName={walletNames.get(tx.walletId) ?? ''} symbolOf={symbolOf} priceOf={(t) => prices.get(transferKey(tx.chain, t.contract))} />)}
               </ul>
@@ -175,7 +175,7 @@ export default function TransactionsPage() {
           <button
             onClick={loadMore}
             disabled={loading}
-            className="rounded-xl bg-ink px-5 py-2.5 font-bold text-white hover:bg-ink/85 disabled:opacity-60"
+            className="rounded-xl bg-ink px-5 py-2.5 font-bold text-on-ink hover:bg-ink/85 disabled:opacity-60"
           >
             {loading ? 'Loading…' : 'Load more'}
           </button>
@@ -220,10 +220,10 @@ function TxRow({ tx, walletName, symbolOf, priceOf }: {
         <div className="flex items-start justify-between gap-3">
           <p className="min-w-0 break-words text-sm font-medium text-ink">
             {title}
-            {tx.status === 'failed' && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-800">FAILED</span>}
+            {tx.status === 'failed' && <span className="ml-2 rounded bg-bad-soft px-1.5 py-0.5 text-[10px] font-semibold text-bad">FAILED</span>}
           </p>
           {value !== 0 && (
-            <span className={`shrink-0 text-sm font-semibold tabular-nums ${neutral ? 'text-muted' : value > 0 ? 'text-green-700' : 'text-ink'}`} title="At today's prices">
+            <span className={`shrink-0 text-sm font-semibold tabular-nums ${neutral ? 'text-muted' : value > 0 ? 'text-good' : 'text-ink'}`} title="At today's prices">
               {neutral ? '' : value > 0 ? '+' : '−'}{formatUSD(Math.abs(value))}
             </span>
           )}

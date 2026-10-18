@@ -33,11 +33,11 @@ const ROWS_COMPACT = 8;
 const DUST_USD = 1;
 
 const CHAIN_DOT: Record<string, string> = {
-  bitcoin: 'bg-orange-500',
-  ethereum: 'bg-blue-500',
+  bitcoin: 'bg-warn-solid',
+  ethereum: 'bg-info-solid',
   pulsechain: 'bg-pink-500',
   base: 'bg-accent',
-  robinhood: 'bg-green-500',
+  robinhood: 'bg-up',
   solana: 'bg-violet-500',
 };
 
@@ -83,7 +83,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
   const walletName = (address: string) => walletNames.get(address.toLowerCase()) ?? address;
 
   return (
-    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl font-bold text-ink">{compact ? 'Top holdings' : 'All holdings'}</h2>
         <span className="text-sm text-muted">
@@ -128,7 +128,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
                           <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
                             {h.chains.map((c) => (
                               <span key={c} className="flex items-center gap-1">
-                                <span className={`h-1.5 w-1.5 rounded-full ${CHAIN_DOT[c] ?? 'bg-gray-400'}`} />
+                                <span className={`h-1.5 w-1.5 rounded-full ${CHAIN_DOT[c] ?? 'bg-muted'}`} />
                                 {chainLabel(c)}
                               </span>
                             ))}
@@ -137,7 +137,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
                               const key = tokenKey(h.parts[0].asset);
                               const r = risk.get(key);
                               if (r?.verdict !== 'suspicious' || trustedKeys.includes(key)) return null;
-                              return <span className="rounded bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800">⚠ Suspicious</span>;
+                              return <span className="rounded bg-warn-soft px-1.5 text-[10px] font-semibold text-warn">⚠ Suspicious</span>;
                             })()}
                           </div>
                         </div>
@@ -175,7 +175,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
                               {shown.length > 0 && (
                                 <ul className="mt-1 list-disc space-y-0.5 pl-4">
                                   {shown.map((x) => (
-                                    <li key={x.id} className={x.strength === 'strong' ? 'text-red-700' : x.strength === 'weak' ? 'text-amber-800' : 'text-muted'}>{x.label}</li>
+                                    <li key={x.id} className={x.strength === 'strong' ? 'text-bad' : x.strength === 'weak' ? 'text-warn' : 'text-muted'}>{x.label}</li>
                                   ))}
                                 </ul>
                               )}
@@ -184,7 +184,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
                           <div>
                             <button
                               onClick={() => { onHide(key); setExpanded(null); }}
-                              className="font-medium text-red-700 hover:text-red-900"
+                              className="font-medium text-bad hover:text-bad"
                             >
                               Hide this token (spam / scam)
                             </button>
@@ -263,7 +263,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
       </div>
       )}
       {!compact && showAutoHidden && autoHiddenList.length > 0 && (
-        <ul className="mt-3 divide-y divide-line rounded-xl bg-white text-sm">
+        <ul className="mt-3 divide-y divide-line rounded-xl bg-surface text-sm">
           {autoHiddenList.map((h) => (
             <li key={h.key} className="px-4 py-2">
               <div className="flex items-center justify-between gap-3">
@@ -277,7 +277,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
               </div>
               <ul className="mt-1 list-disc pl-5 text-xs">
                 {evidence(risk.get(h.key)).map((x) => (
-                  <li key={x.id} className={x.strength === 'strong' ? 'text-red-700' : x.strength === 'weak' ? 'text-amber-800' : 'text-muted'}>{x.label}</li>
+                  <li key={x.id} className={x.strength === 'strong' ? 'text-bad' : x.strength === 'weak' ? 'text-warn' : 'text-muted'}>{x.label}</li>
                 ))}
               </ul>
             </li>
@@ -286,7 +286,7 @@ export function Holdings({ assets, walletNames, hiddenAssets, hiddenKeys, onHide
       )}
 
       {!compact && showHidden && hiddenList.length > 0 && (
-        <ul className="mt-3 divide-y divide-line rounded-xl bg-white text-sm">
+        <ul className="mt-3 divide-y divide-line rounded-xl bg-surface text-sm">
           {hiddenList.map((h) => (
             <li key={h.key} className="flex items-center justify-between gap-3 px-4 py-2">
               <span className="min-w-0 truncate">

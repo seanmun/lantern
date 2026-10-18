@@ -7,6 +7,12 @@ import { usePortfolioContext } from './PortfolioProvider';
 import { assetsToCsv } from '@/utils/csv';
 import { downloadFile } from '@/utils/ics';
 import { SITE } from '@/config/site';
+import { LanternMark } from './LanternMark';
+import { ThemeToggle, useTheme } from './ThemeToggle';
+import { LanternLight } from './LanternLight';
+import { dayChange } from '@/utils/dayChange';
+
+export { LanternMark };
 
 interface NavItem {
   href: string;
@@ -39,18 +45,6 @@ function Icon({ name, className = 'h-5 w-5' }: { name: keyof typeof ICONS; class
   );
 }
 
-/** The Lantern mark: a violet lantern with a warm flame. */
-export function LanternMark({ size = 26 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-      <path d="M10.5 6.5a3.5 3.5 0 0 1 7 0" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" />
-      <path d="M9 8.5h10l-1.6 2.8h-6.8z" fill="var(--color-accent)" />
-      <rect x="8.5" y="11.3" width="11" height="10.7" rx="2.2" fill="none" stroke="var(--color-accent)" strokeWidth="2" />
-      <path d="M14 13.6c1.9 2 2.7 3.4 2.7 4.6a2.7 2.7 0 0 1-5.4 0c0-1.2.8-2.6 2.7-4.6z" fill="#F2A93B" />
-      <path d="M8 24.6h12" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 interface NavGroup { id: string; label: string; items: (NavItem & { description: string })[] }
 
@@ -100,6 +94,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const theme = useTheme();
   const { wallets, assets, isLoading, lastUpdated, refresh, walletNames } = usePortfolioContext();
 
   // Close the "More" sheet on navigation
@@ -134,8 +129,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/* Dark theme: the lantern light; embers follow the day (±5% = full mood) */}
+      {theme === 'dark' && <LanternLight mood={(dayChange(assets)?.pct ?? 0) / 5} />}
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-line bg-page/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-extrabold tracking-tight text-ink">
             <LanternMark size={28} />
@@ -159,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform ${openMenu === g.id ? 'rotate-180' : ''}`} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
                   </button>
                   {openMenu === g.id && (
-                    <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line bg-white p-2 shadow-xl">
+                    <div className="absolute left-0 top-full z-50 mt-2 w-80 rounded-2xl border border-line bg-surface p-2 shadow-xl">
                       {g.items.map((item) => (
                         <Link
                           key={item.href}
@@ -204,6 +201,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
           )}
+          <span className={wallets.length > 0 ? '' : 'ml-auto'}><ThemeToggle /></span>
         </div>
       </header>
 
@@ -222,7 +220,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </footer>
 
       {/* Phone tab bar */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-page/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
         <ul className="grid grid-cols-4">
           {TABS.map((item) => (
             <li key={item.href}>
@@ -258,7 +256,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/20" />
           <div
-            className="absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] max-h-[75vh] overflow-y-auto rounded-2xl bg-white p-2 shadow-2xl"
+            className="absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] max-h-[75vh] overflow-y-auto rounded-2xl bg-surface p-2 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {GROUPS.map((g) => (
@@ -300,7 +298,7 @@ export function NoWallets({ what }: { what: string }) {
   return (
     <div className="rounded-3xl border border-line p-8 text-center">
       <p className="text-ink">Add a wallet to see {what}.</p>
-      <Link href="/wallets" className="mt-4 inline-flex h-11 items-center rounded-full bg-ink px-5 font-bold text-white hover:bg-ink/85">
+      <Link href="/wallets" className="mt-4 inline-flex h-11 items-center rounded-full bg-ink px-5 font-bold text-on-ink hover:bg-ink/85">
         Add a wallet
       </Link>
     </div>

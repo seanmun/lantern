@@ -72,10 +72,10 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
   if (!isNFT && !isOrdinal) return null;
 
   return (
-    <div className={`group relative w-full min-w-0 rounded-2xl border bg-white p-2 transition-colors sm:p-4 ${featured ? 'border-accent/50 ring-1 ring-accent/30' : 'border-line hover:border-[#D6D6DE]'}`}>
+    <div className={`group relative w-full min-w-0 rounded-2xl border bg-surface p-2 transition-colors sm:p-4 ${featured ? 'border-accent/50 ring-1 ring-accent/30' : 'border-line hover:border-line-strong'}`}>
       {onFeaturedChange && (
         <label
-          className="absolute left-1.5 top-1.5 z-20 flex cursor-pointer items-center gap-1 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-ink/85 shadow-sm ring-1 ring-line sm:left-2 sm:top-2"
+          className="absolute left-1.5 top-1.5 z-20 flex cursor-pointer items-center gap-1 rounded-md bg-surface/90 px-1.5 py-0.5 text-[10px] font-medium text-ink/85 shadow-sm ring-1 ring-line sm:left-2 sm:top-2"
           title="Show this piece in the Overview frame"
         >
           <input
@@ -94,7 +94,7 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
           <>
             {imageLoading && (
               <div className="absolute inset-0 flex items-center justify-center z-10 bg-soft">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-info-solid"></div>
               </div>
             )}
             <iframe
@@ -111,7 +111,7 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
           <>
             {imageLoading && (
               <div className="absolute inset-0 flex items-center justify-center z-10 bg-soft">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-info-solid"></div>
               </div>
             )}
             <img
@@ -152,14 +152,14 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
 
         {/* Ordinal specific info */}
         {isOrdinal && asset.inscriptionNumber !== undefined && (
-          <p className="text-xs text-orange-600 mb-1">
+          <p className="text-xs text-warn mb-1">
             Inscription #{asset.inscriptionNumber}
           </p>
         )}
 
         {/* Token ID for regular NFTs */}
         {isNFT && asset.tokenId && (
-          <p className="mb-1 truncate text-xs text-blue-600" title={`Token #${asset.tokenId}`}>
+          <p className="mb-1 truncate text-xs text-info" title={`Token #${asset.tokenId}`}>
             Token #{shortTokenId(asset.tokenId)}
           </p>
         )}
@@ -167,11 +167,11 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
         {/* Chain indicator */}
         <div className="flex items-center justify-center mt-2">
           <div className={`w-2 h-2 rounded-full mr-2 ${
-            asset.chain === 'bitcoin' ? 'bg-orange-500' :
-            asset.chain === 'ethereum' ? 'bg-blue-500' :
+            asset.chain === 'bitcoin' ? 'bg-warn-solid' :
+            asset.chain === 'ethereum' ? 'bg-info-solid' :
             asset.chain === 'pulsechain' ? 'bg-pink-500' :
             asset.chain === 'base' ? 'bg-base' :
-            asset.chain === 'robinhood' ? 'bg-robinhood' : 'bg-gray-400'
+            asset.chain === 'robinhood' ? 'bg-robinhood' : 'bg-muted'
           }`}></div>
           <span className="text-xs text-muted capitalize">{asset.chain}</span>
         </div>
@@ -316,10 +316,10 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
 
             {/* Type Badge */}
             <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              asset.type === 'ordinal' ? 'bg-orange-100 text-orange-800' :
-              asset.type === 'nft' ? 'bg-blue-100 text-blue-800' :
-              asset.type === 'token' ? 'bg-green-100 text-green-800' :
-              asset.type === 'stake' ? 'bg-pink-100 text-pink-800' :
+              asset.type === 'ordinal' ? 'bg-warn-soft text-warn' :
+              asset.type === 'nft' ? 'bg-info-soft text-info' :
+              asset.type === 'token' ? 'bg-good-soft text-good' :
+              asset.type === 'stake' ? 'bg-accent/15 text-accent' :
               'bg-soft text-ink'
             }`}>
               {asset.pool ? 'POOL' : TOKEN_BADGES[asset.tokenStandard ?? ''] ?? asset.type.toUpperCase()}
@@ -371,7 +371,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
               )}
 
               {asset.inscriptionNumber !== undefined && (
-                <p className="text-xs text-orange-600">
+                <p className="text-xs text-warn">
                   Inscription #{asset.inscriptionNumber}
                 </p>
               )}

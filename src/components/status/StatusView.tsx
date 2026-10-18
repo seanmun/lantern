@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { ServiceState, ServiceStatus, StatusReport } from '@/types/status';
+import { Flame, FlameState } from '@/components/ui/Flame';
 
 const REFRESH_MS = 60_000;
 
-const STATE: Record<ServiceState, { label: string; text: string; icon: string }> = {
-  up: { label: 'Working', text: 'text-[#0B5A38]', icon: 'M5 12.5l4.5 4.5L19 7.5' },
-  degraded: { label: 'Degraded', text: 'text-[#7A4B00]', icon: 'M12 8v5M12 16.5h.01' },
-  down: { label: 'Down', text: 'text-[#8A1C1C]', icon: 'M6 6l12 12M18 6L6 18' },
+// Each service is a little lantern: lit when working, flickering when degraded, out when down
+const STATE: Record<ServiceState, { label: string; text: string; flame: FlameState }> = {
+  up: { label: 'Working', text: 'text-good', flame: 'lit' },
+  degraded: { label: 'Degraded', text: 'text-warn', flame: 'warn' },
+  down: { label: 'Down', text: 'text-bad', flame: 'out' },
 };
 
 const ago = (ms: number) => {
@@ -81,12 +83,14 @@ export function StatusView() {
 function Headline({ report, troubled, now }: { report: StatusReport; troubled: ServiceStatus[]; now: number }) {
   const { producingBlocks, lastBlock, lastBlockAt } = report.chain;
   const down = troubled.filter((s) => s.state === 'down');
-  const tone = !producingBlocks ? 'bg-[#FDECEC] ring-[#F3BDBD]' : down.length ? 'bg-[#FFF4DB] ring-[#F5D78E]' : 'bg-[#E3F5EC] ring-[#B9E4CD]';
+  const tone = !producingBlocks ? 'bg-bad-soft ring-bad-line' : down.length ? 'bg-warn-soft ring-warn-line' : 'bg-good-soft ring-good-line';
   const title = !producingBlocks
     ? 'PulseChain isn’t producing blocks right now'
     : troubled.length === 0 ? 'Everything is working' : 'No, PulseChain is running';
   return (
-    <div className={`rounded-3xl p-6 ring-1 ${tone}`} role="status">
+    <div className={`flex gap-4 rounded-3xl p-6 ring-1 ${tone}`} role="status">
+      <Flame state={!producingBlocks ? 'danger' : down.length ? 'warn' : 'lit'} size={56} />
+      <div className="min-w-0">
       <div className="text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">{title}</div>
       <p className="mt-2 text-[17px] leading-snug text-ink">
         {lastBlock !== null && lastBlockAt !== null
@@ -95,6 +99,7 @@ function Headline({ report, troubled, now }: { report: StatusReport; troubled: S
         {producingBlocks && troubled.length > 0 &&
           ` ${troubled.length} service${troubled.length === 1 ? ' is' : 's are'} having trouble (listed below). Funds and stakes live on the chain, which is fine; only apps that rely on ${troubled.length === 1 ? 'that service' : 'those services'} may look broken.`}
       </p>
+      </div>
     </div>
   );
 }
@@ -104,7 +109,7 @@ function Row({ s }: { s: ServiceStatus }) {
   return (
     <li className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line px-5 py-3.5 first:border-t-0">
       <span className={`order-1 flex shrink-0 items-center gap-2 text-sm font-bold sm:w-28 ${st.text}`}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d={st.icon} /></svg>
+        <Flame state={st.flame} size={22} />
         {st.label}
       </span>
       <span className="order-3 min-w-0 basis-full sm:order-2 sm:basis-0 sm:flex-1">

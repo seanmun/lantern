@@ -38,7 +38,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
           spellCheck={false}
           autoComplete="off"
           aria-label="Wallet address"
-          className="flex-1 min-w-0 rounded-xl border border-line bg-white px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          className="flex-1 min-w-0 rounded-xl border border-line bg-surface px-4 py-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-accent"
         />
         <input
           value={name}
@@ -46,18 +46,18 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
           placeholder="Name (optional)"
           aria-label="Wallet name"
           maxLength={40}
-          className="sm:w-48 rounded-xl border border-line bg-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          className="sm:w-48 rounded-xl border border-line bg-surface px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
         />
         <button
           type="submit"
           disabled={!detected?.isValid}
-          className="rounded-xl bg-ink px-6 py-3 font-bold text-white transition hover:bg-ink/85 disabled:bg-line disabled:text-muted"
+          className="rounded-xl bg-ink px-6 py-3 font-bold text-on-ink transition hover:bg-ink/85 disabled:bg-line disabled:text-muted"
         >
           Add wallet
         </button>
       </div>
 
-      <p className={`text-xs ${error || (detected && !detected.isValid) ? 'text-red-600' : 'text-muted'}`}>
+      <p className={`text-xs ${error || (detected && !detected.isValid) ? 'text-bad' : 'text-muted'}`}>
         {error
           ? error
           : detected?.isValid

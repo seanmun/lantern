@@ -33,11 +33,11 @@ const formatDate = (iso: string) =>
 
 function StatusBadge({ status, graceDaysLeft }: { status: HexStakeStatus; graceDaysLeft?: number }) {
   if (status === 'late') {
-    return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">⚠ Late penalty</span>;
+    return <span className="rounded-full bg-warn-soft px-2 py-0.5 text-xs font-medium text-warn">⚠ Late penalty</span>;
   }
   if (status === 'matured') {
     return (
-      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+      <span className="rounded-full bg-good-soft px-2 py-0.5 text-xs font-medium text-good">
         ✓ Matured · {graceDaysLeft}d grace
       </span>
     );
@@ -159,7 +159,7 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
   ].sort((a, b) => a.endDay - b.endDay);
 
   return (
-    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
+    <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
       <div className="mb-6 flex items-center gap-3">
         <Hexagon size={36} />
         <h2 className="text-2xl font-extrabold tracking-tight text-ink">HEX</h2>
@@ -196,7 +196,7 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
           )}
 
           {needsAction.length > 0 && (
-            <p className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="mb-6 rounded-xl border border-warn-line bg-warn-soft p-3 text-sm text-warn">
               ⚠ {needsAction.length} stake{needsAction.length === 1 ? ' has' : 's have'} reached maturity. Interest stopped at the end
               day, and HEX starts a late-end penalty 14 days after it, so end {needsAction.length === 1 ? 'it' : 'them'} soon.
             </p>
@@ -287,7 +287,7 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
 
 function HeroStat({ label, value, sub, emphasis }: { label: string; value: string; sub?: string; emphasis?: boolean }) {
   return (
-    <div className={`rounded-xl p-4 ${emphasis ? 'bg-accent text-white' : 'bg-white'}`}>
+    <div className={`rounded-xl p-4 ${emphasis ? 'bg-accent text-on-accent' : 'bg-surface'}`}>
       <dt className={`text-xs uppercase tracking-wide ${emphasis ? 'text-white/80' : 'text-muted'}`}>{label}</dt>
       <dd className={`mt-1 text-lg font-bold tabular-nums ${emphasis ? 'text-white' : 'text-ink'}`}>{value}</dd>
       {sub && <dd className={`text-xs ${emphasis ? 'text-white/80' : 'text-muted'}`}>{sub}</dd>}

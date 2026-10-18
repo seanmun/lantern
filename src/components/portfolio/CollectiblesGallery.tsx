@@ -113,7 +113,7 @@ function ChainGallery({ title, assets }: { title: string; assets: Asset[] }) {
   const value = groups.reduce((s, g) => s + (g.valueUSD ?? 0), 0);
 
   return (
-    <div className="min-w-0 rounded-3xl border border-line bg-white p-4 sm:p-8">
+    <div className="min-w-0 rounded-3xl border border-line bg-surface p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-2xl font-extrabold tracking-tight text-ink">{title}</h3>
         <span className="text-sm text-muted">
@@ -164,7 +164,7 @@ function CollectionBlock({ group, compact = false }: { group: CollectionGroup; c
   const hidden = group.count - shown.length;
 
   return (
-    <div className="min-w-0 rounded-xl bg-white p-3 sm:p-4">
+    <div className="min-w-0 rounded-xl bg-surface p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0 break-words">
           <span className="font-semibold text-ink">{group.name}</span>

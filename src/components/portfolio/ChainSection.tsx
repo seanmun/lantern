@@ -47,7 +47,7 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
   }
 
   return (
-    <section className="min-w-0 rounded-3xl border border-line bg-white p-6">
+    <section className="min-w-0 rounded-3xl border border-line bg-surface p-6">
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="flex min-w-0 items-center gap-3 text-xl font-extrabold tracking-tight text-ink">
           <TokenLogo src={NATIVE_COIN[chain.key] ? `/api/logos/native/${NATIVE_COIN[chain.key]}` : undefined} symbol={chain.label} size={28} />
@@ -70,7 +70,7 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
           const pool = showDust ? listed : main;
           return showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
         })().map((asset) => (
-          <div key={asset.id} className="rounded-2xl border border-line bg-white transition-colors hover:border-[#D6D6DE]">
+          <div key={asset.id} className="rounded-2xl border border-line bg-surface transition-colors hover:border-line-strong">
             {showWalletNames && (
               <div className="px-4 pt-2 text-xs font-medium text-muted">
                 {walletNames.get(asset.walletAddress.toLowerCase())}

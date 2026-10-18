@@ -11,6 +11,7 @@ const BADGES = ['bg-accent/10 text-accent', 'bg-pink-100 text-accent', 'bg-sky-1
  */
 export function TokenLogo({ src, symbol, size = 20 }: { src?: string; symbol: string; size?: number }) {
   const [failed, setFailed] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<string | null>(null);
   const style = { width: size, height: size };
 
   if (!src || failed === src) {
@@ -34,7 +35,9 @@ export function TokenLogo({ src, symbol, size = 20 }: { src?: string; symbol: st
       height={size}
       loading="lazy"
       style={style}
-      className="shrink-0 rounded-full bg-white object-cover ring-1 ring-black/5"
+      // White backing only once loaded (logos with transparency need it); a soft disc while loading
+      className={`shrink-0 rounded-full object-cover ring-1 ring-black/5 ${loaded === src ? 'bg-white' : 'bg-soft'}`}
+      onLoad={() => setLoaded(src)}
       onError={() => setFailed(src)}
     />
   );

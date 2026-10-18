@@ -18,7 +18,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover', // lets the phone tab bar sit above the home indicator
-  themeColor: '#ffffff',
+  themeColor: '#09090b',
 };
 
 export default function RootLayout({
@@ -27,8 +27,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={manrope.variable}>
-      <body className="min-h-screen bg-white font-sans text-ink antialiased">
+    <html lang="en" data-theme="dark" className={manrope.variable} suppressHydrationWarning>
+      <head>
+        {/* Apply a saved light/dark choice before first paint (dark is the default) */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('lantern.theme');if(t=='light'||t=='dark')document.documentElement.dataset.theme=t}catch(e){}" }} />
+      </head>
+      <body className="min-h-screen bg-page font-sans text-ink antialiased">
         <ErrorBoundary>
           <ToastProvider>
             <PortfolioProvider>

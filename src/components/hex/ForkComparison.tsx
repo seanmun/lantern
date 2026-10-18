@@ -55,7 +55,7 @@ export function ForkComparison({ assets, hexPrices }: { assets: Asset[]; hexPric
         {HEX_CHAINS.map((c) => {
           const x = byChain[c];
           return (
-            <div key={c} className="rounded-xl bg-white p-4">
+            <div key={c} className="rounded-xl bg-surface p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="flex items-center gap-2 text-sm font-semibold text-ink">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[c] }} />

@@ -68,7 +68,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
   };
 
   return (
-    <li className="rounded-xl border border-white/40 bg-white p-4 shadow-sm">
+    <li className="rounded-xl border border-white/40 bg-surface p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {editing ? (
@@ -103,7 +103,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
 
         {confirmRemove ? (
           <div className="flex shrink-0 gap-1 text-xs">
-            <button onClick={() => onRemove(wallet.id)} className="rounded-md bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-700">
+            <button onClick={() => onRemove(wallet.id)} className="rounded-md bg-down px-2 py-1 font-medium text-white hover:bg-down">
               Remove
             </button>
             <button onClick={() => setConfirmRemove(false)} className="rounded-md bg-soft px-2 py-1 text-ink/85 hover:bg-line">

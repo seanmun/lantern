@@ -66,7 +66,7 @@ export function AssetCardSkeleton() {
 
 export function ChainSectionSkeleton() {
   return (
-    <div className="bg-white border rounded-lg p-6">
+    <div className="bg-surface border rounded-lg p-6">
       <div className="flex items-center mb-4">
         <Skeleton variant="circular" width={16} height={16} className="mr-3" />
         <Skeleton width={200} height={24} />

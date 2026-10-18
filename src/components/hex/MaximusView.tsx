@@ -128,13 +128,13 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
           <div className="text-xs font-medium uppercase tracking-wide text-muted">Worth now</div>
           <div className="text-2xl font-bold tabular-nums text-ink sm:text-3xl">{formatUSD(nowUSD)}</div>
         </div>
-        <div className="text-2xl text-purple-400" aria-hidden>→</div>
+        <div className="text-2xl text-accent/60" aria-hidden>→</div>
         <div>
           <div className="text-xs font-medium uppercase tracking-wide text-muted">Est. at cycle ends</div>
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span className="text-2xl font-bold tabular-nums text-accent sm:text-3xl">{formatUSD(endUSD)}</span>
             {growth !== null && Math.abs(growth) >= 0.5 && (
-              <span className={`text-sm font-semibold ${growth >= 0 ? 'text-green-700' : 'text-muted'}`}>
+              <span className={`text-sm font-semibold ${growth >= 0 ? 'text-good' : 'text-muted'}`}>
                 {growth >= 0 ? '+' : ''}{growth.toFixed(0)}%
               </span>
             )}
@@ -150,7 +150,7 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
       {/* Held positions, Pulsechain beside Ethereum */}
       <div className="grid gap-4 lg:grid-cols-2">
         {columns.map((col) => (
-          <section key={col.chain} className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-line">
+          <section key={col.chain} className="min-w-0 rounded-2xl bg-surface p-4 ring-1 ring-line">
             <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[col.chain] }} />
               {chainLabel(col.chain)}
@@ -242,7 +242,7 @@ function TeamRow({ team, chain }: { team: Holding; chain: string }) {
 
 function PoolTable({ chain, rows }: { chain: string; rows: PerpRow[] }) {
   return (
-    <div className="min-w-0 overflow-x-auto rounded-xl bg-white p-3 ring-1 ring-line">
+    <div className="min-w-0 overflow-x-auto rounded-xl bg-surface p-3 ring-1 ring-line">
       <h5 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{chainLabel(chain)} pools · HEX per token</h5>
       <table className="w-full text-xs tabular-nums">
         <thead>
@@ -259,7 +259,7 @@ function PoolTable({ chain, rows }: { chain: string; rows: PerpRow[] }) {
             <tr key={r.pool.symbol} className="border-t border-line">
               <td className="py-1 font-medium text-ink">{r.pool.symbol}</td>
               <td className="py-1 text-right text-muted">{fmtDate(r.pool.endDay)}</td>
-              <td className="py-1 text-right text-green-700">{r.earnedPerToken.toFixed(3)}</td>
+              <td className="py-1 text-right text-good">{r.earnedPerToken.toFixed(3)}</td>
               <td className="py-1 text-right text-ink">{r.perTokenNow.toFixed(3)}</td>
               <td className="py-1 text-right text-ink">{r.perTokenEnd.toFixed(3)}</td>
             </tr>

@@ -73,7 +73,7 @@ export function IcosaView({ assets }: { assets: Asset[] }) {
         {COLUMNS.map((chain) => {
           const onChain = stakes.filter((a) => a.chain === chain);
           return (
-            <section key={chain} className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-line">
+            <section key={chain} className="min-w-0 rounded-2xl bg-surface p-4 ring-1 ring-line">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[chain] }} />
                 {chainLabel(chain)}
@@ -139,9 +139,9 @@ function PoolRow({ pool, assets }: { pool: (typeof POOLS)[number]; assets: Icosa
             role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}
             aria-label={`${pool.label} ${Math.round(progress)}% of minimum stake length served`}
           >
-            <div className={`h-full rounded-full ${blocking ? 'bg-amber-400' : 'bg-accent'}`} style={{ width: `${Math.max(progress, 1.5)}%` }} />
+            <div className={`h-full rounded-full ${blocking ? 'bg-warn-solid' : 'bg-accent'}`} style={{ width: `${Math.max(progress, 1.5)}%` }} />
           </div>
-          <span className={`shrink-0 text-[11px] tabular-nums ${blocking ? 'text-amber-700' : 'text-muted'}`}>
+          <span className={`shrink-0 text-[11px] tabular-nums ${blocking ? 'text-warn' : 'text-muted'}`}>
             {blocking
               ? stakeCount > 1
                 ? `${pending.length} of ${stakeCount} stakes in minimum period · up to ${blocking.icosa.daysUntilMature}d left`

@@ -19,7 +19,7 @@ export function HexNetworkStrip({ stats }: { stats: HexStatsWithPrice[] }) {
         const tShareUSD = s.hexPriceUSD != null ? s.tSharePriceHex * s.hexPriceUSD : null;
         const payoutUSD = s.hexPriceUSD != null ? s.payoutPerTShareHex * s.hexPriceUSD : null;
         return (
-          <div key={s.chain} className="rounded-xl bg-white p-4">
+          <div key={s.chain} className="rounded-xl bg-surface p-4">
             <div className="mb-3 flex items-center justify-between">
               <span className="flex items-center gap-2 text-sm font-semibold text-ink">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[s.chain] }} />

@@ -20,9 +20,9 @@ const fmtDate = (day: number) =>
   hexDayToDate(day).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 const OUTCOME: Record<EndedStake['outcome'], { label: string; className: string }> = {
-  full: { label: '✓ Full term', className: 'bg-green-100 text-green-800' },
-  early: { label: 'Ended early', className: 'bg-amber-100 text-amber-800' },
-  late: { label: 'Ended late', className: 'bg-red-100 text-red-800' },
+  full: { label: '✓ Full term', className: 'bg-good-soft text-good' },
+  early: { label: 'Ended early', className: 'bg-warn-soft text-warn' },
+  late: { label: 'Ended late', className: 'bg-bad-soft text-bad' },
 };
 
 /**
@@ -87,7 +87,7 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
                       <td className="py-2 pr-4 text-right tabular-nums">{fmt(x.servedDays)} / {fmt(x.stakedDays)}d</td>
                       <td className="py-2 pr-4 text-right tabular-nums">{fmt(x.payoutHex)}</td>
                       <td className="py-2 pr-4 text-right tabular-nums">{x.penaltyHex > 0 ? `−${fmt(x.penaltyHex)}` : '—'}</td>
-                      <td className={`py-2 pr-4 text-right font-semibold tabular-nums ${x.returnHex < x.stakedHex ? 'text-red-700' : 'text-ink'}`}>
+                      <td className={`py-2 pr-4 text-right font-semibold tabular-nums ${x.returnHex < x.stakedHex ? 'text-bad' : 'text-ink'}`}>
                         {fmt(x.returnHex)}
                       </td>
                       <td className="py-2 pr-4"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${o.className}`}>{o.label}</span></td>
@@ -123,7 +123,7 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl bg-white p-4">
+    <div className="rounded-xl bg-surface p-4">
       <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
       <dd className="mt-1 text-lg font-bold tabular-nums text-ink">{value}</dd>
       {sub && <dd className="text-xs text-muted">{sub}</dd>}

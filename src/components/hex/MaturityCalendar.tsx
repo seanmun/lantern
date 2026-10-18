@@ -113,7 +113,7 @@ export function MaturityCalendar({ stakes, hexPrices }: MaturityCalendarProps) {
               key={r}
               onClick={() => setRange(r)}
               aria-pressed={range === r}
-              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               {RANGE_LABEL[r]}
             </button>
@@ -125,7 +125,7 @@ export function MaturityCalendar({ stakes, hexPrices }: MaturityCalendarProps) {
               key={u}
               onClick={() => setUnit(u)}
               aria-pressed={unit === u}
-              className={`rounded-md px-2.5 py-1 font-medium ${unit === u ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
+              className={`rounded-md px-2.5 py-1 font-medium ${unit === u ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               {u.toUpperCase()}
             </button>
@@ -146,7 +146,7 @@ export function MaturityCalendar({ stakes, hexPrices }: MaturityCalendarProps) {
         <div className="pointer-events-none absolute inset-x-0 top-0" style={{ height: CHART_HEIGHT }} aria-hidden="true">
           {[0.5, 1].map((f) => (
             <div key={f} className="absolute inset-x-0 border-t border-line" style={{ bottom: `${f * 100}%` }}>
-              <span className="absolute -top-2 left-0 bg-[#fcfcfb] pr-1 text-[10px] tabular-nums text-muted">{fmtUnit(max * f)}</span>
+              <span className="absolute -top-2 left-0 bg-surface pr-1 text-[10px] tabular-nums text-muted">{fmtUnit(max * f)}</span>
             </div>
           ))}
         </div>
@@ -190,14 +190,14 @@ export function MaturityCalendar({ stakes, hexPrices }: MaturityCalendarProps) {
         {/* Column labels, thinned when there are many */}
         <div className="flex gap-1 pl-12 pt-1" aria-hidden="true">
           {columns.map((b, i) => (
-            <span key={b.key} className={`flex-1 truncate text-center text-[10px] ${b.key === 'ready' ? 'font-semibold text-green-700' : 'text-muted'}`}>
+            <span key={b.key} className={`flex-1 truncate text-center text-[10px] ${b.key === 'ready' ? 'font-semibold text-good' : 'text-muted'}`}>
               {columns.length > 12 && i % 2 === 1 && b.key !== 'ready' ? '' : b.label}
             </span>
           ))}
         </div>
 
         {hovered && (
-          <div role="tooltip" className="pointer-events-none absolute right-0 top-0 z-10 w-56 rounded-lg border border-line bg-white p-3 text-xs shadow-lg">
+          <div role="tooltip" className="pointer-events-none absolute right-0 top-0 z-10 w-56 rounded-lg border border-line bg-surface p-3 text-xs shadow-lg">
             <div className="mb-1.5 font-semibold text-ink">{hovered.label}</div>
             {chains.filter((c) => hovered.hex[c]).map((c) => (
               <div key={c} className="flex items-center justify-between gap-2">
