@@ -71,8 +71,13 @@ export function artByFloor(assets: Asset[]): { asset: Asset; floor: number }[] {
     .sort((x, y) => y.floor - x.floor);
 }
 
+/** The raw in/out choices, for sync. */
+export function useFeaturedChoices() {
+  return useSyncExternalStore(subscribe, getSnapshot, () => EMPTY);
+}
+
 export function useFeaturedArt(assets: Asset[]) {
-  const choices = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY);
+  const choices = useFeaturedChoices();
 
   // Default picks: best floors, skipping BRC-20 text records
   const autoIds = useMemo(

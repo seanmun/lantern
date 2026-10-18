@@ -17,6 +17,7 @@ const NEVER = [
 
 const DATA = [
   { title: 'Your addresses stay in your browser', body: 'Wallet addresses you add are saved in this browser’s local storage. There are no accounts and no database of users.' },
+  { title: 'Sync is encrypted, and optional', body: 'If you turn on a sync code, your wallet list is encrypted in your browser with a key made from that code before it is uploaded. Lantern’s server stores only the scrambled copy and can’t read it, and no email or name is attached. Lose the code and the copy can’t be opened by anyone, including us. Unused copies are deleted after a year.' },
   { title: 'Lookups go through Lantern’s server', body: 'To read balances, prices and logos, your browser asks Lantern’s server, which asks public blockchain nodes and price services. Third parties see Lantern asking, not you. The server keeps short-lived caches of public data, not a record of who looked up what. NFT images are the exception: your browser loads them directly from where they are hosted.' },
   { title: 'No tracking', body: 'No analytics, no ads, no cookies for tracking.' },
   { title: 'You can run your own', body: 'Lantern is open source under the MIT license. Run it on your own computer and nothing passes through anyone else’s server.' },

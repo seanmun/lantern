@@ -4,6 +4,8 @@ import { usePortfolioContext } from '@/components/app/PortfolioProvider';
 import { PageHeader } from '@/components/app/AppShell';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 import { WalletList } from '@/components/wallet/WalletList';
+import { SyncPanel } from '@/components/wallet/SyncPanel';
+import { useSync } from '@/hooks/useSync';
 
 const TEST_WALLETS = [
   { address: process.env.NEXT_PUBLIC_TEST_ETH_WALLET, name: 'Test EVM Wallet' },
@@ -12,9 +14,13 @@ const TEST_WALLETS = [
 
 export default function WalletsPage() {
   const { wallets, walletTotals, walletLoading, addWallet, renameWallet, removeWallet } = usePortfolioContext();
+  const { code } = useSync();
   return (
     <>
-      <PageHeader title="Wallets" subtitle="Public addresses only. Saved in this browser, never on a server." />
+      <PageHeader
+        title="Wallets"
+        subtitle={code ? 'Public addresses only. Saved in this browser, with an encrypted copy only your sync code can open.' : 'Public addresses only. Saved in this browser, never on a server.'}
+      />
       <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
         {wallets.length > 0 && (
           <div className="mb-6">
@@ -28,6 +34,7 @@ export default function WalletsPage() {
           </button>
         )}
       </section>
+      <SyncPanel />
     </>
   );
 }

@@ -10,6 +10,7 @@ import { SITE } from '@/config/site';
 import { LanternMark } from './LanternMark';
 import { ThemeToggle, useTheme } from './ThemeToggle';
 import { LanternLight } from './LanternLight';
+import { SyncAgent } from './SyncAgent';
 import { dayChange } from '@/utils/dayChange';
 
 export { LanternMark };
@@ -131,6 +132,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       {/* Dark theme: the lantern light; embers follow the day (±5% = full mood) */}
       {theme === 'dark' && <LanternLight mood={(dayChange(assets)?.pct ?? 0) / 5} />}
+      <SyncAgent />
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b border-line bg-page/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">

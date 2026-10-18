@@ -64,7 +64,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
             ? `Will track: ${detected.compatibleChains.map(chainLabel).join(', ')}`
             : detected
               ? 'Not a recognized EVM, Bitcoin or Solana address'
-              : 'Public addresses only. Wallets are saved in this browser, never on a server.'}
+              : 'Public addresses only. Wallets are saved in this browser.'}
       </p>
     </form>
   );
