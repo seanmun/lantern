@@ -92,6 +92,9 @@ export function Dashboard({ assets, isLoading, isFeatured, autoHiddenCount }: Da
     <div className="flex flex-wrap gap-10">
       <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-9">
         <section aria-label="Portfolio value">
+          {/* Hero: the number and the brief, with the framed collectibles beside them */}
+          <div className="flex flex-wrap items-start gap-x-8 gap-y-6">
+          <div className="min-w-0 flex-[1_1_340px]">
           <div className="text-5xl font-extrabold tracking-tight tabular-nums text-ink sm:text-7xl">{formatUSD(value)}</div>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-2 text-base font-semibold sm:text-lg">
             {change ? (
@@ -114,6 +117,17 @@ export function Dashboard({ assets, isLoading, isFeatured, autoHiddenCount }: Da
               ))}
             </ul>
           )}
+          </div>
+
+          {artworks.length > 0 && (
+            <figure className="m-0 w-full shrink-0 sm:w-[340px] xl:w-[380px]" aria-label="On the wall">
+              <PaintingFrame artworks={artworks} />
+              <figcaption className="mt-2 text-right text-[13px]">
+                <Link href="/collectibles" className="font-semibold text-accent hover:underline">Choose what hangs here</Link>
+              </figcaption>
+            </figure>
+          )}
+          </div>
 
           <ValueChart points={points} color={rising ? UP : DOWN} loading={history.loading} hover={hover} onHover={setHover} />
 
@@ -140,17 +154,6 @@ export function Dashboard({ assets, isLoading, isFeatured, autoHiddenCount }: Da
 
         <Earning assets={assets} />
 
-        {artworks.length > 0 && (
-          <section aria-labelledby="wall-h">
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 id="wall-h" className="text-xl font-extrabold tracking-tight text-ink">On the wall</h2>
-              <Link href="/collectibles" className="text-sm font-semibold text-accent hover:underline">Collectibles</Link>
-            </div>
-            <div className="mx-auto max-w-xl">
-              <PaintingFrame artworks={artworks} />
-            </div>
-          </section>
-        )}
       </div>
 
       <AssetRail holdings={holdings} total={total} perKey={history.perKey} />

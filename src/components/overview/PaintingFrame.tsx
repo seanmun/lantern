@@ -141,11 +141,8 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
 
   return (
     <figure
-      className="relative m-0 flex h-full flex-col items-center justify-center overflow-hidden rounded-2xl px-6 py-8 sm:px-10"
-      style={{
-        // Gallery wall with a picture light above the frame
-        background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255,236,190,0.75), rgba(255,236,190,0) 70%), linear-gradient(180deg, #ece4d6 0%, #e2d8c6 100%)',
-      }}
+      // Hangs straight on the page: no backdrop, so the frame gets the full width
+      className="relative m-0 flex flex-col items-center"
       aria-roledescription="carousel"
       aria-label="Collectibles on display"
       onMouseEnter={() => setPaused(true)}
@@ -165,7 +162,7 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
 
       {/* Frame */}
       <div
-        className="relative w-full max-w-[420px] rounded-[6px] p-[18px] sm:p-[24px]"
+        className="relative w-full rounded-[6px] p-[18px] sm:p-[24px]"
         style={{
           background: `${PATINA}, ${GILT}`,
           boxShadow: [
@@ -228,10 +225,10 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
       )}
 
       {count > 1 && (
-        <div className="mt-4 flex items-center gap-3 text-xs text-[#6b5a3a]">
-          <button onClick={() => go(safeIndex - 1)} aria-label="Previous piece" className="rounded-full px-2 py-1 hover:bg-black/5">‹</button>
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+          <button onClick={() => go(safeIndex - 1)} aria-label="Previous piece" className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-ink hover:bg-soft">‹</button>
           <span className="tabular-nums">{safeIndex + 1} / {count}</span>
-          <button onClick={() => go(safeIndex + 1)} aria-label="Next piece" className="rounded-full px-2 py-1 hover:bg-black/5">›</button>
+          <button onClick={() => go(safeIndex + 1)} aria-label="Next piece" className="flex h-9 w-9 items-center justify-center rounded-full text-lg text-ink hover:bg-soft">›</button>
           {(paused || reducedMotion) && <span className="italic">{reducedMotion ? 'auto-rotate off (reduced motion)' : 'paused'}</span>}
         </div>
       )}
