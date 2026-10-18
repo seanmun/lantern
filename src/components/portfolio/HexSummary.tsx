@@ -95,14 +95,14 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
         const amount = `${formatHex(Number(a.balanceFormatted))} HEX principal + est. ${formatHex(a.stake.projectedInterestHex)} HEX interest`;
         return [
           {
-            uid: `${a.id}-end@crypto-portfolio-tracker`,
+            uid: `${a.id}-end@lantern`,
             title: `${label} ends`,
             date: hexDayToDate(a.stake.endDay),
             description: `${amount}. Wallet: ${walletName(a)} (${a.walletAddress}). End it within 14 days to avoid the late penalty.`,
             alarmDaysBefore: 1,
           },
           {
-            uid: `${a.id}-grace@crypto-portfolio-tracker`,
+            uid: `${a.id}-grace@lantern`,
             title: `Last day to end ${label} without penalty`,
             date: hexDayToDate(a.stake.endDay + 14),
             description: `From tomorrow HEX deducts a late-end penalty from this stake. Wallet: ${a.walletAddress}.`,

@@ -1,271 +1,94 @@
-# 🚀 Crypto Portfolio Tracker
+# Lantern
 
-A privacy-first, self-hosted multi-chain cryptocurrency portfolio tracker that puts YOU in control of your data. Track wallets across Bitcoin, Ethereum, Pulsechain, Base, Solana, and more - all from your own server.
+**Shine a light on any PulseChain wallet or token.**
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-14-black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
-![Tailwind](https://img.shields.io/badge/Tailwind-3-38bdf8)
+Lantern is a free, open-source, read-only portfolio tracker built by and for the HEX and PulseChain community. It reads public blockchain data and explains it plainly: what you hold across chains, what your HEX stakes will pay and when, what your Maximus, Hedron and Icosa positions are worth, and whether a token looks like a scam.
 
-## ✨ Features
+Lantern is an independent community project. It is not affiliated with PulseChain, HEX or their founders.
 
-### 🔐 Privacy-First
-- **Self-hosted**: Your data never leaves your server
-- **No tracking**: No analytics, no data collection
-- **Open source**: Fully auditable code
+## Lantern will never
 
-### 🌐 Multi-Chain Support
-- **Bitcoin**: BTC + Ordinals (Bitcoin NFTs)
-- **Ethereum**: ETH, ERC-20 tokens, NFTs
-- **Pulsechain**: PLS, PRC-20 tokens, NFTs
-- **Base**: ETH (L2), ERC-20 tokens, NFTs  
-- **Solana**: SOL, SPL tokens, Solana NFTs
+- Ask for your seed phrase, private key or recovery words.
+- Ask you to connect a wallet or sign anything to see a portfolio.
+- Message you first on Telegram, X, Discord or anywhere else. Anyone claiming to be "Lantern support" in your DMs is a scammer.
+- Hold, move or "recover" funds.
 
-### 🎨 Personalization
-- **Named Wallets**: Give your wallets custom names
-- **NFT Avatars**: Use your owned NFTs as wallet avatars
-- **Portfolio PFP**: Set any NFT/Ordinal as your portfolio picture
-- **Smart Grouping**: Organize by chain, asset type, or value
+## What it does
 
-### 📊 Portfolio Management
-- **Real-time Pricing**: Live USD valuations
-- **Multi-Wallet**: Track unlimited wallets per chain
-- **EVM Unification**: Same address across Ethereum, Pulsechain, Base
-- **Asset Breakdown**: Detailed view of tokens, NFTs, and native assets
+- **One portfolio across chains:** PulseChain, Ethereum, Bitcoin (including Ordinals, Runes and BRC-20), Base, Solana and Robinhood Chain. ETH and WETH, and HEX liquid plus staked plus pools, roll up into single holdings. eHEX and pHEX are always priced separately.
+- **A dashboard that tells you what matters:** net worth, a value chart (today's holdings at past prices) and a short morning brief, such as stakes that need ending, the day's move, the next stake to land and HDRN ready to mint.
+- **HEX, done properly:** contract-exact interest and penalties, stake ladder and maturity calendar, a stake estimator with payout scenarios, .ics calendar export and stake alerts, and HSIs with mintable HDRN.
+- **Maximus DAO:** perps worth now versus at cycle end, TEAM staking with unclaimed rewards, and pools compared with staking directly.
+- **Hedron and Icosa:** HDRN, ICSA and WAATSA NFT stakes with earnings and penalty-free progress.
+- **Scam detection:** behavior-based token risk checks (ghost balances, honeypot-style sells, owner-controlled balances) that never flag core PulseChain tokens just for being PulseChain.
+- **Validator calculator:** what running an ETH or PLS validator pays compared with pooled staking, backtested on real data.
+- **Collectibles:** NFTs and Ordinals (including recursive inscriptions such as Quantum Cats) with floor prices, and a framed gallery on the dashboard.
 
-## 🚀 Quick Start
+## Privacy
 
-### Prerequisites
-- **Node.js** 18+ ([Download](https://nodejs.org/))
-- **Git** ([Download](https://git-scm.com/))
+- Wallet addresses you add are stored in your browser only. There are no accounts and no user database.
+- Balances, prices, history and token logos are fetched by the Lantern server from public nodes and price services, so those third parties see Lantern, not you. The server caches public data briefly and keeps no record of who looked up what.
+- The one exception is NFT images, which your browser loads directly from where they are hosted (IPFS gateways, marketplace image servers).
+- No analytics, ads or tracking cookies.
+- For full control, run your own copy (below). Then nothing passes through anyone else's server.
 
-### Installation
+## Run it yourself
+
+Requires Node.js 20 or newer.
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/crypto-portfolio-tracker.git
-cd crypto-portfolio-tracker
-
-# Install dependencies
+git clone https://github.com/seanmun/crypto-portfolio-tracker.git lantern
+cd lantern
 npm install
-
-# Create environment file
-cp .env.example .env.local
-
-# Start development server
-npm run dev
+cp .env.example .env.local   # every key is optional
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Everything works without API keys, using public endpoints. These optional keys make it faster or more complete:
 
-### 🔑 API Setup
+| Variable | What it adds |
+|---|---|
+| `ALCHEMY_API_KEY` | Faster Ethereum, Base and Robinhood RPC, and NFT metadata |
+| `COINGECKO_API_KEY` | Higher limits for native coin prices and price history |
+| `XVERSE_API_KEY` | Full Ordinals metadata |
+| `UNISAT_API_KEY` | BRC-20 balances |
+| `SOLANA_RPC_URL` | A dedicated Solana RPC (the public one is rate-limited) |
 
-Everything works without API keys using public RPCs and free price APIs. Optional keys go in `.env.local`. They're read server-side only and never sent to the browser:
+Keys are only read on the server and never reach the browser.
 
-```bash
-ALCHEMY_API_KEY=      # Faster RPC, Base/Robinhood NFTs, NFT floor prices, Ethereum HEX history
-XVERSE_API_KEY=       # Full Ordinals metadata (numbers, collections, floors)
-UNISAT_API_KEY=       # BRC-20 balances
-SOLANA_RPC_URL=       # Dedicated Solana RPC (public one is rate-limited)
-COINGECKO_API_KEY=    # CoinGecko Demo key for BTC/ETH/PLS/SOL prices
-```
+Scripts: `npm run dev`, `npm run build`, `npm start`, `npm run lint`, `npm run type-check`.
 
-Add wallets from the dashboard. They're saved in your browser's localStorage, not on the server.
+## How it is built
 
-## 🏗️ Project Structure
+Next.js (App Router), React, TypeScript, Tailwind CSS and ethers.
 
 ```
 src/
-├── app/                    # Next.js app directory
-├── components/            
-│   ├── ui/                # Reusable UI components
-│   ├── portfolio/         # Portfolio-specific components
-│   └── wallet/            # Wallet management components
-├── chains/                # Blockchain integrations
-│   ├── ethereum.js        # Ethereum + EVM chains
-│   ├── bitcoin.js         # Bitcoin + Ordinals
-│   ├── solana.js          # Solana integration
-│   └── base.js            # Base L2 integration
-├── config/                # Configuration files
-│   ├── chains.json        # Chain settings
-│   ├── tokens.json        # Popular token lists
-│   └── display.json       # UI customization
-├── hooks/                 # React hooks
-├── utils/                 # Helper functions
-└── types/                 # TypeScript definitions
+  app/          pages, plus API routes (/api/*) that do all third-party calls
+  chains/       one module per chain or protocol: EVM handler, HEX, Hedron, Icosa,
+                Maximus TEAM, Bitcoin, Solana, Robinhood, token risk, validators
+  components/   UI: dashboard, HEX views, holdings, collectibles, tools
+  hooks/        client data hooks (portfolio, prices, history, stats)
+  utils/        pricing, holdings roll-up, logo resolver, the morning brief
 ```
 
-## 🎨 Customization Guide
+Protocol math (HEX interest, penalties, Hedron minting, Icosa payouts, Maximus backing and TEAM rewards) reads the verified contracts directly. Where it says "exact", it was checked against on-chain results.
 
-### Adding New Blockchains
+## Contributing
 
-1. **Create chain handler** in `src/chains/yourchain.js`:
-```javascript
-// src/chains/yourchain.js
-export class YourChainHandler {
-  async getBalance(address) {
-    // Implement balance fetching
-  }
-  
-  async getTokens(address) {
-    // Implement token fetching
-  }
-  
-  async getNFTs(address) {
-    // Implement NFT fetching
-  }
-}
-```
+Issues and pull requests are welcome, especially for:
 
-2. **Add chain config** in `src/config/chains.json`:
-```json
-{
-  "yourchain": {
-    "name": "Your Chain",
-    "symbol": "YOUR",
-    "rpcUrl": "https://rpc.yourchain.com",
-    "explorerUrl": "https://explorer.yourchain.com",
-    "addressFormat": "hex", // or "base58", "bech32"
-    "features": ["tokens", "nfts"]
-  }
-}
-```
+- scam tokens Lantern missed, or legitimate tokens it wrongly flagged (include the chain and contract address);
+- PulseChain protocols worth supporting;
+- wrong numbers, with a transaction or address that shows the problem;
+- accessibility, translations and documentation.
 
-3. **Update display order** in `src/config/display.json`
+Before opening a pull request, run `npm run lint` and `npm run type-check`.
 
-### Customizing UI
+To report a security issue privately, see [SECURITY.md](SECURITY.md).
 
-**Colors & Styling**: Edit `tailwind.config.js`
-```javascript
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        bitcoin: '#f7931a',
-        ethereum: '#627eea', 
-        // Add your chain colors
-      }
-    }
-  }
-}
-```
+## License
 
-**Chain Display Order**: Edit `src/config/display.json`
-```json
-{
-  "displayOrder": ["bitcoin", "ethereum", "yourchain"],
-  "defaultExpanded": ["ethereum"],
-  "groupByValue": true
-}
-```
+[MIT](LICENSE). Use it, fork it, run your own.
 
-### Adding Price Sources
-
-Edit `src/utils/pricing.js` to add new price APIs:
-```javascript
-const priceProviders = [
-  'coingecko',    // Primary
-  'coinmarketcap', // Fallback
-  'yourprovider'   // Add yours here
-];
-```
-
-## 🔧 Development
-
-### Available Scripts
-
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run type-check   # Check TypeScript
-```
-
-### Code Style
-
-- **TypeScript**: Strongly typed for better documentation
-- **ESLint**: Consistent code formatting
-- **Comments**: Every function and component documented
-- **Modular**: Each chain/feature in separate files
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how:
-
-### Quick Contributions
-- 🐛 **Bug Reports**: Open an issue with details
-- 💡 **Feature Requests**: Describe your idea in an issue
-- 📝 **Documentation**: Improve README, comments, guides
-
-### Code Contributions
-
-1. **Fork** the repository
-2. **Create branch**: `git checkout -b feature/amazing-feature`
-3. **Make changes** with clear, documented code
-4. **Test thoroughly** across different wallets/chains
-5. **Commit**: `git commit -m 'Add amazing feature'`
-6. **Push**: `git push origin feature/amazing-feature`
-7. **Pull Request**: Open PR with description
-
-### Contribution Areas
-
-- 🔗 **New Blockchain Support**: Add Polygon, Arbitrum, etc.
-- 🎨 **UI/UX Improvements**: Better charts, animations, mobile
-- 📊 **Analytics Features**: Historical tracking, portfolio analysis
-- 🔒 **Security Enhancements**: Better validation, error handling
-- 📱 **Mobile App**: React Native version
-- 🌐 **Internationalization**: Multi-language support
-
-## 🛡️ Security
-
-- **Local Storage Only**: No data sent to external servers
-- **Read-Only**: Never requests private keys or permissions
-- **Open Source**: Code is fully auditable
-- **API Keys**: Your keys, your control
-
-**⚠️ Important**: Only enter **public** wallet addresses. Never share private keys!
-
-## 📋 Roadmap
-
-### Phase 1: MVP ✅
-- [x] Basic wallet tracking
-- [x] Multi-chain support
-- [x] NFT avatars
-- [x] Real-time pricing
-
-### Phase 2: Enhanced UX 🔄
-- [ ] Portfolio analytics
-- [ ] Historical tracking
-- [ ] Export functionality
-- [ ] Mobile optimization
-
-### Phase 3: Advanced Features 🔮
-- [ ] 3D Portfolio City visualization
-- [ ] DeFi position tracking
-- [ ] Multi-wallet comparisons
-- [ ] Community themes
-
-## 📞 Support
-
-- **Documentation**: Check this README and code comments
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/crypto-portfolio-tracker/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/crypto-portfolio-tracker/discussions)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Ethereum Community**: For robust tooling and APIs
-- **Bitcoin Developers**: For Ordinals innovation  
-- **Solana Ecosystem**: For fast, cheap transactions
-- **Pulsechain**: For EVM compatibility and innovation
-- **Open Source Community**: For making this possible
-
----
-
-**Built with ❤️ by the community, for the community**
-
-*Take back control of your crypto portfolio tracking!*
+Prices and data come from public sources and can be wrong or late. Estimates of future value are illustrations, not financial advice.

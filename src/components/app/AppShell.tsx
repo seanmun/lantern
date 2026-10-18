@@ -6,6 +6,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePortfolioContext } from './PortfolioProvider';
 import { assetsToCsv } from '@/utils/csv';
 import { downloadFile } from '@/utils/ics';
+import { SITE } from '@/config/site';
 
 interface NavItem {
   href: string;
@@ -22,6 +23,7 @@ const ICONS = {
   tools: 'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
   image: 'M4 4h16v16H4zM4 16l5-5 4 4 3-3 4 4M15 9h.01',
   wallet: 'M3 7h17a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h12v3M16 13.5h.01',
+  info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
@@ -35,11 +37,15 @@ function Icon({ name, className = 'h-5 w-5' }: { name: keyof typeof ICONS; class
   );
 }
 
-/** The Pulse mark: a heartbeat line in the accent color. */
-export function PulseMark({ size = 26 }: { size?: number }) {
+/** The Lantern mark: a violet lantern with a warm flame. */
+export function LanternMark({ size = 26 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden="true">
-      <path d="M3 15h5l3-8 5 14 3-6h6" fill="none" stroke="var(--color-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10.5 6.5a3.5 3.5 0 0 1 7 0" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" />
+      <path d="M9 8.5h10l-1.6 2.8h-6.8z" fill="var(--color-accent)" />
+      <rect x="8.5" y="11.3" width="11" height="10.7" rx="2.2" fill="none" stroke="var(--color-accent)" strokeWidth="2" />
+      <path d="M14 13.6c1.9 2 2.7 3.4 2.7 4.6a2.7 2.7 0 0 1-5.4 0c0-1.2.8-2.6 2.7-4.6z" fill="#F2A93B" />
+      <path d="M8 24.6h12" stroke="var(--color-accent)" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -52,6 +58,7 @@ const NAV: NavItem[] = [
   { href: '/tools', label: 'Tools', icon: 'tools' },
   { href: '/collectibles', label: 'Collectibles', icon: 'image' },
   { href: '/wallets', label: 'Wallets', icon: 'wallet' },
+  { href: '/about', label: 'About', icon: 'info' },
 ];
 // Phone tab bar: four destinations + "More" for the rest
 const TABS = NAV.slice(0, 4);
@@ -85,8 +92,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-line bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2 text-xl font-extrabold tracking-tight text-ink">
-            <PulseMark />
-            pulse
+            <LanternMark size={28} />
+            lantern
           </Link>
 
           <nav aria-label="Main" className="hidden min-w-0 flex-1 md:block">
@@ -133,6 +140,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+
+      <footer className="mx-auto mt-8 max-w-7xl border-t border-line px-4 py-6 text-sm text-muted sm:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+          <span className="flex items-center gap-2 font-semibold text-ink"><LanternMark size={20} /> {SITE.name}</span>
+          <span className="font-semibold text-ink">We will never DM you or ask for your seed phrase.</span>
+          <span className="flex gap-4">
+            <Link href="/about" className="hover:text-ink">About &amp; privacy</Link>
+            <a href={SITE.repoUrl} className="hover:text-ink">Open source</a>
+          </span>
+        </div>
+      </footer>
 
       {/* Phone tab bar */}
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">

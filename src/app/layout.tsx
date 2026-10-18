@@ -10,8 +10,8 @@ import { Manrope } from 'next/font/google';
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Crypto Portfolio Tracker',
-  description: 'Privacy-first, self-hosted multi-chain portfolio tracker with HEX staking support',
+  title: { default: 'Lantern', template: '%s · Lantern' },
+  description: 'Shine a light on any PulseChain wallet or token. A free, open-source, read-only portfolio tracker built for the HEX and PulseChain community.',
 };
 
 export const viewport: Viewport = {

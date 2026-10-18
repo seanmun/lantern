@@ -1,4 +1,4 @@
-// Core Types for Crypto Portfolio Tracker
+// Core types for Lantern
 
 export interface Chain {
   name: string;

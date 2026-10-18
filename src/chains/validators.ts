@@ -19,7 +19,7 @@ import { ValidatorNetworkStats } from '@/types';
  * year of real samples; Ethereum's public node doesn't, so only today's.
  */
 
-const UA = { 'user-agent': 'crypto-portfolio-tracker', accept: 'application/json', 'content-type': 'application/json' };
+const UA = { 'user-agent': 'lantern', accept: 'application/json', 'content-type': 'application/json' };
 const TIMEOUT_MS = 30_000;
 const SECONDS_PER_YEAR = 365.25 * 86_400;
 const HISTORY_POINTS = 26;           // ~every two weeks over a year

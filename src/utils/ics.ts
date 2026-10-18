@@ -25,7 +25,7 @@ function fold(line: string): string {
 
 export function buildIcs(events: CalendarEvent[]): string {
   const now = stamp(new Date());
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Crypto Portfolio Tracker//HEX stakes//EN', 'CALSCALE:GREGORIAN'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Lantern//HEX stakes//EN', 'CALSCALE:GREGORIAN'];
 
   for (const event of events) {
     const next = new Date(event.date.getTime() + 86_400_000);

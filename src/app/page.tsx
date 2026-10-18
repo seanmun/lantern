@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePortfolioContext } from '@/components/app/PortfolioProvider';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { PulseMark } from '@/components/app/AppShell';
+import { LanternMark } from '@/components/app/AppShell';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
 
 const TEST_WALLETS = [
@@ -17,7 +17,7 @@ export default function DashboardPage() {
   if (wallets.length === 0) {
     return (
       <section className="mx-auto max-w-2xl rounded-3xl border border-line p-6 text-center sm:p-10">
-        <div className="mb-4 flex justify-center"><PulseMark size={56} /></div>
+        <div className="mb-4 flex justify-center"><LanternMark size={64} /></div>
         <h1 className="text-4xl font-extrabold tracking-tight text-ink">Your portfolio, in one place</h1>
         <p className="mt-3 text-lg text-muted">
           Bitcoin, Ethereum, Pulsechain, Base, Robinhood Chain and Solana, with HEX staking built in.
