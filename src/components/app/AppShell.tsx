@@ -25,6 +25,7 @@ const ICONS = {
   wallet: 'M3 7h17a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2h12v3M16 13.5h.01',
   info: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
+  pulse: 'M3 12h4l3-7 4 14 3-7h4',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
@@ -60,6 +61,7 @@ const NAV: NavItem[] = [
   { href: '/tools', label: 'Tools', icon: 'tools' },
   { href: '/collectibles', label: 'Collectibles', icon: 'image' },
   { href: '/wallets', label: 'Wallets', icon: 'wallet' },
+  { href: '/status', label: 'Status', icon: 'pulse' },
   { href: '/about', label: 'About', icon: 'info' },
 ];
 // Phone tab bar: four destinations + "More" for the rest
@@ -148,6 +150,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="flex items-center gap-2 font-semibold text-ink"><LanternMark size={20} /> {SITE.name}</span>
           <span className="font-semibold text-ink">We will never DM you or ask for your seed phrase.</span>
           <span className="flex gap-4">
+            <Link href="/status" className="hover:text-ink">Status</Link>
             <Link href="/about" className="hover:text-ink">About &amp; privacy</Link>
             <a href={SITE.repoUrl} className="hover:text-ink">Open source</a>
           </span>
