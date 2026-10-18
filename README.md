@@ -39,7 +39,7 @@ Lantern is an independent project. It is not affiliated with PulseChain, HEX or 
 Requires Node.js 20 or newer.
 
 ```bash
-git clone https://github.com/seanmun/crypto-portfolio-tracker.git lantern
+git clone https://github.com/seanmun/lantern.git
 cd lantern
 npm install
 cp .env.example .env.local   # every key is optional
