@@ -5,6 +5,7 @@ import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Asset } from '@/types';
 import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, TokenCheck, TxCheck } from '@/types/check';
+import { ApprovalItem, ApprovalsReport } from '@/types/approvals';
 import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
 import { groupHoldings } from '@/utils/holdings';
@@ -218,6 +219,7 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
   const total = holdings.reduce((s, h) => s + (h.valueUSD ?? 0), 0);
   const stakes = (assets ?? []).filter((a) => a.stake);
   return (
+    <>
     <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
@@ -249,6 +251,91 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
         </ul>
       )}
       <p className="text-[13px] text-muted">Read from public chain data. Tracking a wallet only saves its address in this browser.</p>
+    </section>
+    {/^0x[0-9a-fA-F]{40}$/.test(address) && !title && <ApprovalsPanel address={address} />}
+    </>
+  );
+}
+
+const RISK_STYLE: Record<ApprovalItem['risk'], { label: string; tone: string }> = {
+  high: { label: 'High risk', tone: 'bg-[#FDECEC] text-[#8A1C1C]' },
+  medium: { label: 'Worth a look', tone: 'bg-[#FFF4DB] text-[#7A4B00]' },
+  low: { label: 'Low risk', tone: 'bg-soft text-muted' },
+};
+
+/** Open token approvals: what this wallet lets others spend. */
+function ApprovalsPanel({ address }: { address: string }) {
+  const [report, setReport] = useState<ApprovalsReport | null>(null);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/approvals?address=${address}`).then((r) => r.json()).then((d: ApprovalsReport) => !cancelled && setReport(d)).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  const items = report?.chains.flatMap((c) => c.items) ?? [];
+  const flagged = items.filter((i) => i.risk !== 'low');
+  const unlimited = items.filter((i) => i.unlimited || i.kind === 'nft-all').length;
+  const inherited = items.filter((i) => i.reasons.some((r) => r.startsWith('Inherited from Ethereum'))).length;
+  const shown = showAll ? items : flagged;
+
+  return (
+    <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-labelledby="approvals-h">
+      <div>
+        <h2 id="approvals-h" className="text-2xl font-extrabold tracking-tight text-ink">Open approvals</h2>
+        <p className="mt-1 text-[15px] text-muted">Permissions this wallet gave contracts to spend its tokens. They stay open until revoked, and forgotten ones are what wallet drainers exploit.</p>
+      </div>
+      {!report && <div className="rounded-2xl bg-soft p-5 text-center text-muted">Reading this wallet&apos;s approval history on PulseChain and Ethereum…</div>}
+      {report && (
+        <>
+          <div className={`rounded-2xl p-4 text-[15px] ${flagged.some((i) => i.risk === 'high') ? 'bg-[#FDECEC] text-[#8A1C1C]' : flagged.length ? 'bg-[#FFF4DB] text-[#7A4B00]' : 'bg-[#E3F5EC] text-[#0B5A38]'}`}>
+            <strong>{items.length} open approval{items.length === 1 ? '' : 's'}</strong>
+            {items.length > 0 && <>, {unlimited} unlimited. </>}
+            {flagged.length === 0 ? ' Nothing looks dangerous.' : ` ${flagged.length} worth reviewing.`}
+            {inherited > 0 && ` ${inherited} on PulseChain were copied from Ethereum at the fork and are easy, safe cleanup if you don’t use them there.`}
+          </div>
+          {shown.length > 0 && (
+            <ul>
+              {shown.map((i) => (
+                <li key={`${i.chain}:${i.token}:${i.spender}:${i.kind}`} className="border-t border-line py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2 font-semibold text-ink">
+                      <TokenLogo src={i.kind === 'nft-all' ? undefined : `/api/logos/${i.chain}/${i.token}`} symbol={i.tokenSymbol} size={24} />
+                      <span className="truncate">{i.tokenSymbol}</span>
+                      <span className="font-normal text-muted">→ {i.spenderName ?? short(i.spender)}</span>
+                    </span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${RISK_STYLE[i.risk].tone}`}>{RISK_STYLE[i.risk].label}</span>
+                  </div>
+                  <div className="mt-1 text-[13px] text-muted">
+                    {chainLabel(i.chain)} · {i.kind === 'nft-all' ? 'all NFTs in the collection' : i.unlimited ? 'unlimited' : `up to ${fmt(i.allowance ?? 0)} ${i.tokenSymbol}`}
+                    {i.valueAtRiskUSD !== null && i.valueAtRiskUSD >= 0.01 && <> · {formatUSD(i.valueAtRiskUSD)} exposed today</>}
+                  </div>
+                  <ul className="mt-1 space-y-0.5 text-[14px] text-ink">
+                    {i.reasons.map((r) => <li key={r}>{r}</li>)}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+          {items.length > flagged.length && (
+            <button type="button" onClick={() => setShowAll((v) => !v)} className="inline-flex h-10 items-center rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line">
+              {showAll ? 'Show only the ones worth reviewing' : `Show all ${items.length}`}
+            </button>
+          )}
+          <div className="flex flex-wrap gap-2 text-sm">
+            {report.chains.filter((c) => c.items.length).map((c) => (
+              <a key={c.chain} href={`https://revoke.cash/address/${address}?chainId=${c.chainId}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent hover:underline">
+                Revoke on {chainLabel(c.chain)} with revoke.cash ↗
+              </a>
+            ))}
+            {report.chains.filter((c) => c.error).map((c) => <span key={c.chain} className="text-muted">{chainLabel(c.chain)}: {c.error}</span>)}
+          </div>
+          <p className="text-[13px] text-muted">Lantern only reads; revoking happens in your own wallet. Base and Robinhood Chain aren&apos;t covered yet.</p>
+        </>
+      )}
     </section>
   );
 }
