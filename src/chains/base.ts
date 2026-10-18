@@ -11,6 +11,7 @@ export const BASE_CONFIG: EvmChainConfig = {
   nativeName: 'Ether',
   nativeSymbol: 'ETH',
   publicRpcUrl: 'https://mainnet.base.org',
+  fallbackRpcUrls: ['https://base.drpc.org'],
   alchemyNetwork: 'base-mainnet',
   tokenStandard: 'ERC-20',
   tokens: [

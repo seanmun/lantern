@@ -18,6 +18,7 @@ export const ETHEREUM_CONFIG: EvmChainConfig = {
   nativeName: 'Ethereum',
   nativeSymbol: 'ETH',
   publicRpcUrl: 'https://ethereum.publicnode.com',
+  fallbackRpcUrls: ['https://eth.drpc.org'],
   alchemyNetwork: 'eth-mainnet',
   tokenStandard: 'ERC-20',
   hex: true,

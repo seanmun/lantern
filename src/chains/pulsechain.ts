@@ -22,6 +22,8 @@ export const PULSECHAIN_CONFIG: EvmChainConfig = {
   nativeName: 'Pulse',
   nativeSymbol: 'PLS',
   publicRpcUrl: 'https://rpc.pulsechain.com',
+  // g4mm4 also serves archive state; PublicNode is fast but not archive, so it goes last
+  fallbackRpcUrls: ['https://rpc-pulsechain.g4mm4.io', 'https://pulsechain-rpc.publicnode.com'],
   rpcBatching: false, // batched calls take ~7s here vs ~0.5s unbatched
   tokenStandard: 'PRC-20',
   hex: true,

@@ -5,6 +5,7 @@ import { HEX_ABI, HEX_ADDRESS, HEX_DECIMALS, MAXIMUS_POOLS, hexDayToDate } from 
 import { endStakeToday, getHexState, stakeYield } from './hex';
 import { hedronMintable, listHsis } from './hedron';
 import { BLOCKSCOUT_HOSTS, collectionAssets, fetchBlockscoutNfts, fetchBlockscoutTokens, looksLikeSpam, toHttpUrl } from './blockscout';
+import { FailoverProvider } from './rpc';
 
 /**
  * Generic EVM Chain Handler
@@ -35,6 +36,7 @@ export interface EvmChainConfig {
   nativeName: string;
   nativeSymbol: string;
   publicRpcUrl: string;
+  fallbackRpcUrls?: string[]; // tried in order when the main endpoint fails (see rpc.ts)
   alchemyNetwork?: string; // e.g. 'eth-mainnet'; enables Alchemy RPC + NFTs
   tokenStandard: string;
   tokens: EvmToken[];
@@ -77,12 +79,18 @@ function errorResponse<T>(message: string, error: unknown): APIResponse<T> {
   return { success: false, error: `${message}: ${error}`, timestamp: new Date() };
 }
 
+/** A chain's RPC endpoints in priority order: Alchemy when configured, then the public ones. */
+export function rpcUrls(config: EvmChainConfig): string[] {
+  return [
+    ...(HAS_ALCHEMY && config.alchemyNetwork ? [`https://${config.alchemyNetwork}.g.alchemy.com/v2/${ALCHEMY_KEY}`] : []),
+    config.publicRpcUrl,
+    ...(config.fallbackRpcUrls ?? []),
+  ];
+}
+
 export function createProvider(config: EvmChainConfig): ethers.JsonRpcProvider {
-  const rpcUrl = HAS_ALCHEMY && config.alchemyNetwork
-    ? `https://${config.alchemyNetwork}.g.alchemy.com/v2/${ALCHEMY_KEY}`
-    : config.publicRpcUrl;
   // staticNetwork skips the eth_chainId probe on every request
-  return new ethers.JsonRpcProvider(rpcUrl, config.chainId, {
+  return new FailoverProvider(config.key, rpcUrls(config), config.chainId, {
     staticNetwork: true,
     ...(config.rpcBatching === false && { batchMaxCount: 1 }),
   });
