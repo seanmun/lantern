@@ -15,7 +15,7 @@ export default function WalletsPage() {
   return (
     <>
       <PageHeader title="Wallets" subtitle="Public addresses only. Saved in this browser, never on a server." />
-      <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+      <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
         {wallets.length > 0 && (
           <div className="mb-6">
             <WalletList wallets={wallets} totals={walletTotals} loading={walletLoading} onRename={renameWallet} onRemove={removeWallet} />
@@ -23,7 +23,7 @@ export default function WalletsPage() {
         )}
         <AddWalletForm onAdd={addWallet} />
         {wallets.length === 0 && TEST_WALLETS.length > 0 && (
-          <button onClick={() => TEST_WALLETS.forEach((w) => addWallet(w.address, w.name))} className="mt-4 text-sm font-medium text-purple-700 hover:text-purple-900">
+          <button onClick={() => TEST_WALLETS.forEach((w) => addWallet(w.address, w.name))} className="mt-4 text-sm font-medium text-accent hover:text-ink">
             Load test wallets from .env.local →
           </button>
         )}

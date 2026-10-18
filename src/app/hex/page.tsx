@@ -10,7 +10,7 @@ export default function HexPage() {
   return (
     <>
       <PageHeader title="HEX" subtitle="Stakes, HSIs, Maximus pools and stake history">
-        <Link href="/tools" className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50">
+        <Link href="/tools" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line">
           Stake estimator →
         </Link>
       </PageHeader>

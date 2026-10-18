@@ -126,9 +126,9 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
       <div className="flex items-start">
         <div className="flex-shrink-0">{icons[toast.type]}</div>
         <div className="ml-3 flex-1">
-          <p className="text-sm font-medium text-gray-900">{toast.title}</p>
+          <p className="text-sm font-medium text-ink">{toast.title}</p>
           {toast.message && (
-            <p className="mt-1 text-sm text-gray-500">{toast.message}</p>
+            <p className="mt-1 text-sm text-muted">{toast.message}</p>
           )}
           {toast.action && (
             <button
@@ -142,7 +142,7 @@ function ToastItem({ toast, onClose }: ToastItemProps) {
         <div className="ml-4 flex-shrink-0 flex">
           <button
             onClick={handleClose}
-            className="inline-flex text-gray-400 hover:text-gray-500"
+            className="inline-flex text-muted/70 hover:text-muted"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -110,21 +110,21 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
   return (
     <figure className="m-0">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <figcaption className="text-sm font-medium text-gray-800">{title}</figcaption>
+        <figcaption className="text-sm font-medium text-ink">{title}</figcaption>
         <div className="flex flex-wrap items-center gap-3">
           {!single && visible.map((s) => (
-            <span key={s.key} className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span key={s.key} className="flex items-center gap-1.5 text-xs text-muted">
               <span className="h-0.5 w-4 rounded" style={{ background: s.color }} />
               {s.label}
             </span>
           ))}
-          <div className="flex rounded-lg bg-gray-100 p-0.5 text-xs" role="group" aria-label={`${title} range`}>
+          <div className="flex rounded-lg bg-soft p-0.5 text-xs" role="group" aria-label={`${title} range`}>
             {(Object.keys(RANGE_DAYS) as Range[]).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
                 aria-pressed={range === r}
-                className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
               >
                 {r === 'all' ? 'All' : r.toUpperCase()}
               </button>
@@ -198,24 +198,24 @@ export function LineChart({ title, series, formatValue, formatAxis = formatValue
         {hoverDay !== null && (
           <div
             role="tooltip"
-            className="pointer-events-none absolute top-2 z-10 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-lg"
+            className="pointer-events-none absolute top-2 z-10 rounded-lg border border-line bg-white px-3 py-2 text-xs shadow-lg"
             style={{ left: Math.max(0, Math.min(x(hoverDay) + 10, width - 190)) }}
           >
-            <div className="text-gray-500">{fmtDate(hoverDay)} · day {hoverDay.toLocaleString()}</div>
+            <div className="text-muted">{fmtDate(hoverDay)} · day {hoverDay.toLocaleString()}</div>
             {visible.map((s) => {
               const v = valueAt(s.points, hoverDay);
               return (
                 <div key={s.key} className="mt-1 flex items-center gap-2">
                   <span className="h-0.5 w-3 rounded" style={{ background: s.color }} />
-                  <span className="font-semibold tabular-nums text-gray-900">{v === undefined ? '—' : formatValue(v)}</span>
-                  <span className="text-gray-500">{s.label}</span>
+                  <span className="font-semibold tabular-nums text-ink">{v === undefined ? '—' : formatValue(v)}</span>
+                  <span className="text-muted">{s.label}</span>
                 </div>
               );
             })}
           </div>
         )}
       </div>
-      {note && <p className="mt-1 text-xs text-gray-500">{note}</p>}
+      {note && <p className="mt-1 text-xs text-muted">{note}</p>}
     </figure>
   );
 }

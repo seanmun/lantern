@@ -50,31 +50,31 @@ export function ForkComparison({ assets, hexPrices }: { assets: Asset[]; hexPric
 
   return (
     <div>
-      <h3 className="mb-3 text-lg font-semibold text-gray-800">Ethereum vs Pulsechain</h3>
+      <h3 className="mb-3 text-lg font-semibold text-ink">Ethereum vs Pulsechain</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         {HEX_CHAINS.map((c) => {
           const x = byChain[c];
           return (
-            <div key={c} className="rounded-xl bg-white/60 p-4">
+            <div key={c} className="rounded-xl bg-white p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[c] }} />
                   {chainLabel(c)}
                 </span>
-                <span className="text-xs tabular-nums text-gray-500">{x.price != null ? `${formatUSD(x.price)} / HEX` : ''}</span>
+                <span className="text-xs tabular-nums text-muted">{x.price != null ? `${formatUSD(x.price)} / HEX` : ''}</span>
               </div>
-              <div className="text-2xl font-bold tabular-nums text-gray-900">{formatUSD(x.value)}</div>
-              <div className="text-sm tabular-nums text-gray-600">{fmt(totalHex(x))} HEX</div>
+              <div className="text-2xl font-bold tabular-nums text-ink">{formatUSD(x.value)}</div>
+              <div className="text-sm tabular-nums text-muted">{fmt(totalHex(x))} HEX</div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <div><dt className="text-gray-500">Liquid</dt><dd className="font-semibold tabular-nums text-gray-900">{fmt(x.liquid)}</dd></div>
-                <div><dt className="text-gray-500">Staked</dt><dd className="font-semibold tabular-nums text-gray-900">{fmt(x.staked)}</dd></div>
-                <div><dt className="text-gray-500">Interest</dt><dd className="font-semibold tabular-nums text-gray-900">{fmt(x.interest)}</dd></div>
+                <div><dt className="text-muted">Liquid</dt><dd className="font-semibold tabular-nums text-ink">{fmt(x.liquid)}</dd></div>
+                <div><dt className="text-muted">Staked</dt><dd className="font-semibold tabular-nums text-ink">{fmt(x.staked)}</dd></div>
+                <div><dt className="text-muted">Interest</dt><dd className="font-semibold tabular-nums text-ink">{fmt(x.interest)}</dd></div>
               </dl>
             </div>
           );
         })}
       </div>
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-muted">
         {ratio !== null && `pHEX trades at ${ratio.toFixed(2)}× the price of eHEX. `}
         {twins > 0 && `${twins} stake${twins === 1 ? ' predates' : 's predate'} the fork and exist${twins === 1 ? 's' : ''} on both chains. `}
         Stakes started after the fork earn separately on each chain.

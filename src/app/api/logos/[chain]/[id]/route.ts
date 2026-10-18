@@ -16,7 +16,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!isLogoChain(chain) || !ID_RE.test(id)) return new NextResponse(null, { status: 404 });
 
   const logo = await resolveLogo(chain, id);
-  if (!logo) return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'public, max-age=3600' } });
+  // Short browser cache on a miss: it may be a rate-limited source that recovers
+  if (!logo) return new NextResponse(null, { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
 
   return new NextResponse(logo.body, {
     headers: {

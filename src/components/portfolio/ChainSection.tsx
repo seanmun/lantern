@@ -8,7 +8,8 @@ import { ChainResult } from '@/hooks/usePortfolio';
 import { AssetWithNFT } from '@/components/ui/NFTDisplay';
 import { ChainError } from '@/components/ui/ErrorState';
 import { AssetCardSkeleton } from '@/components/ui/Skeleton';
-import { formatUSD } from '@/utils/prices';
+import { NATIVE_COIN, formatUSD } from '@/utils/prices';
+import { TokenLogo } from '@/components/ui/TokenLogo';
 
 interface ChainSectionProps {
   chain: ChainDisplay;
@@ -46,13 +47,13 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
   }
 
   return (
-    <section className="min-w-0 rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
+    <section className="min-w-0 rounded-3xl border border-line bg-white p-6">
       <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="flex min-w-0 items-center text-xl font-bold">
-          <span className={`mr-3 h-5 w-5 shrink-0 rounded-full bg-gradient-to-r ${chain.dot} shadow`} />
-          <span className={`truncate bg-gradient-to-r ${chain.title} bg-clip-text text-transparent`}>{chain.label}</span>
+        <h2 className="flex min-w-0 items-center gap-3 text-xl font-extrabold tracking-tight text-ink">
+          <TokenLogo src={NATIVE_COIN[chain.key] ? `/api/logos/native/${NATIVE_COIN[chain.key]}` : undefined} symbol={chain.label} size={28} />
+          <span className="truncate">{chain.label}</span>
         </h2>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${chain.badge}`}>{formatUSD(total)}</span>
+        <span className="shrink-0 rounded-full bg-soft px-3 py-1 text-sm font-bold tabular-nums text-ink">{formatUSD(total)}</span>
       </div>
 
       <div className="space-y-3">
@@ -69,9 +70,9 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
           const pool = showDust ? listed : main;
           return showAll ? pool : pool.slice(0, ROWS_COLLAPSED);
         })().map((asset) => (
-          <div key={asset.id} className={`rounded-xl border bg-white/50 transition-colors ${chain.border}`}>
+          <div key={asset.id} className="rounded-2xl border border-line bg-white transition-colors hover:border-[#D6D6DE]">
             {showWalletNames && (
-              <div className="px-4 pt-2 text-xs font-medium text-gray-500">
+              <div className="px-4 pt-2 text-xs font-medium text-muted">
                 {walletNames.get(asset.walletAddress.toLowerCase())}
               </div>
             )}
@@ -81,12 +82,12 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
 
         <div className="flex flex-wrap gap-x-4 gap-y-1 empty:hidden">
           {(showDust ? listed : main).length > ROWS_COLLAPSED && (
-            <button onClick={() => setShowAll((v) => !v)} className="text-xs font-medium text-purple-700 hover:text-purple-900">
+            <button onClick={() => setShowAll((v) => !v)} className="text-xs font-medium text-accent hover:text-ink">
               {showAll ? 'Show top 10' : `Show all ${(showDust ? listed : main).length} holdings`}
             </button>
           )}
           {dust.length > 0 && (
-            <button onClick={() => setShowDust((v) => !v)} className="text-xs font-medium text-purple-700 hover:text-purple-900">
+            <button onClick={() => setShowDust((v) => !v)} className="text-xs font-medium text-accent hover:text-ink">
               {showDust ? 'Hide small balances' : `Show ${dust.length} small or unpriced balance${dust.length === 1 ? '' : 's'}`}
             </button>
           )}
@@ -95,7 +96,7 @@ export function ChainSection({ chain, results, walletNames, showWalletNames, onR
         {Array.from({ length: loading }, (_, i) => <AssetCardSkeleton key={`loading-${i}`} />)}
 
         {(stakes.length > 0 || collectibles > 0) && (
-          <p className="pt-1 text-xs text-gray-500">
+          <p className="pt-1 text-xs text-muted">
             {stakes.length > 0 && `${stakes.length} HEX stake${stakes.length === 1 ? '' : 's'} (${formatUSD(stakes.reduce((s, a) => s + (a.valueUSD ?? 0), 0))}) in HEX Stakes below`}
             {stakes.length > 0 && collectibles > 0 && ' · '}
             {collectibles > 0 && `${collectibles} collectible${collectibles === 1 ? '' : 's'}${collectiblesValue > 0 ? ` (${formatUSD(collectiblesValue)} at floor)` : ''} in the gallery`}

@@ -96,7 +96,7 @@ function buildRows(chain: string, pools: PoolWithPrice[], holdings: Map<string, 
  */
 export function MaximusView({ assets, hexStats }: MaximusViewProps) {
   const pools = useMaximusPools();
-  if (!pools) return <p className="text-sm text-gray-500">Loading Maximus pools…</p>;
+  if (!pools) return <p className="text-sm text-muted">Loading Maximus pools…</p>;
 
   const holdings = holdingsByToken(assets);
   const columns = COLUMNS.map((chain) => {
@@ -119,29 +119,29 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
 
   return (
     <div>
-      <h3 className="mb-3 text-lg font-semibold text-gray-800">Maximus DAO</h3>
+      <h3 className="mb-3 text-lg font-semibold text-ink">Maximus DAO</h3>
 
       {/* Headline: worth now -> worth at cycle ends */}
-      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 p-4 ring-1 ring-purple-100 sm:p-5">
+      <div className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl bg-accent/5 p-4 ring-1 ring-accent/25 sm:p-5">
         <div className="flex items-center gap-4 sm:gap-6">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Worth now</div>
-          <div className="text-2xl font-bold tabular-nums text-gray-900 sm:text-3xl">{formatUSD(nowUSD)}</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted">Worth now</div>
+          <div className="text-2xl font-bold tabular-nums text-ink sm:text-3xl">{formatUSD(nowUSD)}</div>
         </div>
         <div className="text-2xl text-purple-400" aria-hidden>→</div>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wide text-gray-500">Est. at cycle ends</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted">Est. at cycle ends</div>
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-2xl font-bold tabular-nums text-purple-700 sm:text-3xl">{formatUSD(endUSD)}</span>
+            <span className="text-2xl font-bold tabular-nums text-accent sm:text-3xl">{formatUSD(endUSD)}</span>
             {growth !== null && Math.abs(growth) >= 0.5 && (
-              <span className={`text-sm font-semibold ${growth >= 0 ? 'text-green-700' : 'text-gray-600'}`}>
+              <span className={`text-sm font-semibold ${growth >= 0 ? 'text-green-700' : 'text-muted'}`}>
                 {growth >= 0 ? '+' : ''}{growth.toFixed(0)}%
               </span>
             )}
           </div>
         </div>
         </div>
-        <p className="w-full text-[11px] text-gray-500 sm:ml-auto sm:w-auto sm:max-w-xs sm:text-right">
+        <p className="w-full text-[11px] text-muted sm:ml-auto sm:w-auto sm:max-w-xs sm:text-right">
           Each perp redeems its HEX backing at cycle end, valued at today&apos;s HEX price. TEAM is counted at market.
           {unpriced && ' * No market price: valued at its HEX backing today.'}
         </p>
@@ -150,15 +150,15 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
       {/* Held positions, Pulsechain beside Ethereum */}
       <div className="grid gap-4 lg:grid-cols-2">
         {columns.map((col) => (
-          <section key={col.chain} className="min-w-0 rounded-2xl bg-white/60 p-4 ring-1 ring-gray-200">
-            <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-gray-900">
+          <section key={col.chain} className="min-w-0 rounded-2xl bg-white p-4 ring-1 ring-line">
+            <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-ink">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[col.chain] }} />
               {chainLabel(col.chain)}
             </h4>
             {col.held.length === 0 && col.team.amount === 0 ? (
-              <p className="py-3 text-sm text-gray-400">No Maximus holdings</p>
+              <p className="py-3 text-sm text-muted/70">No Maximus holdings</p>
             ) : (
-              <ul className="divide-y divide-gray-100">
+              <ul className="divide-y divide-line">
                 {col.held.map((r) => <PerpRow key={r.pool.symbol} row={r} showRewards={significant(r.rewards, r.amount)} />)}
                 {col.team.amount > 0 && <TeamRow team={col.team} chain={col.chain} />}
               </ul>
@@ -168,7 +168,7 @@ export function MaximusView({ assets, hexStats }: MaximusViewProps) {
       </div>
 
       <details className="group mt-4">
-        <summary className="cursor-pointer select-none text-sm font-medium text-purple-700 hover:text-purple-900">
+        <summary className="cursor-pointer select-none text-sm font-medium text-accent hover:text-ink">
           <span className="group-open:hidden">Show</span><span className="hidden group-open:inline">Hide</span> pool details
         </summary>
         <div className="mt-3 grid gap-4 lg:grid-cols-2">
@@ -190,30 +190,30 @@ function PerpRow({ row: r, showRewards }: { row: PerpRow; showRewards: boolean }
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <TokenLogo src={`/api/logos/${r.pool.chain}/${r.pool.address}`} symbol={r.pool.symbol} />
-          <span className="font-bold text-gray-900">{r.pool.symbol}</span>
-          <span className="tabular-nums text-sm text-gray-600">{fmt(r.amount, r.amount >= 100 ? 0 : 2)}</span>
+          <span className="font-bold text-ink">{r.pool.symbol}</span>
+          <span className="tabular-nums text-sm text-muted">{fmt(r.amount, r.amount >= 100 ? 0 : 2)}</span>
         </div>
         <div className="shrink-0 text-right tabular-nums">
-          <span className="text-sm text-gray-700" title={r.priced ? 'Market value' : 'No market price: HEX backing today'}>
+          <span className="text-sm text-ink/85" title={r.priced ? 'Market value' : 'No market price: HEX backing today'}>
             {r.nowUSD !== null ? formatUSD(r.nowUSD) : '—'}{!r.priced && '*'}
           </span>
-          <span className="mx-1.5 text-gray-400" aria-hidden>→</span>
-          <span className="font-semibold text-purple-700" title="HEX backing at cycle end, at today's HEX price">
+          <span className="mx-1.5 text-muted/70" aria-hidden>→</span>
+          <span className="font-semibold text-accent" title="HEX backing at cycle end, at today's HEX price">
             {r.endUSD !== null ? formatUSD(r.endUSD) : '—'}
           </span>
         </div>
       </div>
       <div className="mt-1.5 flex items-center gap-2">
         <div
-          className="h-1 flex-1 overflow-hidden rounded-full bg-gray-200"
+          className="h-1 flex-1 overflow-hidden rounded-full bg-line"
           role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}
           aria-label={`${r.pool.symbol} cycle ${Math.round(progress)}% complete`}
         >
-          <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-600" style={{ width: `${Math.max(progress, 1.5)}%` }} />
+          <div className="h-full rounded-full bg-accent" style={{ width: `${Math.max(progress, 1.5)}%` }} />
         </div>
-        <span className="shrink-0 text-[11px] tabular-nums text-gray-500">ends {fmtDate(r.pool.endDay)}</span>
+        <span className="shrink-0 text-[11px] tabular-nums text-muted">ends {fmtDate(r.pool.endDay)}</span>
       </div>
-      {notes.length > 0 && <p className="mt-1 text-[11px] text-gray-500">incl. {notes.join(' · ')}</p>}
+      {notes.length > 0 && <p className="mt-1 text-[11px] text-muted">incl. {notes.join(' · ')}</p>}
     </li>
   );
 }
@@ -228,12 +228,12 @@ function TeamRow({ team, chain }: { team: Holding; chain: string }) {
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <TokenLogo src={`/api/logos/${chain}/${MAXIMUS_TEAM_ADDRESS}`} symbol="TEAM" />
-          <span className="font-bold text-gray-900">TEAM</span>
-          <span className="tabular-nums text-sm text-gray-600">{fmt(team.amount, team.amount >= 100 ? 0 : 2)}</span>
+          <span className="font-bold text-ink">TEAM</span>
+          <span className="tabular-nums text-sm text-muted">{fmt(team.amount, team.amount >= 100 ? 0 : 2)}</span>
         </div>
-        <span className="shrink-0 text-sm tabular-nums text-gray-700">{team.value !== null ? formatUSD(team.value) : 'no market price'}</span>
+        <span className="shrink-0 text-sm tabular-nums text-ink/85">{team.value !== null ? formatUSD(team.value) : 'no market price'}</span>
       </div>
-      <p className="mt-1 text-[11px] text-gray-500" title="Staked TEAM earns a share of the perps' bonus yield each staking period">
+      <p className="mt-1 text-[11px] text-muted" title="Staked TEAM earns a share of the perps' bonus yield each staking period">
         {notes.length > 0 ? `incl. ${notes.join(' · ')}` : 'not staked'}
       </p>
     </li>
@@ -242,11 +242,11 @@ function TeamRow({ team, chain }: { team: Holding; chain: string }) {
 
 function PoolTable({ chain, rows }: { chain: string; rows: PerpRow[] }) {
   return (
-    <div className="min-w-0 overflow-x-auto rounded-xl bg-white/60 p-3 ring-1 ring-gray-200">
-      <h5 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">{chainLabel(chain)} pools · HEX per token</h5>
+    <div className="min-w-0 overflow-x-auto rounded-xl bg-white p-3 ring-1 ring-line">
+      <h5 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">{chainLabel(chain)} pools · HEX per token</h5>
       <table className="w-full text-xs tabular-nums">
         <thead>
-          <tr className="text-left text-gray-500">
+          <tr className="text-left text-muted">
             <th className="pb-1 font-medium">Pool</th>
             <th className="pb-1 text-right font-medium">Ends</th>
             <th className="pb-1 text-right font-medium">Earned</th>
@@ -256,12 +256,12 @@ function PoolTable({ chain, rows }: { chain: string; rows: PerpRow[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.pool.symbol} className="border-t border-gray-100">
-              <td className="py-1 font-medium text-gray-900">{r.pool.symbol}</td>
-              <td className="py-1 text-right text-gray-600">{fmtDate(r.pool.endDay)}</td>
+            <tr key={r.pool.symbol} className="border-t border-line">
+              <td className="py-1 font-medium text-ink">{r.pool.symbol}</td>
+              <td className="py-1 text-right text-muted">{fmtDate(r.pool.endDay)}</td>
               <td className="py-1 text-right text-green-700">{r.earnedPerToken.toFixed(3)}</td>
-              <td className="py-1 text-right text-gray-900">{r.perTokenNow.toFixed(3)}</td>
-              <td className="py-1 text-right text-gray-900">{r.perTokenEnd.toFixed(3)}</td>
+              <td className="py-1 text-right text-ink">{r.perTokenNow.toFixed(3)}</td>
+              <td className="py-1 text-right text-ink">{r.perTokenEnd.toFixed(3)}</td>
             </tr>
           ))}
         </tbody>

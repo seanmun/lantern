@@ -114,14 +114,14 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
   return (
     <figure className="m-0">
       {/* Legend + zoom */}
-      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-gray-600">
-        <div className="mr-auto flex rounded-lg bg-gray-100 p-0.5" role="group" aria-label="Time range">
+      <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
+        <div className="mr-auto flex rounded-lg bg-soft p-0.5" role="group" aria-label="Time range">
           {(Object.keys(RANGE_LABEL) as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               aria-pressed={range === r}
-              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`rounded-md px-2.5 py-1 font-medium ${range === r ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               {RANGE_LABEL[r]}
             </button>
@@ -147,7 +147,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
             {/* Gridlines + today line, behind the bars, spanning the track column */}
             <div className="pointer-events-none absolute inset-y-0 left-[6.5rem] right-0 sm:left-[10rem]" aria-hidden="true">
               {ticks.map((t) => (
-                <div key={t.day} className="absolute inset-y-0 w-px bg-gray-200" style={{ left: `${pct(t.day)}%` }} />
+                <div key={t.day} className="absolute inset-y-0 w-px bg-line" style={{ left: `${pct(t.day)}%` }} />
               ))}
               <div className="absolute inset-y-0 w-px bg-gray-900" style={{ left: `${todayPct}%` }} />
             </div>
@@ -167,13 +167,13 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
               return (
                 <div key={row.id} className="contents">
                   <div className="flex min-w-0 flex-col justify-center py-1.5 pr-2">
-                    <span className="truncate text-xs font-medium text-gray-900">{row.label}</span>
-                    <span className={`truncate text-[11px] ${row.status === 'late' ? 'font-medium text-amber-700' : 'text-gray-500'}`}>
+                    <span className="truncate text-xs font-medium text-ink">{row.label}</span>
+                    <span className={`truncate text-[11px] ${row.status === 'late' ? 'font-medium text-amber-700' : 'text-muted'}`}>
                       {statusLabel ?? row.sub}
                     </span>
                   </div>
                   <div
-                    className="relative flex items-center py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded"
+                    className="relative flex items-center py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
                     tabIndex={0}
                     aria-label={`${row.label}: ${fmtDate(row.lockedDay)} to ${fmtDate(row.endDay)}, ${Math.round(served * 100)}% served`}
                     onPointerMove={(e) => showTooltip(row, e)}
@@ -194,7 +194,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
                       }}
                     >
                       {runsPast && (
-                        <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-[10px] leading-none text-gray-500" aria-hidden="true">›</span>
+                        <span className="absolute -right-3 top-1/2 -translate-y-1/2 text-[10px] leading-none text-muted" aria-hidden="true">›</span>
                       )}
                       {served > 0 && (
                         <div
@@ -218,9 +218,9 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
         {/* Axis */}
         <div className="grid grid-cols-[6.5rem_1fr] sm:grid-cols-[10rem_1fr]" aria-hidden="true">
           <div />
-          <div ref={axisRef} className="relative h-6 border-t border-gray-200">
+          <div ref={axisRef} className="relative h-6 border-t border-line">
             {ticks.map((t) => (
-              <span key={t.day} className="absolute top-1 -translate-x-1/2 text-[11px] tabular-nums text-gray-500" style={{ left: `${pct(t.day)}%` }}>
+              <span key={t.day} className="absolute top-1 -translate-x-1/2 text-[11px] tabular-nums text-muted" style={{ left: `${pct(t.day)}%` }}>
                 {t.label}
               </span>
             ))}
@@ -237,7 +237,7 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
         {hover && (
           <div
             role="tooltip"
-            className="pointer-events-none absolute z-20 w-60 rounded-lg border border-gray-200 bg-white p-3 text-xs shadow-xl"
+            className="pointer-events-none absolute z-20 w-60 rounded-lg border border-line bg-white p-3 text-xs"
             style={{
               left: Math.max(0, Math.min(hover.x + 14, hover.width - 248)),
               top: hover.y + 14,
@@ -245,14 +245,14 @@ export function StakeLadder({ rows, currentDay }: StakeLadderProps) {
           >
             <div className="mb-2 flex items-center gap-2">
               <span className="h-0.5 w-4 rounded" style={{ background: HEX_CHAIN_COLORS[hover.row.chain] }} />
-              <span className="font-semibold text-gray-900">{hover.row.label}</span>
-              <span className="text-gray-500">{chainLabel(hover.row.chain)}</span>
+              <span className="font-semibold text-ink">{hover.row.label}</span>
+              <span className="text-muted">{chainLabel(hover.row.chain)}</span>
             </div>
             <dl className="space-y-1">
               {hover.row.details.map((d) => (
                 <div key={d.label} className="flex justify-between gap-3">
-                  <dd className="font-semibold tabular-nums text-gray-900">{d.value}</dd>
-                  <dt className="text-right text-gray-500">{d.label}</dt>
+                  <dd className="font-semibold tabular-nums text-ink">{d.value}</dd>
+                  <dt className="text-right text-muted">{d.label}</dt>
                 </div>
               ))}
             </dl>

@@ -83,15 +83,12 @@ export function CollectiblesGallery({ assets, isFeatured, onFeaturedChange, onRe
 
   return (
     <section className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold">
-          <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">Collectibles</span>
-        </h2>
-        {totalFloor > 0 && <p className="mt-1 text-sm text-gray-500">{formatUSD(totalFloor)} at floor prices</p>}
-        <p className="mt-1 text-sm text-gray-500">
-          Checked pieces hang in the Overview frame · {assets.filter((a) => (a.type === 'nft' || a.type === 'ordinal') && isFeatured(a)).length} in frame
+      <div>
+        {totalFloor > 0 && <p className="text-lg font-bold tabular-nums text-ink">{formatUSD(totalFloor)} at floor prices</p>}
+        <p className="mt-1 text-sm text-muted">
+          Checked pieces hang in the dashboard frame · {assets.filter((a) => (a.type === 'nft' || a.type === 'ordinal') && isFeatured(a)).length} in frame
           {featuredCustomized && (
-            <button onClick={onResetFeatured} className="ml-2 font-medium text-purple-700 hover:text-purple-900">
+            <button onClick={onResetFeatured} className="ml-2 font-medium text-accent hover:text-ink">
               Reset to automatic
             </button>
           )}
@@ -116,12 +113,10 @@ function ChainGallery({ title, assets }: { title: string; assets: Asset[] }) {
   const value = groups.reduce((s, g) => s + (g.valueUSD ?? 0), 0);
 
   return (
-    <div className="min-w-0 rounded-2xl border border-white/20 bg-white/70 p-4 shadow-xl backdrop-blur-sm sm:p-8">
+    <div className="min-w-0 rounded-3xl border border-line bg-white p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-2xl font-bold">
-          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{title}</span>
-        </h3>
-        <span className="text-sm text-gray-500">
+        <h3 className="text-2xl font-extrabold tracking-tight text-ink">{title}</h3>
+        <span className="text-sm text-muted">
           {itemCount.toLocaleString()} items · {groups.length} collection{groups.length === 1 ? '' : 's'}
           {value > 0 && ` · ${formatUSD(value)} at floor`}
         </span>
@@ -138,14 +133,14 @@ function ChainGallery({ title, assets }: { title: string; assets: Asset[] }) {
 
         {visibleUncategorized.length > 0 && (
           <div>
-            {groups.length > 0 && <h4 className="mb-3 text-sm font-semibold text-gray-700">Not in a known collection</h4>}
+            {groups.length > 0 && <h4 className="mb-3 text-sm font-semibold text-ink/85">Not in a known collection</h4>}
             <div className="grid w-full grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {visibleUncategorized.slice(0, uncategorizedShown).map((a) => <ArtCard key={a.id} asset={a} />)}
             </div>
             {visibleUncategorized.length > uncategorizedShown && (
               <button
                 onClick={() => setUncategorizedShown((n) => n + UNCATEGORIZED_PAGE * 2)}
-                className="mt-4 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+                className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line"
               >
                 Show more ({(visibleUncategorized.length - uncategorizedShown).toLocaleString()} remaining)
               </button>
@@ -154,7 +149,7 @@ function ChainGallery({ title, assets }: { title: string; assets: Asset[] }) {
         )}
 
         {textItems.length > 0 && (
-          <button onClick={() => setShowText((v) => !v)} className="text-xs font-medium text-purple-700 hover:text-purple-900">
+          <button onClick={() => setShowText((v) => !v)} className="text-xs font-medium text-accent hover:text-ink">
             {showText ? 'Hide text inscriptions' : `Show ${textItems.length.toLocaleString()} text inscriptions (mostly BRC-20 token records)`}
           </button>
         )}
@@ -169,20 +164,20 @@ function CollectionBlock({ group, compact = false }: { group: CollectionGroup; c
   const hidden = group.count - shown.length;
 
   return (
-    <div className="min-w-0 rounded-xl bg-white/60 p-3 sm:p-4">
+    <div className="min-w-0 rounded-xl bg-white p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0 break-words">
-          <span className="font-semibold text-gray-900">{group.name}</span>
-          <span className="ml-2 text-sm text-gray-500">{group.count.toLocaleString()} item{group.count === 1 ? '' : 's'}</span>
+          <span className="font-semibold text-ink">{group.name}</span>
+          <span className="ml-2 text-sm text-muted">{group.count.toLocaleString()} item{group.count === 1 ? '' : 's'}</span>
         </div>
         <div className="text-right text-sm">
           {group.valueUSD !== undefined ? (
             <>
-              <span className="font-semibold tabular-nums text-gray-900">{formatUSD(group.valueUSD)}</span>
-              <span className="ml-2 text-gray-500">floor {formatUSD(group.floorUSD ?? 0)}</span>
+              <span className="font-semibold tabular-nums text-ink">{formatUSD(group.valueUSD)}</span>
+              <span className="ml-2 text-muted">floor {formatUSD(group.floorUSD ?? 0)}</span>
             </>
           ) : (
-            <span className="text-gray-500">no floor price</span>
+            <span className="text-muted">no floor price</span>
           )}
         </div>
       </div>
@@ -194,9 +189,9 @@ function CollectionBlock({ group, compact = false }: { group: CollectionGroup; c
       </div>
 
       {hidden > 0 && (
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-muted">
           {group.items.length > shown.length ? (
-            <button onClick={() => setExpanded(true)} className="font-medium text-purple-700 hover:text-purple-900">
+            <button onClick={() => setExpanded(true)} className="font-medium text-accent hover:text-ink">
               Show all {group.items.length} loaded
             </button>
           ) : (

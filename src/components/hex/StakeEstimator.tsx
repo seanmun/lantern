@@ -68,22 +68,22 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
   const color = HEX_CHAIN_COLORS[s.chain];
 
   return (
-    <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Hexagon size={36} />
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Stake estimator</h2>
-            <p className="text-sm text-gray-500">What a new stake could pay, in HEX and in dollars</p>
+            <h2 className="text-2xl font-bold text-ink">Stake estimator</h2>
+            <p className="text-sm text-muted">What a new stake could pay, in HEX and in dollars</p>
           </div>
         </div>
-        <div className="flex rounded-lg bg-gray-100 p-0.5 text-sm" role="group" aria-label="Chain">
+        <div className="flex rounded-lg bg-soft p-0.5 text-sm" role="group" aria-label="Chain">
           {stats.map((x) => (
             <button
               key={x.chain}
               onClick={() => { setChain(x.chain); setCustomPayout(null); }}
               aria-pressed={x.chain === s.chain}
-              className={`flex items-center gap-2 rounded-md px-3 py-1.5 font-medium ${x.chain === s.chain ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+              className={`flex items-center gap-2 rounded-md px-3 py-1.5 font-medium ${x.chain === s.chain ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               <span className="h-2 w-2 rounded-full" style={{ background: HEX_CHAIN_COLORS[x.chain] }} />
               {chainLabel(x.chain)}
@@ -96,7 +96,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
         {/* Inputs */}
         <div className="space-y-6">
           <div>
-            <label htmlFor="est-amount" className="mb-1.5 block text-sm font-medium text-gray-800">Amount to stake</label>
+            <label htmlFor="est-amount" className="mb-1.5 block text-sm font-medium text-ink">Amount to stake</label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
@@ -105,15 +105,15 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   value={amountInput}
                   onChange={(e) => setAmountInput(e.target.value)}
                   onBlur={() => amount > 0 && setAmountInput(fmt(amount, 8))}
-                  className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-4 pr-14 text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-purple-400"
+                  className="w-full rounded-xl border border-line bg-white py-2.5 pl-4 pr-14 text-lg font-semibold tabular-nums focus:outline-none focus:ring-2 focus:ring-accent"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500">HEX</span>
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted">HEX</span>
               </div>
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+            <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
               <span>{todayPrice != null ? `≈ ${formatUSD(amount * todayPrice)} today` : ''}</span>
               {myLiquid > 0 && (
-                <button onClick={() => setAmountInput(fmt(myLiquid, 8))} className="font-medium text-purple-700 hover:text-purple-900">
+                <button onClick={() => setAmountInput(fmt(myLiquid, 8))} className="font-medium text-accent hover:text-ink">
                   Use my liquid {chainLabel(s.chain)} HEX ({fmt(myLiquid)})
                 </button>
               )}
@@ -122,8 +122,8 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
 
           <div>
             <div className="mb-1.5 flex items-baseline justify-between">
-              <label htmlFor="est-days" className="text-sm font-medium text-gray-800">Stake length</label>
-              <span className="text-sm tabular-nums text-gray-600">
+              <label htmlFor="est-days" className="text-sm font-medium text-ink">Stake length</label>
+              <span className="text-sm tabular-nums text-muted">
                 <input
                   aria-label="Stake length in days"
                   type="number"
@@ -131,7 +131,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   max={MAX_STAKE_DAYS}
                   value={days}
                   onChange={(e) => setDays(Math.min(MAX_STAKE_DAYS, Math.max(MIN_STAKE_DAYS, Number(e.target.value) || MIN_STAKE_DAYS)))}
-                  className="w-20 rounded-md border border-gray-200 bg-white px-2 py-0.5 text-right font-semibold text-gray-900"
+                  className="w-20 rounded-md border border-line bg-white px-2 py-0.5 text-right font-semibold text-ink"
                 />{' '}
                 days · ends {fmtDate(endDay)}
               </span>
@@ -143,7 +143,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
               max={MAX_STAKE_DAYS}
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="w-full accent-purple-600"
+              className="w-full accent-accent"
             />
             <div className="mt-2 flex flex-wrap gap-1.5">
               {LENGTH_PRESETS.map((p) => (
@@ -151,19 +151,19 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   key={p.label}
                   onClick={() => setDays(p.days)}
                   aria-pressed={days === p.days}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${days === p.days ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${days === p.days ? 'bg-accent text-white' : 'bg-soft text-ink/85 hover:bg-line'}`}
                 >
                   {p.label}
                 </button>
               ))}
             </div>
-            <p className="mt-1.5 text-xs text-gray-500">
+            <p className="mt-1.5 text-xs text-muted">
               The Longer Pays Better bonus maxes out at 3,641 days; longer stakes earn interest for more days but no extra bonus.
             </p>
           </div>
 
           <div>
-            <div className="mb-1.5 text-sm font-medium text-gray-800">Daily payout per T-Share (assumption)</div>
+            <div className="mb-1.5 text-sm font-medium text-ink">Daily payout per T-Share (assumption)</div>
             <div className="flex flex-wrap gap-1.5">
               {([
                 ['30d', `30-day avg · ${avg30.toFixed(3)}`],
@@ -174,7 +174,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   key={mode}
                   onClick={() => setPayoutMode(mode)}
                   aria-pressed={payoutMode === mode}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${payoutMode === mode ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium ${payoutMode === mode ? 'bg-accent text-white' : 'bg-soft text-ink/85 hover:bg-line'}`}
                 >
                   {label}
                 </button>
@@ -190,9 +190,9 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   step={0.01}
                   value={payout}
                   onChange={(e) => setCustomPayout(Number(e.target.value))}
-                  className="flex-1 accent-purple-600"
+                  className="flex-1 accent-accent"
                 />
-                <span className="w-24 text-right text-sm font-semibold tabular-nums text-gray-900">{payout.toFixed(2)} HEX</span>
+                <span className="w-24 text-right text-sm font-semibold tabular-nums text-ink">{payout.toFixed(2)} HEX</span>
               </div>
             )}
           </div>
@@ -200,7 +200,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
 
         {/* Results */}
         <div className="space-y-4">
-          <div className="rounded-2xl bg-gradient-to-br from-pink-600 to-purple-700 p-5 text-white shadow-lg">
+          <div className="rounded-2xl bg-accent p-5 text-white">
             <div className="text-xs uppercase tracking-wide text-white/80">Estimated HEX at end of stake</div>
             <div className="mt-1 text-3xl font-bold tabular-nums">{fmt(est.totalHex)} HEX</div>
             <div className="mt-1 text-sm text-white/85">
@@ -217,11 +217,11 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
 
           {/* Price scenario */}
           {todayPrice != null && price != null && (
-            <div className="rounded-xl bg-white/60 p-4">
+            <div className="rounded-xl bg-white p-4">
               <div className="mb-2 flex items-baseline justify-between">
-                <label htmlFor="est-price" className="text-sm font-medium text-gray-800">HEX price at end</label>
-                <span className="text-sm tabular-nums text-gray-600">
-                  <span className="font-semibold text-gray-900">{formatUSD(price)}</span> · {multLabel(multiplier)}
+                <label htmlFor="est-price" className="text-sm font-medium text-ink">HEX price at end</label>
+                <span className="text-sm tabular-nums text-muted">
+                  <span className="font-semibold text-ink">{formatUSD(price)}</span> · {multLabel(multiplier)}
                 </span>
               </div>
               <input
@@ -232,14 +232,14 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                 step={0.01}
                 value={logMult}
                 onChange={(e) => setLogMult(Number(e.target.value))}
-                className="w-full accent-purple-600"
+                className="w-full accent-accent"
               />
               <div className="mt-3 flex items-end justify-between gap-3">
                 <div>
-                  <div className="text-xs text-gray-500">Stake value at end</div>
-                  <div className="text-2xl font-bold tabular-nums text-gray-900">{formatUSD(est.totalHex * price)}</div>
+                  <div className="text-xs text-muted">Stake value at end</div>
+                  <div className="text-2xl font-bold tabular-nums text-ink">{formatUSD(est.totalHex * price)}</div>
                 </div>
-                <div className="text-right text-xs text-gray-500">
+                <div className="text-right text-xs text-muted">
                   vs. {formatUSD(amount * todayPrice)} today
                   <div className={`text-sm font-semibold tabular-nums ${est.totalHex * price >= amount * todayPrice ? 'text-green-700' : 'text-red-700'}`}>
                     {est.totalHex * price >= amount * todayPrice ? '+' : '−'}
@@ -257,7 +257,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
         <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted">
                 <th className="py-2 pr-4 font-medium">Price scenario</th>
                 <th className="py-2 pr-4 text-right font-medium">HEX price</th>
                 <th className="py-2 pr-4 text-right font-medium">Stake value at end</th>
@@ -275,12 +275,12 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
                   <tr
                     key={m}
                     onClick={() => setLogMult(Math.log10(m))}
-                    className={`cursor-pointer border-b border-gray-100 last:border-0 hover:bg-purple-50/60 ${selected ? 'bg-purple-50' : ''}`}
+                    className={`cursor-pointer border-b border-line last:border-0 hover:bg-accent/10/60 ${selected ? 'bg-accent/10' : ''}`}
                   >
-                    <td className="py-2 pr-4 font-medium text-gray-900">{multLabel(m)}</td>
+                    <td className="py-2 pr-4 font-medium text-ink">{multLabel(m)}</td>
                     <td className="py-2 pr-4 text-right tabular-nums">{formatUSD(p)}</td>
-                    <td className="py-2 pr-4 text-right font-semibold tabular-nums text-gray-900">{formatUSD(value)}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums text-gray-600">{formatUSD(amount * p)}</td>
+                    <td className="py-2 pr-4 text-right font-semibold tabular-nums text-ink">{formatUSD(value)}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums text-muted">{formatUSD(amount * p)}</td>
                     <td className={`py-2 text-right tabular-nums ${change >= 0 ? 'text-green-700' : 'text-red-700'}`}>
                       {change >= 0 ? '+' : '−'}{formatUSD(Math.abs(change))}
                     </td>
@@ -289,7 +289,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
               })}
             </tbody>
           </table>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-muted">
             &ldquo;Just holding&rdquo; is the same HEX left unstaked, valued at that price.
           </p>
         </div>
@@ -305,7 +305,7 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
         <TSharePriceChart currentPrice={s.tSharePriceHex} />
       </div>
 
-      <p className="mt-4 text-xs text-gray-500">
+      <p className="mt-4 text-xs text-muted">
         Estimates only, not financial advice. Real payouts depend on future total T-Shares, end-stake penalties paid into the
         pool, and HEX inflation. Ending a stake early forfeits interest and principal.
       </p>
@@ -315,10 +315,10 @@ export function StakeEstimator({ stats, liquidHex }: StakeEstimatorProps) {
 
 function ResultStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl bg-white/60 p-3">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="mt-0.5 font-bold tabular-nums text-gray-900">{value}</dd>
-      {sub && <dd className="text-xs text-gray-500">{sub}</dd>}
+    <div className="rounded-xl bg-white p-3">
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-0.5 font-bold tabular-nums text-ink">{value}</dd>
+      {sub && <dd className="text-xs text-muted">{sub}</dd>}
     </div>
   );
 }

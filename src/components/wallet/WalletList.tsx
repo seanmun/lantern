@@ -68,7 +68,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
   };
 
   return (
-    <li className="rounded-xl border border-white/40 bg-white/80 p-4 shadow-sm">
+    <li className="rounded-xl border border-white/40 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {editing ? (
@@ -81,13 +81,13 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
               onKeyDown={onKeyDown}
               maxLength={40}
               aria-label="Wallet name"
-              className="w-full rounded-md border border-purple-300 px-2 py-0.5 font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="w-full rounded-md border border-accent/25 px-2 py-0.5 font-semibold text-ink focus:outline-none focus:ring-2 focus:ring-accent"
             />
           ) : (
             <button
               onClick={() => { setDraft(wallet.name); setEditing(true); }}
               title="Rename"
-              className="max-w-full truncate text-left font-semibold text-gray-900 hover:text-purple-700"
+              className="max-w-full truncate text-left font-semibold text-ink hover:text-accent"
             >
               {wallet.name}
             </button>
@@ -95,7 +95,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
           <button
             onClick={copy}
             title={wallet.address}
-            className="mt-0.5 block font-mono text-xs text-gray-500 hover:text-gray-800"
+            className="mt-0.5 block font-mono text-xs text-muted hover:text-ink"
           >
             {copied ? 'Copied!' : shortAddress(wallet.address)}
           </button>
@@ -106,7 +106,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
             <button onClick={() => onRemove(wallet.id)} className="rounded-md bg-red-600 px-2 py-1 font-medium text-white hover:bg-red-700">
               Remove
             </button>
-            <button onClick={() => setConfirmRemove(false)} className="rounded-md bg-gray-100 px-2 py-1 text-gray-700 hover:bg-gray-200">
+            <button onClick={() => setConfirmRemove(false)} className="rounded-md bg-soft px-2 py-1 text-ink/85 hover:bg-line">
               Cancel
             </button>
           </div>
@@ -114,7 +114,7 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
           <button
             onClick={() => setConfirmRemove(true)}
             aria-label={`Remove ${wallet.name}`}
-            className="shrink-0 rounded-md px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="shrink-0 rounded-md px-2 py-1 text-muted/70 hover:bg-soft hover:text-ink/85"
           >
             ✕
           </button>
@@ -122,9 +122,9 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
       </div>
 
       <div className="mt-3 flex items-end justify-between">
-        <span className="text-xs text-gray-500">{wallet.chains.length} chain{wallet.chains.length === 1 ? '' : 's'}</span>
-        <span className="text-lg font-bold text-gray-900">
-          {isLoading ? <span className="text-sm font-normal text-gray-400">Loading…</span> : formatUSD(total)}
+        <span className="text-xs text-muted">{wallet.chains.length} chain{wallet.chains.length === 1 ? '' : 's'}</span>
+        <span className="text-lg font-bold text-ink">
+          {isLoading ? <span className="text-sm font-normal text-muted/70">Loading…</span> : formatUSD(total)}
         </span>
       </div>
     </li>

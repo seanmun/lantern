@@ -20,7 +20,7 @@ export default function ToolsPage() {
       <PageHeader title="Tools" subtitle="Plan a HEX stake, compare it with Maximus pool tokens, and see whether running a validator pays" />
       <div className="space-y-8">
         {hexStats.length === 0 ? (
-          <p className="text-gray-500">Loading HEX network data…</p>
+          <p className="text-muted">Loading HEX network data…</p>
         ) : (
           <>
             <StakeEstimator stats={hexStats} liquidHex={liquidHex} />

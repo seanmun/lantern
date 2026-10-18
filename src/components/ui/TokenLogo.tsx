@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 // Muted badge colors, picked by symbol so a token keeps its color
-const BADGES = ['bg-purple-100 text-purple-700', 'bg-pink-100 text-pink-700', 'bg-sky-100 text-sky-700', 'bg-amber-100 text-amber-800', 'bg-emerald-100 text-emerald-700', 'bg-indigo-100 text-indigo-700'];
+const BADGES = ['bg-accent/10 text-accent', 'bg-pink-100 text-accent', 'bg-sky-100 text-sky-700', 'bg-amber-100 text-amber-800', 'bg-emerald-100 text-emerald-700', 'bg-accent/10 text-accent'];
 
 /**
  * Round token logo, served through /api/logos so the browser never contacts a

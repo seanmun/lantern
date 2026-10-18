@@ -19,13 +19,13 @@ export function HexNetworkStrip({ stats }: { stats: HexStatsWithPrice[] }) {
         const tShareUSD = s.hexPriceUSD != null ? s.tSharePriceHex * s.hexPriceUSD : null;
         const payoutUSD = s.hexPriceUSD != null ? s.payoutPerTShareHex * s.hexPriceUSD : null;
         return (
-          <div key={s.chain} className="rounded-xl bg-white/60 p-4">
+          <div key={s.chain} className="rounded-xl bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+              <span className="flex items-center gap-2 text-sm font-semibold text-ink">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: HEX_CHAIN_COLORS[s.chain] }} />
                 {chainLabel(s.chain)} HEX
               </span>
-              <span className="text-xs text-gray-500">Day {fmt(s.currentDay)}</span>
+              <span className="text-xs text-muted">Day {fmt(s.currentDay)}</span>
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-4">
               <NetStat label="HEX price" value={s.hexPriceUSD != null ? formatUSD(s.hexPriceUSD) : '—'} />
@@ -51,9 +51,9 @@ export function HexNetworkStrip({ stats }: { stats: HexStatsWithPrice[] }) {
 function NetStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="truncate font-semibold tabular-nums text-gray-900">{value}</dd>
-      {sub && <dd className="truncate text-xs tabular-nums text-gray-500">{sub}</dd>}
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="truncate font-semibold tabular-nums text-ink">{value}</dd>
+      {sub && <dd className="truncate text-xs tabular-nums text-muted">{sub}</dd>}
     </div>
   );
 }

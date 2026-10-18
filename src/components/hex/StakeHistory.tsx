@@ -44,7 +44,7 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
 
   return (
     <div>
-      <h3 className="mb-3 text-lg font-semibold text-gray-800">Stake history</h3>
+      <h3 className="mb-3 text-lg font-semibold text-ink">Stake history</h3>
 
       {stakes.length > 0 ? (
         <>
@@ -58,7 +58,7 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-gray-500">
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted">
                   <th className="py-2 pr-4 font-medium">Stake</th>
                   <th className="py-2 pr-4 text-right font-medium">Principal</th>
                   <th className="py-2 pr-4 text-right font-medium">Served</th>
@@ -73,13 +73,13 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
                 {shown.map((x) => {
                   const o = OUTCOME[x.outcome];
                   return (
-                    <tr key={`${x.chain}-${x.stakeId}`} className="border-b border-gray-100 last:border-0">
+                    <tr key={`${x.chain}-${x.stakeId}`} className="border-b border-line last:border-0">
                       <td className="py-2 pr-4">
-                        <div className="flex items-center gap-2 font-medium text-gray-900">
+                        <div className="flex items-center gap-2 font-medium text-ink">
                           <span className="h-2 w-2 rounded-full" style={{ background: HEX_CHAIN_COLORS[x.chain] }} />
                           #{x.stakeId}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted">
                           {chainLabel(x.chain)}{x.preFork ? ' · before fork' : ''} · {walletName(x.walletAddress)}
                         </div>
                       </td>
@@ -87,11 +87,11 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
                       <td className="py-2 pr-4 text-right tabular-nums">{fmt(x.servedDays)} / {fmt(x.stakedDays)}d</td>
                       <td className="py-2 pr-4 text-right tabular-nums">{fmt(x.payoutHex)}</td>
                       <td className="py-2 pr-4 text-right tabular-nums">{x.penaltyHex > 0 ? `−${fmt(x.penaltyHex)}` : '—'}</td>
-                      <td className={`py-2 pr-4 text-right font-semibold tabular-nums ${x.returnHex < x.stakedHex ? 'text-red-700' : 'text-gray-900'}`}>
+                      <td className={`py-2 pr-4 text-right font-semibold tabular-nums ${x.returnHex < x.stakedHex ? 'text-red-700' : 'text-ink'}`}>
                         {fmt(x.returnHex)}
                       </td>
                       <td className="py-2 pr-4"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${o.className}`}>{o.label}</span></td>
-                      <td className="py-2 text-right text-gray-600">{fmtDate(x.endedDay)}</td>
+                      <td className="py-2 text-right text-muted">{fmtDate(x.endedDay)}</td>
                     </tr>
                   );
                 })}
@@ -101,18 +101,18 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
           {stakes.length > ROWS_COLLAPSED && (
             <button
               onClick={() => setShowAll((v) => !v)}
-              className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+              className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line"
             >
               {showAll ? 'Show fewer' : `Show all ${stakes.length} ended stakes`}
             </button>
           )}
         </>
       ) : (
-        <p className="text-sm text-gray-500">No ended stakes found.</p>
+        <p className="text-sm text-muted">No ended stakes found.</p>
       )}
 
       {unavailable.length > 0 && (
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-2 text-xs text-muted">
           {unavailable.map(chainLabel).join(' and ')} history needs an RPC that serves full event logs (set ALCHEMY_API_KEY).
           Stakes that ended before the May 2023 fork are included from Pulsechain, which shares that history.
         </p>
@@ -123,10 +123,10 @@ export function StakeHistory({ stakes, unavailable, walletName, hexPrices }: Sta
 
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="rounded-xl bg-white/60 p-4">
-      <dt className="text-xs uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className="mt-1 text-lg font-bold tabular-nums text-gray-900">{value}</dd>
-      {sub && <dd className="text-xs text-gray-500">{sub}</dd>}
+    <div className="rounded-xl bg-white p-4">
+      <dt className="text-xs uppercase tracking-wide text-muted">{label}</dt>
+      <dd className="mt-1 text-lg font-bold tabular-nums text-ink">{value}</dd>
+      {sub && <dd className="text-xs text-muted">{sub}</dd>}
     </div>
   );
 }

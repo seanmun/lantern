@@ -35,8 +35,8 @@ function StakeProgress({ lockedDay, stakedDays, endDate, daysRemaining }: Pick<H
   const ends = new Date(endDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   return (
     <div title={`Locked on HEX day ${lockedDay}`}>
-      <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-pink-500 to-purple-600" style={{ width: `${progress}%` }} />
+      <div className="h-1.5 w-full rounded-full bg-line overflow-hidden">
+        <div className="h-full bg-accent" style={{ width: `${progress}%` }} />
       </div>
       <p className="mt-1">
         {daysRemaining > 0 ? `${daysRemaining.toLocaleString()} days left · ends ${ends}` : `Matured ${ends}`}
@@ -72,28 +72,28 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
   if (!isNFT && !isOrdinal) return null;
 
   return (
-    <div className={`group relative w-full min-w-0 rounded-xl border bg-white/90 p-2 backdrop-blur-sm transition-all duration-300 hover:bg-white hover:shadow-xl sm:p-4 ${featured ? 'border-amber-400 ring-1 ring-amber-300' : 'border-white/40'}`}>
+    <div className={`group relative w-full min-w-0 rounded-2xl border bg-white p-2 transition-colors sm:p-4 ${featured ? 'border-accent/50 ring-1 ring-accent/30' : 'border-line hover:border-[#D6D6DE]'}`}>
       {onFeaturedChange && (
         <label
-          className="absolute left-1.5 top-1.5 z-20 flex cursor-pointer items-center gap-1 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 sm:left-2 sm:top-2"
+          className="absolute left-1.5 top-1.5 z-20 flex cursor-pointer items-center gap-1 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-medium text-ink/85 shadow-sm ring-1 ring-line sm:left-2 sm:top-2"
           title="Show this piece in the Overview frame"
         >
           <input
             type="checkbox"
             checked={!!featured}
             onChange={(e) => onFeaturedChange(e.target.checked)}
-            className="h-3 w-3 accent-amber-600"
+            className="h-3 w-3 accent-accent"
             aria-label={`Show ${asset.name} in the frame`}
           />
           In frame
         </label>
       )}
       {/* NFT Image: square, fills the column up to 160px so 2 columns fit on a phone */}
-      <div className="relative mx-auto mb-3 aspect-square w-full max-w-40 overflow-hidden rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 transition-shadow group-hover:shadow-lg">
+      <div className="relative mx-auto mb-3 aspect-square w-full max-w-40 overflow-hidden rounded-lg bg-soft transition-shadow group-hover:shadow-md">
         {isHTMLOrdinal && asset.imageUrl ? (
           <>
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
+              <div className="absolute inset-0 flex items-center justify-center z-10 bg-soft">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               </div>
             )}
@@ -110,7 +110,7 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
         ) : asset.imageUrl && !imageError ? (
           <>
             {imageLoading && (
-              <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-100">
+              <div className="absolute inset-0 flex items-center justify-center z-10 bg-soft">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               </div>
             )}
@@ -124,16 +124,14 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
             />
           </>
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+          <div className="w-full h-full flex items-center justify-center bg-soft">
             {isOrdinal ? (
               <div className="text-center">
-                <div className="mb-1 text-2xl">🟠</div>
-                <div className="text-gray-500 text-xs">Ordinal</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-muted">Ordinal</div>
               </div>
             ) : (
               <div className="text-center">
-                <div className="mb-1 text-2xl">🖼️</div>
-                <div className="text-gray-500 text-xs">NFT</div>
+                <div className="text-xs font-bold uppercase tracking-wide text-muted">NFT</div>
               </div>
             )}
           </div>
@@ -142,12 +140,12 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
 
       {/* NFT Info */}
       <div className="text-center">
-        <h3 className="font-medium text-gray-900 mb-1 text-base truncate">
+        <h3 className="font-medium text-ink mb-1 text-base truncate">
           {asset.name}
         </h3>
 
         {asset.collectionName && (
-          <p className="text-gray-500 mb-2 text-sm truncate">
+          <p className="text-muted mb-2 text-sm truncate">
             {asset.collectionName}
           </p>
         )}
@@ -175,7 +173,7 @@ export function NFTCard({ asset, variant = 'default', featured, onFeaturedChange
             asset.chain === 'base' ? 'bg-base' :
             asset.chain === 'robinhood' ? 'bg-robinhood' : 'bg-gray-400'
           }`}></div>
-          <span className="text-xs text-gray-500 capitalize">{asset.chain}</span>
+          <span className="text-xs text-muted capitalize">{asset.chain}</span>
         </div>
       </div>
     </div>
@@ -203,16 +201,13 @@ export function NFTGrid({ assets, title }: NFTGridProps) {
     <div>
       {title && (
         <div className="mb-6">
-          <h3 className="text-2xl font-bold mb-2 flex items-center">
-            <span className="mr-3 text-2xl">🖼️</span>
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              {title}
-            </span>
-            <span className="ml-3 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+          <h3 className="mb-2 flex items-center text-2xl font-extrabold tracking-tight text-ink">
+            <span>{title}</span>
+            <span className="ml-3 bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
               {nftAssets.length}
             </span>
           </h3>
-          <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full w-24"></div>
+          <div className="h-1 bg-accent rounded-full w-24"></div>
         </div>
       )}
 
@@ -231,7 +226,7 @@ export function NFTGrid({ assets, title }: NFTGridProps) {
         <div className="mt-6 text-center">
           <button
             onClick={() => setVisible(v => v + NFT_PAGE_SIZE * 2)}
-            className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line"
           >
             Show more ({(nftAssets.length - visible).toLocaleString()} remaining)
           </button>
@@ -256,7 +251,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
         {/* NFT/Ordinal Image Preview */}
         {isNFTOrOrdinal && showNFTPreview && (
           <div
-            className="flex-shrink-0 overflow-hidden rounded-lg relative bg-gray-100"
+            className="flex-shrink-0 overflow-hidden rounded-lg relative bg-soft"
             style={{
               width: '128px',
               height: '128px',
@@ -300,9 +295,9 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
                 />
               )
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+              <div className="w-full h-full flex items-center justify-center bg-soft">
                 <span className="text-2xl">
-                  {asset.type === 'ordinal' ? '🟠' : '🖼️'}
+                  {asset.type === 'ordinal' ? 'Ordinal' : 'NFT'}
                 </span>
               </div>
             )}
@@ -312,7 +307,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
         {/* Asset Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <h3 className="flex min-w-0 items-center gap-2 font-medium text-gray-900">
+            <h3 className="flex min-w-0 items-center gap-2 font-medium text-ink">
               {(asset.type === 'token' || asset.type === 'native' || asset.type === 'stake') && (
                 <TokenLogo src={logoUrl(asset)} symbol={asset.symbol} />
               )}
@@ -325,33 +320,33 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
               asset.type === 'nft' ? 'bg-blue-100 text-blue-800' :
               asset.type === 'token' ? 'bg-green-100 text-green-800' :
               asset.type === 'stake' ? 'bg-pink-100 text-pink-800' :
-              'bg-gray-100 text-gray-800'
+              'bg-soft text-ink'
             }`}>
               {asset.pool ? 'POOL' : TOKEN_BADGES[asset.tokenStandard ?? ''] ?? asset.type.toUpperCase()}
             </span>
           </div>
 
-          <p className="mt-1 break-words text-sm text-gray-500">
+          <p className="mt-1 break-words text-sm text-muted">
             {asset.type === 'stake' ? 'Principal' : 'Balance'}: {formatAmount(asset.balanceFormatted)} {asset.symbol}
             {asset.valueUSD !== undefined && (
-              <span className="ml-2 font-medium text-gray-800">{formatUSD(asset.valueUSD)}</span>
+              <span className="ml-2 font-medium text-ink">{formatUSD(asset.valueUSD)}</span>
             )}
           </p>
 
           {asset.stake && (
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
+            <div className="mt-2 space-y-1 text-xs text-muted">
               <p>{asset.stake.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })} T-Shares · {asset.stake.stakedDays.toLocaleString()} days</p>
               <StakeProgress {...asset.stake} />
             </div>
           )}
 
           {asset.pool && (
-            <div className="mt-2 space-y-1 text-xs text-gray-500">
+            <div className="mt-2 space-y-1 text-xs text-muted">
               <p>
                 Backing: {formatAmount(String(asset.pool.backingHex))} HEX
                 {asset.pool.backingValueUSD !== undefined && ` (${formatUSD(asset.pool.backingValueUSD)})`}
                 {asset.valueUSD !== undefined && asset.pool.backingValueUSD ? (
-                  <span className="ml-1 font-medium text-gray-700">
+                  <span className="ml-1 font-medium text-ink/85">
                     · trades at {((asset.valueUSD / asset.pool.backingValueUSD) * 100).toFixed(0)}% of backing
                   </span>
                 ) : null}
@@ -364,13 +359,13 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
           {isNFTOrOrdinal && (
             <div className="mt-2 space-y-1">
               {asset.collectionName && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Collection: {asset.collectionName}
                 </p>
               )}
 
               {asset.tokenId && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Token ID: {shortTokenId(asset.tokenId)}
                 </p>
               )}
@@ -382,7 +377,7 @@ export function AssetWithNFT({ asset, showNFTPreview = true }: AssetWithNFTProps
               )}
 
               {asset.contentType && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Type: {asset.contentType}
                 </p>
               )}

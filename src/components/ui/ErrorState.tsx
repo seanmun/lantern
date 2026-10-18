@@ -52,13 +52,13 @@ export function ErrorState({
             </svg>
           </div>
           <div className="ml-3 flex-1">
-            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-            <p className="mt-2 text-sm text-gray-500">{errorMessage}</p>
+            <h3 className="text-lg font-medium text-ink">{title}</h3>
+            <p className="mt-2 text-sm text-muted">{errorMessage}</p>
 
             {suggestions.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700">Try these suggestions:</p>
-                <ul className="mt-2 text-sm text-gray-500 list-disc list-inside space-y-1">
+                <p className="text-sm font-medium text-ink/85">Try these suggestions:</p>
+                <ul className="mt-2 text-sm text-muted list-disc list-inside space-y-1">
                   {suggestions.map((suggestion, index) => (
                     <li key={index}>{suggestion}</li>
                   ))}
@@ -82,16 +82,16 @@ export function ErrorState({
 
   return (
     <div className="text-center py-12">
-      <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="mx-auto h-12 w-12 text-muted/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <h3 className="mt-2 text-sm font-medium text-gray-900">{title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{errorMessage}</p>
+      <h3 className="mt-2 text-sm font-medium text-ink">{title}</h3>
+      <p className="mt-1 text-sm text-muted">{errorMessage}</p>
 
       {suggestions.length > 0 && (
         <div className="mt-4 text-left max-w-md mx-auto">
-          <p className="text-sm font-medium text-gray-700">Suggestions:</p>
-          <ul className="mt-2 text-sm text-gray-500 list-disc list-inside">
+          <p className="text-sm font-medium text-ink/85">Suggestions:</p>
+          <ul className="mt-2 text-sm text-muted list-disc list-inside">
             {suggestions.map((suggestion, index) => (
               <li key={index}>{suggestion}</li>
             ))}

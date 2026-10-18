@@ -43,9 +43,9 @@ function StatusBadge({ status, graceDaysLeft }: { status: HexStakeStatus; graceD
     );
   }
   if (status === 'pending') {
-    return <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">Starts tomorrow</span>;
+    return <span className="rounded-full bg-soft px-2 py-0.5 text-xs font-medium text-ink/85">Starts tomorrow</span>;
   }
-  return <span className="text-xs text-gray-500">Active</span>;
+  return <span className="text-xs text-muted">Active</span>;
 }
 
 /**
@@ -159,12 +159,10 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
   ].sort((a, b) => a.endDay - b.endDay);
 
   return (
-    <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-6 flex items-center gap-3">
         <Hexagon size={36} />
-        <h2 className="text-2xl font-bold">
-          <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-orange-500 bg-clip-text text-transparent">HEX</span>
-        </h2>
+        <h2 className="text-2xl font-extrabold tracking-tight text-ink">HEX</h2>
       </div>
 
       <div className="mb-6">
@@ -187,13 +185,13 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
           </dl>
 
           {hdrnMintable > 0 && (
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent/25 bg-accent/10 p-3 text-sm text-ink">
               <span>
                 ⬡ <strong className="tabular-nums">{compactHex(hdrnMintable)} HDRN</strong> mintable from your stakes
                 {hdrnMintableUSD > 0 && <span className="tabular-nums"> (≈ {formatUSD(hdrnMintableUSD)})</span>}
-                {hsiCount > 0 && <span className="text-indigo-700"> · includes {hsiCount} Hedron HSI{hsiCount === 1 ? '' : 's'}</span>}
+                {hsiCount > 0 && <span className="text-accent"> · includes {hsiCount} Hedron HSI{hsiCount === 1 ? '' : 's'}</span>}
               </span>
-              <span className="text-xs text-indigo-700">Hedron pays 1,000 HDRN per T-Share per day served. Not counted in your total until minted.</span>
+              <span className="text-xs text-accent">Hedron pays 1,000 HDRN per T-Share per day served. Not counted in your total until minted.</span>
             </div>
           )}
 
@@ -208,14 +206,14 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
 
       {ladderRows.length > 0 && (
         <div className="mb-8">
-          <h3 className="mb-3 text-lg font-semibold text-gray-800">Stake ladder</h3>
+          <h3 className="mb-3 text-lg font-semibold text-ink">Stake ladder</h3>
           <StakeLadder rows={ladderRows} currentDay={currentDay} />
         </div>
       )}
 
       {stakes.length > 0 && (
         <div className="mb-8">
-          <h3 className="mb-3 text-lg font-semibold text-gray-800">Maturity calendar</h3>
+          <h3 className="mb-3 text-lg font-semibold text-ink">Maturity calendar</h3>
           <MaturityCalendar stakes={stakes} hexPrices={hexPrices} />
         </div>
       )}
@@ -227,14 +225,15 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
       {stakes.length > 0 && (
         <div className="mb-8">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-lg font-semibold text-gray-800">Stakes <span className="text-sm font-normal text-gray-500">by end date</span></h3>
+            <h3 className="text-lg font-semibold text-ink">Stakes <span className="text-sm font-normal text-muted">by end date</span></h3>
             <div className="flex flex-wrap gap-2">
             <StakeAlerts stakes={stakes} />
             <button
               onClick={exportCalendar}
-              className="rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line"
             >
-              📅 Add end dates to calendar (.ics)
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true"><path d="M4 6h16v14H4zM4 10h16M8 3v4M16 3v4" /></svg>
+              Add end dates to calendar (.ics)
             </button>
             </div>
           </div>
@@ -252,7 +251,7 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
           {stakes.length > STAKE_ROWS_COLLAPSED && (
             <button
               onClick={() => setShowAllStakes((v) => !v)}
-              className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-gray-200 hover:bg-gray-50"
+              className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-full bg-soft px-4 text-sm font-semibold text-ink hover:bg-line"
             >
               {showAllStakes ? 'Show fewer' : `Show all ${stakes.length} stakes`}
             </button>
@@ -288,10 +287,10 @@ export function HexSummary({ assets, walletNames, hexStats, endedStakes, history
 
 function HeroStat({ label, value, sub, emphasis }: { label: string; value: string; sub?: string; emphasis?: boolean }) {
   return (
-    <div className={`rounded-xl p-4 ${emphasis ? 'bg-gradient-to-br from-pink-600 to-purple-700 text-white shadow-lg' : 'bg-white/60'}`}>
-      <dt className={`text-xs uppercase tracking-wide ${emphasis ? 'text-white/80' : 'text-gray-500'}`}>{label}</dt>
-      <dd className={`mt-1 text-lg font-bold tabular-nums ${emphasis ? 'text-white' : 'text-gray-900'}`}>{value}</dd>
-      {sub && <dd className={`text-xs ${emphasis ? 'text-white/80' : 'text-gray-500'}`}>{sub}</dd>}
+    <div className={`rounded-xl p-4 ${emphasis ? 'bg-accent text-white' : 'bg-white'}`}>
+      <dt className={`text-xs uppercase tracking-wide ${emphasis ? 'text-white/80' : 'text-muted'}`}>{label}</dt>
+      <dd className={`mt-1 text-lg font-bold tabular-nums ${emphasis ? 'text-white' : 'text-ink'}`}>{value}</dd>
+      {sub && <dd className={`text-xs ${emphasis ? 'text-white/80' : 'text-muted'}`}>{sub}</dd>}
     </div>
   );
 }

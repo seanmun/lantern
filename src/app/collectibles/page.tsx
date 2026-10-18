@@ -19,7 +19,7 @@ export default function CollectiblesPage() {
           featuredCustomized={featuredArt.customized}
         />
       ) : (
-        <p className="text-gray-500">{isLoading ? 'Loading…' : 'No NFTs or Ordinals in these wallets.'}</p>
+        <p className="text-muted">{isLoading ? 'Loading…' : 'No NFTs or Ordinals in these wallets.'}</p>
       )}
     </>
   );

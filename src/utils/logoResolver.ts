@@ -24,6 +24,7 @@ export interface Logo { body: ArrayBuffer; contentType: string }
 
 const HIT_TTL_MS = 24 * 60 * 60 * 1000;
 const MISS_TTL_MS = 6 * 60 * 60 * 1000;
+const RETRY_MISS_MS = 2 * 60 * 1000;
 const MAX_CACHED = 1000;
 const MAX_IMAGE_BYTES = 1024 * 1024;
 const BATCH_SIZE = 30;
@@ -57,9 +58,10 @@ export const isLogoChain = (chain: string) => chain === 'native' || chain in NET
 const cache = new Map<string, { logo: Logo | null; at: number }>();
 const inflight = new Map<string, Promise<Logo | null>>();
 
-function remember(key: string, logo: Logo | null) {
+function remember(key: string, logo: Logo | null, ttlMs?: number) {
   if (cache.size >= MAX_CACHED) cache.delete(cache.keys().next().value!);
-  cache.set(key, { logo, at: Date.now() });
+  // A shorter-lived miss is stored as if it were older
+  cache.set(key, { logo, at: ttlMs ? Date.now() - MISS_TTL_MS + ttlMs : Date.now() });
 }
 
 async function getJSON(url: string) {
@@ -117,12 +119,18 @@ async function blockscoutImage(chain: string, address: string) {
   return token.icon_url ?? undefined;
 }
 
-async function candidates(chain: string, addresses: string[]): Promise<Record<string, string[]>> {
+/** Candidate URLs per address; `unsure` when a source errored, so a miss may not be real. */
+async function candidates(chain: string, addresses: string[]): Promise<{ urls: Record<string, string[]>; unsure: boolean }> {
   const result: Record<string, string[]> = Object.fromEntries(addresses.map((a) => [a, []]));
+  let unsure = false;
   const add = (images: Record<string, string>) => {
     for (const [address, url] of Object.entries(images)) result[address]?.push(url);
   };
-  const settle = async <T,>(p: Promise<T>) => p.catch((error) => (console.warn(`⚠️ logo source failed for ${chain}:`, error.message ?? error), undefined));
+  const settle = async <T,>(p: Promise<T>) => p.catch((error) => {
+    unsure = true;
+    console.warn(`⚠️ logo source failed for ${chain}:`, error.message ?? error);
+    return undefined;
+  });
 
   if (chain === 'robinhood') {
     const tokens = (await settle(loadStockTokens())) ?? [];
@@ -141,14 +149,15 @@ async function candidates(chain: string, addresses: string[]): Promise<Record<st
     if (chain === 'pulsechain') result[address].push(`https://tokens.app.pulsex.com/images/tokens/${getAddress(address)}.png`);
     if (chain === 'ethereum') result[address].push(`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/${getAddress(address)}/logo.png`);
   }
-  return result;
+  return { urls: result, unsure };
 }
 
 // --- coalescing --------------------------------------------------------------
 
-const queues = new Map<string, { addresses: Map<string, ((logo: Logo | null) => void)[]>; timer: ReturnType<typeof setTimeout> }>();
+type Found = { logo: Logo | null; unsure: boolean };
+const queues = new Map<string, { addresses: Map<string, ((found: Found) => void)[]>; timer: ReturnType<typeof setTimeout> }>();
 
-function enqueue(chain: string, address: string): Promise<Logo | null> {
+function enqueue(chain: string, address: string): Promise<Found> {
   return new Promise((resolve) => {
     let queue = queues.get(chain);
     if (!queue) {
@@ -165,11 +174,11 @@ async function flush(chain: string) {
   const all = [...queue.addresses.keys()];
   for (let i = 0; i < all.length; i += BATCH_SIZE) {
     const batch = all.slice(i, i + BATCH_SIZE);
-    const urls = await candidates(chain, batch).catch(() => ({} as Record<string, string[]>));
+    const { urls, unsure } = await candidates(chain, batch).catch(() => ({ urls: {} as Record<string, string[]>, unsure: true }));
     await Promise.all(batch.map(async (address) => {
       let logo: Logo | null = null;
       for (const url of urls[address] ?? []) if ((logo = await fetchImage(url))) break;
-      for (const resolve of queue.addresses.get(address)!) resolve(logo);
+      for (const resolve of queue.addresses.get(address)!) resolve({ logo, unsure });
     }));
   }
 }
@@ -189,13 +198,16 @@ export async function resolveLogo(chain: string, id: string): Promise<Logo | nul
   if (!pending) {
     pending = (async () => {
       let logo: Logo | null = null;
+      let unsure = false;
       if (chain === 'native') logo = NATIVE_LOGOS[address] ? await fetchImage(NATIVE_LOGOS[address]) : null;
       else {
-        logo = await enqueue(chain, address);
+        ({ logo, unsure } = await enqueue(chain, address));
         // Same address on Ethereum: Pulsechain fork copies and shared projects
         if (!logo && chain === 'pulsechain') logo = await resolveLogo('ethereum', address);
       }
-      remember(key, logo);
+      // A miss while a source was down (rate limits) is only remembered briefly
+      if (logo || !unsure) remember(key, logo);
+      else remember(key, null, RETRY_MISS_MS);
       return logo;
     })().finally(() => inflight.delete(key));
     inflight.set(key, pending);

@@ -14,10 +14,10 @@ const fmtHex = (v: number) =>
 const fmtDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 
 const BAR: Record<string, string> = {
-  active: 'from-pink-500 to-purple-600',
-  pending: 'from-gray-300 to-gray-400',
-  matured: 'from-green-500 to-emerald-600',
-  late: 'from-amber-500 to-orange-600',
+  active: 'bg-accent',
+  pending: 'bg-muted/40',
+  matured: 'bg-[#0B7A4B]',
+  late: 'bg-amber-500',
 };
 
 /**
@@ -37,21 +37,21 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
   const net = s.endNow.returnHex - principal;
 
   return (
-    <article className="flex min-w-0 flex-col rounded-2xl bg-white/85 p-4 shadow-sm ring-1 ring-gray-200 transition-shadow hover:shadow-md sm:p-5">
+    <article className="flex min-w-0 flex-col rounded-3xl border border-line bg-white p-4 transition-colors hover:border-[#D6D6DE] sm:p-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5 font-semibold text-gray-900">
+          <div className="flex flex-wrap items-center gap-1.5 font-semibold text-ink">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: HEX_CHAIN_COLORS[asset.chain] }} />
             Stake #{s.stakeId}
             {s.hsi && (
-              <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-800" title={`HEX Stake Instance ${s.hsi.address}`}>
+              <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent" title={`HEX Stake Instance ${s.hsi.address}`}>
                 HSI{s.hsi.tokenId ? ` #${s.hsi.tokenId}` : ''}
               </span>
             )}
             {s.hdrnLoaned && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800" title="Collateral for an HDRN loan">LOANED</span>}
           </div>
-          <div className="mt-0.5 truncate text-xs text-gray-500">{chainLabel(asset.chain)} · {walletName}</div>
+          <div className="mt-0.5 truncate text-xs text-muted">{chainLabel(asset.chain)} · {walletName}</div>
         </div>
         <div className="shrink-0">{statusBadge}</div>
       </div>
@@ -59,22 +59,22 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
       {/* Progress through the term */}
       <div className="mt-4">
         <div className="flex items-baseline justify-between text-xs">
-          <span className="font-semibold tabular-nums text-gray-900">{pct.toFixed(pct < 10 ? 1 : 0)}% complete</span>
-          <span className="tabular-nums text-gray-500">
+          <span className="font-semibold tabular-nums text-ink">{pct.toFixed(pct < 10 ? 1 : 0)}% complete</span>
+          <span className="tabular-nums text-muted">
             {s.daysRemaining > 0 ? `${s.daysRemaining.toLocaleString()} days left` : 'Term complete'}
           </span>
         </div>
         <div
-          className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-gray-200"
+          className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-line"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(pct)}
           aria-label={`Stake #${s.stakeId} ${Math.round(pct)}% complete`}
         >
-          <div className={`h-full rounded-full bg-gradient-to-r ${BAR[s.status] ?? BAR.active}`} style={{ width: `${Math.max(pct, 1.5)}%` }} />
+          <div className={`h-full rounded-full ${BAR[s.status] ?? BAR.active}`} style={{ width: `${Math.max(pct, 1.5)}%` }} />
         </div>
-        <div className="mt-1 flex justify-between text-[11px] tabular-nums text-gray-500">
+        <div className="mt-1 flex justify-between text-[11px] tabular-nums text-muted">
           <span>{fmtDate(hexDayToDate(s.lockedDay))}</span>
           <span>{served.toLocaleString()} / {s.stakedDays.toLocaleString()} days</span>
           <span>{fmtDate(new Date(s.endDate))}</span>
@@ -91,13 +91,13 @@ export function StakeCard({ asset, walletName, statusBadge }: { asset: StakeAsse
 
       {/* Details */}
       <div className="mt-auto pt-4">
-        <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
-          <span><span className="text-gray-400">T-Shares</span> {s.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}</span>
-          <span><span className="text-gray-400">APY</span> {s.apy.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</span>
-          {s.hdrnMintable ? <span className="text-indigo-700"><span className="text-indigo-400">Mint</span> {fmtHex(s.hdrnMintable)} HDRN</span> : null}
+        <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-muted">
+          <span><span className="text-muted/70">T-Shares</span> {s.tShares.toLocaleString('en-US', { maximumFractionDigits: 3 })}</span>
+          <span><span className="text-muted/70">APY</span> {s.apy.toLocaleString('en-US', { maximumFractionDigits: 1 })}%</span>
+          {s.hdrnMintable ? <span className="text-accent"><span className="text-accent/70">Mint</span> {fmtHex(s.hdrnMintable)} HDRN</span> : null}
         </div>
-        <div className={`mt-1.5 text-xs ${s.endNow.penaltyHex > 0 && net < 0 ? 'text-red-700' : 'text-gray-600'}`}>
-          <span className="text-gray-400">If ended today</span> {fmtHex(s.endNow.returnHex)} HEX
+        <div className={`mt-1.5 text-xs ${s.endNow.penaltyHex > 0 && net < 0 ? 'text-red-700' : 'text-muted'}`}>
+          <span className="text-muted/70">If ended today</span> {fmtHex(s.endNow.returnHex)} HEX
           {s.endNow.penaltyHex > 0
             ? ` (−${fmtHex(s.endNow.penaltyHex)} penalty${net < 0 ? `, loses ${fmtHex(-net)} principal` : ''})`
             : ' · no penalty'}
@@ -111,11 +111,11 @@ function Metric({ label, hex, usd, strong, accent, prefix = '', note }: {
   label: string; hex: number; usd: string; strong?: boolean; accent?: string; prefix?: string; note?: string;
 }) {
   return (
-    <div className={`min-w-0 rounded-xl p-2.5 ${strong ? 'bg-gradient-to-br from-pink-50 to-purple-50 ring-1 ring-purple-100' : 'bg-gray-50'}`}>
-      <dt className="text-[11px] uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className={`mt-0.5 truncate text-sm font-semibold tabular-nums ${accent ?? 'text-gray-900'}`}>{prefix}{fmtHex(hex)} HEX</dd>
-      <dd className={`truncate tabular-nums ${strong ? 'text-base font-bold text-gray-900' : 'text-sm text-gray-700'}`}>{usd}</dd>
-      {note && <dd className="text-[10px] text-gray-400">{note}</dd>}
+    <div className={`min-w-0 rounded-xl p-2.5 ${strong ? 'bg-accent/5 ring-1 ring-accent/25' : 'bg-soft/60'}`}>
+      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dd className={`mt-0.5 truncate text-sm font-semibold tabular-nums ${accent ?? 'text-ink'}`}>{prefix}{fmtHex(hex)} HEX</dd>
+      <dd className={`truncate tabular-nums ${strong ? 'text-base font-bold text-ink' : 'text-sm text-ink/85'}`}>{usd}</dd>
+      {note && <dd className="text-[10px] text-muted/70">{note}</dd>}
     </div>
   );
 }

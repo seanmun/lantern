@@ -17,8 +17,8 @@ const TYPE_STYLE: Record<TxType, { icon: string; className: string }> = {
   swap: { icon: '⇄', className: 'bg-blue-100 text-blue-800' },
   stake: { icon: '⬡', className: 'bg-pink-100 text-pink-800' },
   approval: { icon: '✓', className: 'bg-amber-100 text-amber-800' },
-  contract: { icon: '⚙', className: 'bg-gray-100 text-gray-700' },
-  nft: { icon: '🖼', className: 'bg-purple-100 text-purple-800' },
+  contract: { icon: '⚙', className: 'bg-soft text-ink/85' },
+  nft: { icon: '▣', className: 'bg-accent/10 text-accent' },
 };
 const NATIVE_SYMBOL: Record<string, string> = { ethereum: 'ETH', pulsechain: 'PLS', base: 'ETH', robinhood: 'ETH', bitcoin: 'BTC', solana: 'SOL' };
 
@@ -117,7 +117,7 @@ export default function TransactionsPage() {
     );
   }
 
-  const select = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 sm:w-auto';
+  const select = 'w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto';
 
   return (
     <>
@@ -137,28 +137,28 @@ export default function TransactionsPage() {
           <option value="all">All types</option>
           {(Object.keys(TYPE_LABEL) as TxType[]).map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
         </select>
-        <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-200">
-          <input type="checkbox" checked={hideSpam} onChange={(e) => setHideSpam(e.target.checked)} className="accent-purple-600" />
+        <label className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm text-ink/85 ring-1 ring-line">
+          <input type="checkbox" checked={hideSpam} onChange={(e) => setHideSpam(e.target.checked)} className="accent-accent" />
           Hide airdrop spam
         </label>
       </div>
 
       {notes.length > 0 && (
-        <ul className="mb-4 space-y-1 text-xs text-gray-500">
+        <ul className="mb-4 space-y-1 text-xs text-muted">
           {notes.map((n) => <li key={n}>ℹ {n}</li>)}
         </ul>
       )}
 
-      <section className="rounded-2xl border border-white/20 bg-white/70 shadow-xl backdrop-blur-sm">
+      <section className="rounded-2xl border border-line bg-white">
         {initialLoading && txs.length === 0 ? (
-          <p className="p-6 text-sm text-gray-500">Loading transactions…</p>
+          <p className="p-6 text-sm text-muted">Loading transactions…</p>
         ) : groups.length === 0 ? (
-          <p className="p-6 text-sm text-gray-500">No transactions match these filters{hasMore ? ' yet. Load more to search older history.' : '.'}</p>
+          <p className="p-6 text-sm text-muted">No transactions match these filters{hasMore ? ' yet. Load more to search older history.' : '.'}</p>
         ) : (
           groups.map((g) => (
             <div key={g.day}>
-              <h2 className="sticky top-14 z-10 border-b border-gray-100 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-500 backdrop-blur sm:px-6">{g.day}</h2>
-              <ul className="divide-y divide-gray-100">
+              <h2 className="sticky top-16 z-10 border-b border-line bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted backdrop-blur sm:px-6">{g.day}</h2>
+              <ul className="divide-y divide-line">
                 {g.items.map((tx) => <TxRow key={`${tx.walletId}:${tx.id}`} tx={tx} walletName={walletNames.get(tx.walletId) ?? ''} symbolOf={symbolOf} priceOf={(t) => prices.get(transferKey(tx.chain, t.contract))} />)}
               </ul>
             </div>
@@ -166,7 +166,7 @@ export default function TransactionsPage() {
         )}
       </section>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
         <span>
           {visible.length.toLocaleString()} shown of {txs.length.toLocaleString()} loaded
           {spamCount > 0 && ` · ${spamCount} spam airdrop${spamCount === 1 ? '' : 's'} hidden`}
@@ -175,7 +175,7 @@ export default function TransactionsPage() {
           <button
             onClick={loadMore}
             disabled={loading}
-            className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 font-semibold text-white shadow-lg disabled:opacity-60"
+            className="rounded-xl bg-ink px-5 py-2.5 font-bold text-white hover:bg-ink/85 disabled:opacity-60"
           >
             {loading ? 'Loading…' : 'Load more'}
           </button>
@@ -218,23 +218,23 @@ function TxRow({ tx, walletName, symbolOf, priceOf }: {
       <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold ${style.className}`} aria-hidden="true">{style.icon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
-          <p className="min-w-0 break-words text-sm font-medium text-gray-900">
+          <p className="min-w-0 break-words text-sm font-medium text-ink">
             {title}
             {tx.status === 'failed' && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-800">FAILED</span>}
           </p>
           {value !== 0 && (
-            <span className={`shrink-0 text-sm font-semibold tabular-nums ${neutral ? 'text-gray-600' : value > 0 ? 'text-green-700' : 'text-gray-900'}`} title="At today's prices">
+            <span className={`shrink-0 text-sm font-semibold tabular-nums ${neutral ? 'text-muted' : value > 0 ? 'text-green-700' : 'text-ink'}`} title="At today's prices">
               {neutral ? '' : value > 0 ? '+' : '−'}{formatUSD(Math.abs(value))}
             </span>
           )}
         </div>
-        <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500">
+        <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-muted">
           <span>{walletName}</span>
           <span>· {chainLabel(tx.chain)}</span>
           <span>· {time}</span>
           {tx.counterparty && <span>· {tx.type === 'receive' ? 'from' : 'with'} {shortAddress(tx.counterparty)}</span>}
           {tx.fee !== undefined && tx.fee > 0 && <span>· fee {fmt(tx.fee)} {NATIVE_SYMBOL[tx.chain]}</span>}
-          <a href={tx.explorerUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-purple-700 hover:text-purple-900">· view ↗</a>
+          <a href={tx.explorerUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:text-ink">· view ↗</a>
         </p>
       </div>
     </li>

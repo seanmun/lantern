@@ -76,20 +76,20 @@ export function ValidatorSimulator({ holdings }: { holdings: Record<string, numb
 
   if (failed) return null;
   return (
-    <section className="rounded-2xl border border-white/20 bg-white/70 p-6 shadow-xl backdrop-blur-sm sm:p-8">
+    <section className="rounded-3xl border border-line bg-white p-6 sm:p-8">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Run a validator?</h2>
-          <p className="text-sm text-gray-500">What staking ETH or PLS on your own validator pays, and whether it beats a pooled service</p>
+          <h2 className="text-2xl font-bold text-ink">Run a validator?</h2>
+          <p className="text-sm text-muted">What staking ETH or PLS on your own validator pays, and whether it beats a pooled service</p>
         </div>
-        <div className="flex rounded-lg bg-gray-100 p-1" role="tablist" aria-label="Network">
+        <div className="flex rounded-lg bg-soft p-1" role="tablist" aria-label="Network">
           {(['pulsechain', 'ethereum'] as const).map((c) => (
             <button
               key={c}
               role="tab"
               aria-selected={chain === c}
               onClick={() => setChain(c)}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${chain === c ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ${chain === c ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
             >
               <TokenLogo src={`/api/logos/native/${c}`} symbol={c === 'ethereum' ? 'ETH' : 'PLS'} size={16} />
               {c === 'ethereum' ? 'Ethereum' : 'PulseChain'}
@@ -98,11 +98,11 @@ export function ValidatorSimulator({ holdings }: { holdings: Record<string, numb
         </div>
       </div>
       {!networks ? (
-        <p className="text-sm text-gray-500">Loading validator data from the beacon chain…</p>
+        <p className="text-sm text-muted">Loading validator data from the beacon chain…</p>
       ) : (
         (() => {
           const n = networks.find((x) => x.chain === chain);
-          return n ? <Network key={chain} n={n} held={holdings[chain] ?? 0} /> : <p className="text-sm text-gray-500">No data for this network right now.</p>;
+          return n ? <Network key={chain} n={n} held={holdings[chain] ?? 0} /> : <p className="text-sm text-muted">No data for this network right now.</p>;
         })()
       )}
     </section>
@@ -212,7 +212,7 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
         />
         </div>
       ) : (
-        <p className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600">
+        <p className="rounded-xl bg-soft/60 p-3 text-xs text-muted">
           Ethereum&apos;s public beacon nodes don&apos;t keep history, so this uses today&apos;s rate. It has drifted down slowly
           for years as more ETH is staked; the rate is ∝ 1/√(total staked).
         </p>
@@ -227,15 +227,15 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
                 inputMode="decimal"
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
-                className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 tabular-nums"
+                className="min-w-0 flex-1 rounded-lg border border-line bg-white px-3 py-2 tabular-nums"
               />
               {held > 0 && (
-                <button onClick={() => setAmountInput(fmt(held, 4))} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50">
+                <button onClick={() => setAmountInput(fmt(held, 4))} className="shrink-0 rounded-lg bg-white px-3 py-2 text-xs font-medium text-ink/85 ring-1 ring-line hover:bg-soft/60">
                   Use my {fmt(held, 2)}
                 </button>
               )}
             </div>
-            <p className={`mt-1 text-xs ${short ? 'text-amber-700' : 'text-gray-500'}`}>
+            <p className={`mt-1 text-xs ${short ? 'text-amber-700' : 'text-muted'}`}>
               {short
                 ? `Solo needs ${fmt(n.minStake)} ${n.symbol}; below that only pooled staking works.`
                 : validators > 0
@@ -259,8 +259,8 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
           )}
 
           <Field label={`Uptime: ${uptime}%`}>
-            <input type="range" min={90} max={100} step={0.5} value={uptime} onChange={(e) => setUptime(Number(e.target.value))} className="w-full accent-purple-600" aria-label="Validator uptime" />
-            <p className="text-xs text-gray-500">Offline time earns nothing and costs a small penalty. Slashing is only for double-signing, never for downtime.</p>
+            <input type="range" min={90} max={100} step={0.5} value={uptime} onChange={(e) => setUptime(Number(e.target.value))} className="w-full accent-accent" aria-label="Validator uptime" />
+            <p className="text-xs text-muted">Offline time earns nothing and costs a small penalty. Slashing is only for double-signing, never for downtime.</p>
           </Field>
 
           <div className="grid grid-cols-3 gap-2">
@@ -270,8 +270,8 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
           </div>
 
           <Field label={`${n.symbol} price: ${multLabel(mult)}${price ? ` (${formatUSD(futurePrice)})` : ''}`}>
-            <input type="range" min={MIN_LOG_MULT} max={MAX_LOG_MULT} step={0.01} value={logMult} onChange={(e) => setLogMult(Number(e.target.value))} className="w-full accent-purple-600" aria-label="Price scenario" />
-            <div className="flex justify-between text-[10px] text-gray-400"><span>0.1×</span><button onClick={() => setLogMult(0)} className="hover:text-gray-600">today</button><span>10×</span></div>
+            <input type="range" min={MIN_LOG_MULT} max={MAX_LOG_MULT} step={0.01} value={logMult} onChange={(e) => setLogMult(Number(e.target.value))} className="w-full accent-accent" aria-label="Price scenario" />
+            <div className="flex justify-between text-[10px] text-muted/70"><span>0.1×</span><button onClick={() => setLogMult(0)} className="hover:text-muted">today</button><span>10×</span></div>
           </Field>
         </div>
 
@@ -306,7 +306,7 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
             symbol={n.symbol}
             years={years}
           />
-          <p className="text-[11px] text-gray-500">
+          <p className="text-[11px] text-muted">
             Rewards aren&apos;t compounded and are valued at the scenario price. Pooled assumes a service or liquid-staking token that
             passes on rewards minus its fee. Your {fmt(amount)} {n.symbol} itself moves with the price either way.
           </p>
@@ -315,9 +315,9 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
 
       {/* Backtest */}
       {backtest && (
-        <div className="rounded-2xl bg-gradient-to-br from-gray-50 to-white p-4 ring-1 ring-gray-200 sm:p-5">
+        <div className="rounded-2xl bg-soft/50 p-4 ring-1 ring-line sm:p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-base font-semibold text-gray-900">If you&apos;d started…</h3>
+            <h3 className="text-base font-semibold text-ink">If you&apos;d started…</h3>
             <Segmented options={BACKTEST.map((b) => ({ value: b.days, label: `${b.label} ago` }))} value={backtestDays} onChange={setBacktestDays} />
           </div>
           <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -331,7 +331,7 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
               emphasis
             />
           </dl>
-          <p className="mt-2 text-[11px] text-gray-500">
+          <p className="mt-2 text-[11px] text-muted">
             Uses {n.consensusHistory.length ? 'PulseChain’s actual protocol rate over the period' : 'today’s protocol rate'} plus today&apos;s{' '}
             {n.chain === 'ethereum' ? 'MEV' : 'tip'} rate, your uptime and costs, and CoinGecko&apos;s daily prices. Staking adds{' '}
             {n.symbol} to your stack; it doesn&apos;t protect the dollar value from a falling price.
@@ -339,9 +339,9 @@ function Network({ n, held }: { n: ValidatorNetworkStats; held: number }) {
         </div>
       )}
 
-      <details className="group rounded-xl bg-white/60 p-4 ring-1 ring-gray-200">
-        <summary className="cursor-pointer select-none text-sm font-medium text-purple-700">What running {n.chain === 'ethereum' ? 'an ETH' : 'a PLS'} validator takes</summary>
-        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-gray-700">
+      <details className="group rounded-xl bg-white p-4 ring-1 ring-line">
+        <summary className="cursor-pointer select-none text-sm font-medium text-accent">What running {n.chain === 'ethereum' ? 'an ETH' : 'a PLS'} validator takes</summary>
+        <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-ink/85">
           {n.chain === 'ethereum' ? (
             <>
               <li>32 ETH per validator. Since the Pectra upgrade (May 2025) one validator with compounding (0x02) credentials can hold up to 2,048 ETH, and its rewards compound automatically.</li>
@@ -371,7 +371,7 @@ function Verdict({ validators, soloNet, pooledNet, breakEvenPrice, breakEvenStak
   }
   const soloWins = soloNet > pooledNet;
   return (
-    <div className={`rounded-xl p-3 text-sm ${soloWins ? 'bg-green-50 text-green-900 ring-1 ring-green-200' : 'bg-indigo-50 text-indigo-900 ring-1 ring-indigo-200'}`}>
+    <div className={`rounded-xl p-3 text-sm ${soloWins ? 'bg-green-50 text-green-900 ring-1 ring-green-200' : 'bg-accent/10 text-ink ring-1 ring-accent/25'}`}>
       <p className="font-semibold">
         {soloWins
           ? `Running your own validator comes out ${formatUSD(soloNet - pooledNet)} ahead over ${years} year${years === 1 ? '' : 's'}.`
@@ -389,15 +389,15 @@ function Option({ title, rate, earned, symbol, value, costs, net }: {
   title: string; rate: number | null; earned: number; symbol: string; value: number; costs: number; net: number | null;
 }) {
   return (
-    <div className="min-w-0 rounded-xl bg-white p-3 ring-1 ring-gray-200">
-      <div className="text-xs font-medium uppercase tracking-wide text-gray-500">{title}</div>
-      <div className="mt-1 text-xl font-bold tabular-nums text-gray-900">{net !== null ? formatUSD(net) : '—'}</div>
-      <div className="text-[11px] text-gray-500">net, after costs</div>
+    <div className="min-w-0 rounded-xl bg-white p-3 ring-1 ring-line">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted">{title}</div>
+      <div className="mt-1 text-xl font-bold tabular-nums text-ink">{net !== null ? formatUSD(net) : '—'}</div>
+      <div className="text-[11px] text-muted">net, after costs</div>
       <dl className="mt-2 space-y-0.5 text-xs tabular-nums">
-        <div className="flex justify-between gap-2"><dt className="text-gray-500">Rate</dt><dd className="text-gray-800">{rate !== null ? pct(rate) : '—'}</dd></div>
-        <div className="flex justify-between gap-2"><dt className="text-gray-500">Earned</dt><dd className="truncate text-gray-800">{fmt(earned, 2)} {symbol}</dd></div>
-        <div className="flex justify-between gap-2"><dt className="text-gray-500">Worth</dt><dd className="text-gray-800">{formatUSD(value)}</dd></div>
-        <div className="flex justify-between gap-2"><dt className="text-gray-500">Costs</dt><dd className="text-gray-800">{costs ? `−${formatUSD(costs)}` : '—'}</dd></div>
+        <div className="flex justify-between gap-2"><dt className="text-muted">Rate</dt><dd className="text-ink">{rate !== null ? pct(rate) : '—'}</dd></div>
+        <div className="flex justify-between gap-2"><dt className="text-muted">Earned</dt><dd className="truncate text-ink">{fmt(earned, 2)} {symbol}</dd></div>
+        <div className="flex justify-between gap-2"><dt className="text-muted">Worth</dt><dd className="text-ink">{formatUSD(value)}</dd></div>
+        <div className="flex justify-between gap-2"><dt className="text-muted">Costs</dt><dd className="text-ink">{costs ? `−${formatUSD(costs)}` : '—'}</dd></div>
       </dl>
     </div>
   );
@@ -405,10 +405,10 @@ function Option({ title, rate, earned, symbol, value, costs, net }: {
 
 function Tile({ label, value, sub, emphasis }: { label: string; value: string; sub?: string; emphasis?: boolean }) {
   return (
-    <div className={`min-w-0 rounded-xl p-3 ring-1 ${emphasis ? 'bg-gradient-to-br from-pink-50 to-purple-50 ring-purple-100' : 'bg-white/70 ring-gray-200'}`}>
-      <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</dt>
-      <dd className={`truncate text-lg font-bold tabular-nums ${emphasis ? 'text-purple-700' : 'text-gray-900'}`}>{value}</dd>
-      {sub && <dd className="text-xs tabular-nums text-gray-500">{sub}</dd>}
+    <div className={`min-w-0 rounded-xl p-3 ring-1 ${emphasis ? 'bg-accent/5 ring-accent/25' : 'bg-white ring-line'}`}>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted">{label}</dt>
+      <dd className={`truncate text-lg font-bold tabular-nums ${emphasis ? 'text-accent' : 'text-ink'}`}>{value}</dd>
+      {sub && <dd className="text-xs tabular-nums text-muted">{sub}</dd>}
     </div>
   );
 }
@@ -416,7 +416,7 @@ function Tile({ label, value, sub, emphasis }: { label: string; value: string; s
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <div className="mb-1 text-sm font-medium text-gray-700">{label}</div>
+      <div className="mb-1 text-sm font-medium text-ink/85">{label}</div>
       {children}
     </div>
   );
@@ -425,12 +425,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function NumberField({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <label className="block min-w-0">
-      <span className="mb-1 block truncate text-xs font-medium text-gray-600">{label}</span>
+      <span className="mb-1 block truncate text-xs font-medium text-muted">{label}</span>
       <input
         inputMode="decimal"
         value={value}
         onChange={(e) => onChange(Number(e.target.value.replace(/[^0-9.]/g, '')) || 0)}
-        className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-sm tabular-nums"
+        className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm tabular-nums"
       />
     </label>
   );
@@ -438,13 +438,13 @@ function NumberField({ label, value, onChange }: { label: string; value: number;
 
 function Segmented<T extends string | number>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="inline-flex flex-wrap rounded-lg bg-gray-100 p-1">
+    <div className="inline-flex flex-wrap rounded-lg bg-soft p-1">
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
-          className={`rounded-md px-3 py-1 text-xs font-medium tabular-nums ${value === o.value ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+          className={`rounded-md px-3 py-1 text-xs font-medium tabular-nums ${value === o.value ? 'bg-white text-ink shadow-sm' : 'text-muted hover:text-ink'}`}
         >
           {o.label}
         </button>

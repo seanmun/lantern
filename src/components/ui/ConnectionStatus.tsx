@@ -44,9 +44,9 @@ const statusConfig = {
     color: 'gray',
     icon: '⚫',
     text: 'Disconnected',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
-    textColor: 'text-gray-800',
+    bgColor: 'bg-soft/60',
+    borderColor: 'border-line',
+    textColor: 'text-ink',
     dotColor: 'bg-gray-500'
   },
   rate_limited: {
@@ -92,7 +92,7 @@ export function ConnectionStatus({ chain, status, error, lastUpdated, onRetry }:
       )}
 
       {lastUpdated && (
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-muted">
           Last updated: {lastUpdated.toLocaleTimeString()}
         </p>
       )}
@@ -132,7 +132,7 @@ export function ConnectionStatusBar({
   chains?: string[];
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4 p-2 bg-gray-50 rounded-lg">
+    <div className="flex flex-wrap items-center gap-4 p-2 bg-soft/60 rounded-lg">
       {chains.map(chain => {
         const status = statuses.get(chain.toLowerCase()) || 'disconnected';
         const config = statusConfig[status];
@@ -140,7 +140,7 @@ export function ConnectionStatusBar({
         return (
           <div key={chain} className="flex items-center space-x-1">
             <ChainStatusIndicator status={status} size="sm" />
-            <span className="text-xs text-gray-600">{chain}</span>
+            <span className="text-xs text-muted">{chain}</span>
           </div>
         );
       })}
