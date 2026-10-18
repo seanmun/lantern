@@ -1,10 +1,12 @@
 # Lantern
 
-**Shine a light on any PulseChain wallet or token.**
+**Shine a light on your whole crypto portfolio.**
 
-Lantern is a free, open-source, read-only portfolio tracker built by and for the HEX and PulseChain community. It reads public blockchain data and explains it plainly: what you hold across chains, what your HEX stakes will pay and when, what your Maximus, Hedron and Icosa positions are worth, and whether a token looks like a scam.
+Lantern is a free, open-source, read-only portfolio tracker for every wallet you own: Bitcoin, Ethereum, PulseChain, Base, Solana and Robinhood Chain in one view. It reads public blockchain data and explains it plainly: what you hold, how it has moved, what your stakes will pay and when, and whether a token looks like a scam.
 
-Lantern is an independent community project. It is not affiliated with PulseChain, HEX or their founders.
+It was born in the HEX and PulseChain community, so it goes deepest there: contract-exact HEX staking, Maximus DAO, Hedron and Icosa, and scam checks that understand PulseChain fork copies.
+
+Lantern is an independent project. It is not affiliated with PulseChain, HEX or their founders.
 
 ## Lantern will never
 
