@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Asset } from '@/types';
-import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, TokenCheck, TxCheck } from '@/types/check';
+import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, SiteCheck, TokenCheck, TxCheck } from '@/types/check';
 import { ApprovalItem, ApprovalsReport } from '@/types/approvals';
 import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
@@ -34,6 +34,7 @@ const EXAMPLES = [
   { label: 'HEX', q: '0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39' },
   { label: 'A fork-copy token (DAI)', q: '0x6B175474E89094C44Da98b954EedeAC495271d0F' },
   { label: 'A failed transaction', q: '0x69c4133bae949a29cff4b0edd4da74e544eed35c7835daccce9c4555492c1b5b' },
+  { label: 'A fake PulseX site', q: 'app-pulsex.com' },
 ];
 
 /** /check: paste an address, token or transaction; get a plain answer. */
@@ -69,7 +70,7 @@ export function CheckView() {
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
         <h1 className="text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Check anything</h1>
-        <p className="mt-2 text-lg text-muted">Paste a wallet, a token contract or a transaction hash. No wallet connection, nothing to sign.</p>
+        <p className="mt-2 text-lg text-muted">Paste a wallet, a token contract, a transaction hash or a website. No wallet connection, nothing to sign.</p>
       </div>
 
       <form onSubmit={submit} role="search" className="flex flex-col gap-2 sm:flex-row">
@@ -78,7 +79,7 @@ export function CheckView() {
           id="check-q"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="0x… address, token or transaction · bc1… · Solana address"
+          placeholder="Address, token, transaction or website"
           autoComplete="off"
           spellCheck={false}
           className="h-14 min-w-0 flex-1 rounded-2xl border border-line bg-white px-5 font-mono text-[15px] text-ink placeholder:font-sans placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25"
@@ -112,6 +113,7 @@ function Result({ result }: { result: CheckResult }) {
     );
     case 'wallet': return <WalletCard address={result.address} chains={result.chains} />;
     case 'tx': return <TxCard tx={result.tx} />;
+    case 'site': return <SiteCard s={result.site} />;
     default: return <div className="rounded-3xl border border-line p-6 text-ink">{result.message}</div>;
   }
 }
@@ -336,6 +338,36 @@ function ApprovalsPanel({ address }: { address: string }) {
           <p className="text-[13px] text-muted">Lantern only reads; revoking happens in your own wallet. Base and Robinhood Chain aren&apos;t covered yet.</p>
         </>
       )}
+    </section>
+  );
+}
+
+const SITE_VERDICT: Record<SiteCheck['verdict'], { title: (s: SiteCheck) => string; tone: string; icon: 'check' | 'alert' | 'x' | 'question' }> = {
+  official: { title: (s) => `The real ${s.brand}`, tone: 'bg-[#E3F5EC] text-[#0B5A38] ring-[#B9E4CD]', icon: 'check' },
+  phishing: { title: (s) => (s.brand ? `Fake ${s.brand} site` : 'Known phishing site'), tone: 'bg-[#FDECEC] text-[#8A1C1C] ring-[#F3BDBD]', icon: 'x' },
+  caution: { title: () => 'Be careful', tone: 'bg-[#FFF4DB] text-[#7A4B00] ring-[#F5D78E]', icon: 'alert' },
+  unknown: { title: () => 'No warnings found', tone: 'bg-soft text-ink ring-line', icon: 'question' },
+};
+
+function SiteCard({ s }: { s: SiteCheck }) {
+  const v = SITE_VERDICT[s.verdict];
+  return (
+    <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-label={`Website ${s.host}`}>
+      <div className="text-sm text-muted">Website · <span className="font-mono">{s.host}</span></div>
+      <div className={`flex gap-3 rounded-2xl p-4 ring-1 ${v.tone}`} role="status">
+        <VerdictIcon icon={v.icon} />
+        <div>
+          <div className="text-lg font-extrabold">{v.title(s)}</div>
+          <ul className="mt-1 space-y-1 text-[15px] leading-snug">
+            {s.notes.map((n) => <li key={n}>{n}</li>)}
+          </ul>
+        </div>
+      </div>
+      {s.verdict === 'phishing' && (
+        <p className="text-[15px] text-ink">Don&apos;t connect a wallet, sign anything or type a recovery phrase there. If you already approved something on it, check this wallet&apos;s approvals on <Link href="/check" className="font-semibold text-accent hover:underline">Check</Link> and revoke them.</p>
+      )}
+      {s.verdict === 'official' && <p className="text-[13px] text-muted">Look-alike sites copy real ones exactly. Make sure the address bar shows this domain, ideally from a bookmark rather than a search result.</p>}
+      <p className="text-[13px] text-muted">Lantern never opens the site itself: it checks the name against known projects, MetaMask&apos;s public phishing list and the domain&apos;s registration date.</p>
     </section>
   );
 }

@@ -7,7 +7,7 @@ import { check } from '@/chains/check';
  */
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get('q')?.trim() ?? '';
-  if (!q || q.length > 100) return NextResponse.json({ kind: 'invalid', message: 'Paste a wallet address, a token contract address or a transaction hash.' });
+  if (!q || q.length > 300) return NextResponse.json({ kind: 'invalid', message: 'Paste a wallet address, a token contract address or a transaction hash.' });
   try {
     return NextResponse.json(await check(q), { headers: { 'Cache-Control': 'public, max-age=60' } });
   } catch (error) {

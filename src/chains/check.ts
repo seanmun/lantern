@@ -12,6 +12,7 @@ import { BLOCKSCOUT_HOSTS } from './blockscout';
 import { checkToken } from './tokenRisk';
 import { HEDRON_ADDRESS, HSIM_ADDRESS } from './hedron';
 import { ICOSA_ADDRESS } from './icosa';
+import { checkSite, parseDomain } from './site';
 
 /**
  * The public lookup behind /check: paste an address or a transaction hash.
@@ -322,7 +323,11 @@ export async function check(query: string): Promise<CheckResult> {
   }
 
   const validation = validateAddress(q);
-  if (!validation.isValid) return { kind: 'invalid', message: 'Paste a wallet address, a token contract address or a transaction hash.' };
+  if (!validation.isValid) {
+    const host = parseDomain(q);
+    if (host) return { kind: 'site', site: await checkSite(host) };
+    return { kind: 'invalid', message: 'Paste a wallet address, a token contract, a transaction hash or a website address.' };
+  }
   if (validation.format !== 'hex') return { kind: 'wallet', address: q, chains: validation.compatibleChains };
 
   const address = ethers.getAddress(q.toLowerCase());

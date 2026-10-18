@@ -60,10 +60,21 @@ export interface TxCheck {
   summary: string;            // plain English
 }
 
+export interface SiteCheck {
+  host: string;
+  domain: string;
+  verdict: 'official' | 'phishing' | 'caution' | 'unknown';
+  brand: string | null;        // the project it is (official) or imitates
+  registeredAt: number | null; // ms
+  ageDays: number | null;
+  notes: string[];
+}
+
 export type CheckResult =
   | { kind: 'token'; tokens: TokenCheck[] }        // one per chain the contract exists on
   | { kind: 'contract'; contracts: ContractCheck[] }
   | { kind: 'wallet'; address: string; chains: string[] }
   | { kind: 'tx'; tx: TxCheck }
+  | { kind: 'site'; site: SiteCheck }
   | { kind: 'not-found'; message: string }
   | { kind: 'invalid'; message: string };
