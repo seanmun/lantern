@@ -6,6 +6,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Asset } from '@/types';
 import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, SiteCheck, TokenCheck, TxCheck } from '@/types/check';
 import { ApprovalItem, ApprovalsReport } from '@/types/approvals';
+import { PrivacyFacts } from '@/types/privacy';
+import { privacyScore } from '@/utils/privacyScore';
 import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
 import { groupHoldings } from '@/utils/holdings';
@@ -254,8 +256,82 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
       )}
       <p className="text-[13px] text-muted">Read from public chain data. Tracking a wallet only saves its address in this browser.</p>
     </section>
+    {/^0x[0-9a-fA-F]{40}$/.test(address) && !title && (
+      <PrivacyPanel
+        address={address}
+        valueUSD={total}
+        nftCount={(assets ?? []).filter((a) => a.type === 'nft').length}
+        ready={assets !== null}
+        otherWallets={wallets.map((w) => w.address.toLowerCase()).filter((a) => a !== address.toLowerCase())}
+      />
+    )}
     {/^0x[0-9a-fA-F]{40}$/.test(address) && !title && <ApprovalsPanel address={address} />}
     </>
+  );
+}
+
+const BAND = {
+  exposed: { label: 'Exposed', tone: 'text-[#8A1C1C]', ring: '#C92A2A' },
+  partial: { label: 'Partly private', tone: 'text-[#7A4B00]', ring: '#D9930D' },
+  private: { label: 'Private', tone: 'text-[#0B5A38]', ring: '#0B7A4B' },
+};
+
+/** How identifiable this wallet is, and what would improve it. */
+function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { address: string; valueUSD: number; nftCount: number; ready: boolean; otherWallets: string[] }) {
+  const [facts, setFacts] = useState<PrivacyFacts | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/privacy?address=${address}`).then((r) => r.json()).then((d: PrivacyFacts) => !cancelled && setFacts(d)).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [address]);
+
+  const result = facts && ready ? privacyScore(facts, { otherWallets, valueUSD, nftCount }) : null;
+  const band = result ? BAND[result.band] : null;
+  return (
+    <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-labelledby="privacy-h">
+      <div>
+        <h2 id="privacy-h" className="text-2xl font-extrabold tracking-tight text-ink">Privacy score</h2>
+        <p className="mt-1 text-[15px] text-muted">How easily a stranger could work out who owns this wallet and what else they own, from public data alone.</p>
+      </div>
+      {!result && <div className="rounded-2xl bg-soft p-5 text-center text-muted">Looking at what this wallet reveals…</div>}
+      {result && band && (
+        <>
+          <div className="flex flex-wrap items-center gap-5">
+            <div className="relative h-24 w-24 shrink-0" role="img" aria-label={`Privacy score ${result.score} out of 100, ${band.label}`}>
+              <svg viewBox="0 0 36 36" className="h-24 w-24 -rotate-90" aria-hidden="true">
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-line)" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15.5" fill="none" stroke={band.ring} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(result.score / 100) * 97.4} 97.4`} />
+              </svg>
+              <span className="absolute inset-0 flex items-center justify-center text-2xl font-extrabold tabular-nums text-ink">{result.score}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className={`text-xl font-extrabold ${band.tone}`}>{band.label}</div>
+              <p className="text-[15px] text-muted">
+                {result.band === 'private'
+                  ? 'Nothing public ties this wallet to an identity or to your other wallets.'
+                  : 'Most wallets score low today. Privacy tools are arriving; the fixes below are what would raise this.'}
+              </p>
+            </div>
+          </div>
+          {result.factors.length > 0 && (
+            <ul className="space-y-3">
+              {result.factors.map((f) => (
+                <li key={f.id} className="flex gap-3 border-t border-line pt-3">
+                  <span className={`w-12 shrink-0 text-right font-extrabold tabular-nums ${f.impact < 0 ? 'text-[#8A1C1C]' : 'text-[#0B5A38]'}`}>{f.impact > 0 ? '+' : '−'}{Math.abs(f.impact)}</span>
+                  <div className="min-w-0 text-[15px]">
+                    <p className="text-ink">{f.label}</p>
+                    {f.fix && <p className="mt-0.5 text-muted"><span className="font-semibold text-ink">Improve: </span>{f.fix}</p>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="text-[13px] text-muted">Based on public explorer data from PulseChain and Ethereum and the last {facts!.sampled} transfers. Firms with private data can see more, so treat this as a best case. Your tracked wallets are compared in this browser and never sent anywhere.</p>
+        </>
+      )}
+    </section>
   );
 }
 
