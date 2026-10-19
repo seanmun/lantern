@@ -5,6 +5,8 @@ import { usePortfolioContext } from '@/components/app/PortfolioProvider';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { LanternMark } from '@/components/app/AppShell';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
+import { SyncJoinForm } from '@/components/wallet/SyncPanel';
+import { useState } from 'react';
 
 const TEST_WALLETS = [
   { address: process.env.NEXT_PUBLIC_TEST_ETH_WALLET, name: 'Test EVM Wallet' },
@@ -13,6 +15,7 @@ const TEST_WALLETS = [
 
 export default function DashboardPage() {
   const { wallets, assets, isLoading, featuredArt, addWallet, autoHidden } = usePortfolioContext();
+  const [joining, setJoining] = useState(false);
 
   if (wallets.length === 0) {
     return (
@@ -24,6 +27,19 @@ export default function DashboardPage() {
           Paste a public address to start. It&apos;s saved only in this browser.
         </p>
         <div className="mt-6 text-left"><AddWalletForm onAdd={addWallet} /></div>
+        <div className="mt-6 border-t border-line pt-5 text-left">
+          {joining ? (
+            <>
+              <h2 className="font-bold text-ink">Enter your sync code</h2>
+              <p className="mt-1 text-sm text-muted">From the Wallets page on the device where your portfolio is set up.</p>
+              <SyncJoinForm onCancel={() => setJoining(false)} showError />
+            </>
+          ) : (
+            <button onClick={() => setJoining(true)} className="w-full rounded-xl bg-soft px-4 py-3 text-sm font-bold text-ink ring-1 ring-line hover:bg-line">
+              Already use Lantern on another device? Enter your sync code
+            </button>
+          )}
+        </div>
         {TEST_WALLETS.length > 0 && (
           <button onClick={() => TEST_WALLETS.forEach((w) => addWallet(w.address, w.name))} className="mt-4 text-sm font-semibold text-accent hover:underline">
             Load test wallets from .env.local →

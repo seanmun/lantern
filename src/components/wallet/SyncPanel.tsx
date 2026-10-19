@@ -17,6 +17,54 @@ const primary = `${button} bg-ink text-on-ink hover:bg-ink/85`;
 const secondary = `${button} bg-soft text-ink ring-1 ring-line hover:bg-line`;
 const quiet = 'text-sm font-semibold text-muted underline-offset-4 hover:text-ink hover:underline disabled:opacity-50';
 
+/** Enter a code from another device. Used on the Wallets page and the empty dashboard. */
+export function SyncJoinForm({ onCancel, showError = false }: { onCancel?: () => void; showError?: boolean }) {
+  const { busy, error } = useSync();
+  const [input, setInput] = useState('');
+
+  const join = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      await joinSyncCode(input);
+      setInput('');
+    } catch {
+      // error is shown from the store
+    }
+  };
+
+  return (
+    <div className="mt-5">
+      <form onSubmit={join} className="flex flex-col gap-3 sm:flex-row">
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="XXXX-XXXX-XXXX"
+          aria-label="Sync code"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          autoFocus
+          className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 font-mono text-base tracking-widest text-ink uppercase focus:outline-none focus:ring-2 focus:ring-accent sm:max-w-xs"
+        />
+        <button type="submit" disabled={busy || !input.trim()} className={primary}>
+          {busy ? 'Unlocking…' : 'Connect'}
+        </button>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className={secondary}>
+            Cancel
+          </button>
+        )}
+      </form>
+      <p className="mt-3 text-[13px] text-muted">Wallets already in this browser are kept and added to the synced set.</p>
+      {showError && error && (
+        <p role="alert" className="mt-2 text-sm text-bad">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /**
  * Sync codes on the Wallets page: create one, enter one from another device,
  * and see or stop the link. The code is the only key to the synced copy.
@@ -24,7 +72,6 @@ const quiet = 'text-sm font-semibold text-muted underline-offset-4 hover:text-in
 export function SyncPanel() {
   const { code, syncedAt, busy, error, missing } = useSync();
   const [mode, setMode] = useState<'idle' | 'join' | 'confirm-delete'>('idle');
-  const [input, setInput] = useState('');
   const [shown, setShown] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -32,17 +79,6 @@ export function SyncPanel() {
     try {
       await createSyncCode();
       setShown(true);
-    } catch {
-      // error is shown from the store
-    }
-  };
-
-  const join = async (e: FormEvent) => {
-    e.preventDefault();
-    try {
-      await joinSyncCode(input);
-      setInput('');
-      setMode('idle');
     } catch {
       // error is shown from the store
     }
@@ -70,7 +106,7 @@ export function SyncPanel() {
   };
 
   return (
-    <section aria-labelledby="sync-h" className="mt-6 rounded-3xl border border-line bg-surface p-6 sm:p-8">
+    <section id="sync" aria-labelledby="sync-h" className="mt-6 scroll-mt-24 rounded-3xl border border-line bg-surface p-6 sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="sync-h" className="text-xl font-extrabold tracking-tight text-ink">Use on another device</h2>
         {code && (
@@ -88,25 +124,7 @@ export function SyncPanel() {
             server only stores scrambled data it can&apos;t read.
           </p>
           {mode === 'join' ? (
-            <form onSubmit={join} className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="XXXX-XXXX-XXXX"
-                aria-label="Sync code"
-                autoComplete="off"
-                autoCapitalize="characters"
-                spellCheck={false}
-                autoFocus
-                className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 font-mono text-base tracking-widest text-ink uppercase focus:outline-none focus:ring-2 focus:ring-accent sm:max-w-xs"
-              />
-              <button type="submit" disabled={busy || !input.trim()} className={primary}>
-                {busy ? 'Unlocking…' : 'Connect'}
-              </button>
-              <button type="button" onClick={() => setMode('idle')} className={secondary}>
-                Cancel
-              </button>
-            </form>
+            <SyncJoinForm onCancel={() => setMode('idle')} />
           ) : (
             <div className="mt-5 flex flex-wrap gap-3">
               <button onClick={create} disabled={busy} className={primary}>
@@ -116,9 +134,6 @@ export function SyncPanel() {
                 I have a code
               </button>
             </div>
-          )}
-          {mode === 'join' && (
-            <p className="mt-3 text-[13px] text-muted">Wallets already in this browser are kept and added to the synced set.</p>
           )}
         </>
       ) : (
