@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { BaroqueFrame, OPENING_INSET } from './BaroqueFrame';
 
 export interface Artwork {
   id: string;
@@ -20,32 +21,12 @@ interface PaintingFrameProps {
 
 const FADE_MS = 1200;
 
-// Carved gilt: layered metallic stops, catching light top-left
-// Antique gilt: muted golds with darker recesses, as on an old carved frame
-const GILT = 'linear-gradient(145deg, #4a3410 0%, #9c7a32 9%, #dcc07a 20%, #9a7630 32%, #ecd79a 44%, #8f6d2b 56%, #cfae62 70%, #6a4c18 84%, #a8853c 100%)';
-const GILT_INNER = 'linear-gradient(145deg, #6a4c18 0%, #d9bd74 30%, #8a6826 55%, #c9a75b 80%, #5a3f12 100%)';
-// Fine grain + crackle so the gilt reads aged rather than glossy
-const PATINA = 'repeating-linear-gradient(115deg, rgba(40,25,5,0.07) 0 1px, transparent 1px 3px), repeating-linear-gradient(25deg, rgba(255,245,215,0.06) 0 1px, transparent 1px 4px)';
 const BRASS = 'linear-gradient(180deg, #e9cd7d 0%, #c99d3e 45%, #a57826 100%)';
-
-/** Acanthus-style corner flourish, drawn once and rotated into each corner. */
-function Corner({ gradientId, className }: { gradientId: string; className: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={`pointer-events-none absolute h-14 w-14 sm:h-16 sm:w-16 ${className}`} aria-hidden="true">
-      <path
-        d="M2 2h30c-6 2-11 5-14 10 6-3 13-3 18 1-7 0-12 3-15 8 5-2 10-1 13 2-6 1-10 4-12 9 3-1 6 0 8 2-5 1-8 4-9 9l-2 3c-1-6-3-11-7-14 4 0 6-2 7-5-4 1-8 0-10-3 4-1 6-4 7-7-4 1-8 0-11-3 4-1 7-4 8-8C8 8 5 5 2 2z"
-        fill={`url(#${gradientId})`}
-        stroke="#5e400f"
-        strokeOpacity="0.45"
-        strokeWidth="0.75"
-      />
-      <circle cx="9" cy="9" r="4.2" fill={`url(#${gradientId})`} stroke="#5e400f" strokeOpacity="0.5" strokeWidth="0.75" />
-    </svg>
-  );
-}
+// Deep velvet slip between the carving and the art, as Victorian frames had
+const VELVET = 'radial-gradient(120% 110% at 50% 35%, #5c1622 0%, #3d0c15 55%, #23060c 100%)';
 
 /**
- * A gilded museum frame that cross-fades through the viewer's collectibles.
+ * A carved Baroque frame that cross-fades through the viewer's collectibles.
  * Pauses on hover/focus; no auto-rotation when the OS asks for reduced motion.
  */
 export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'Add a wallet that holds NFTs or Ordinals to hang art here' }: PaintingFrameProps) {
@@ -54,7 +35,7 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
   const [paused, setPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
-  const gradientId = useId();
+  const [failed, setFailed] = useState<Record<string, boolean>>({});
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const count = artworks.length;
@@ -124,13 +105,20 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
             className="pointer-events-none h-full w-full border-0 bg-white"
             onLoad={onLoad}
           />
+        ) : failed[art.id] ? (
+          <div className="flex h-full items-center justify-center p-6 text-center font-serif text-sm italic text-[#7a6845]">
+            This piece&apos;s image couldn&apos;t be loaded from where it&apos;s hosted
+          </div>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element -- remote NFT media
           <img
             src={art.imageUrl}
             alt={art.title}
             onLoad={onLoad}
-            onError={onLoad}
+            onError={() => {
+              setFailed((f) => ({ ...f, [art.id]: true }));
+              onLoad();
+            }}
             className="h-full w-full object-contain"
             style={{ imageRendering: art.pixelated ? 'pixelated' : 'auto' }}
           />
@@ -150,63 +138,27 @@ export function PaintingFrame({ artworks, intervalMs = 10_000, emptyMessage = 'A
       onFocusCapture={() => setPaused(true)}
       onBlurCapture={() => setPaused(false)}
     >
-      <svg width="0" height="0" className="absolute" aria-hidden="true">
-        <defs>
-          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#fff3bd" />
-            <stop offset="0.45" stopColor="#d4a43a" />
-            <stop offset="1" stopColor="#7b5515" />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* Frame */}
-      <div
-        className="relative w-full rounded-[6px] p-[18px] sm:p-[24px]"
-        style={{
-          background: `${PATINA}, ${GILT}`,
-          boxShadow: [
-            '0 30px 45px -18px rgba(40,25,5,0.55)',
-            '0 10px 14px -8px rgba(40,25,5,0.35)',
-            // outer bead and highlight
-            'inset 0 0 0 1px rgba(40,25,5,0.6)',
-            'inset 0 0 0 3px rgba(230,205,140,0.55)',
-            'inset 0 0 0 4px rgba(60,40,10,0.45)',
-            'inset 0 3px 3px rgba(255,240,200,0.55)',
-            'inset 0 -4px 6px rgba(40,25,5,0.55)',
-          ].join(', '),
-        }}
-      >
-        <Corner gradientId={gradientId} className="-left-1 -top-1" />
-        <Corner gradientId={gradientId} className="-right-1 -top-1 rotate-90" />
-        <Corner gradientId={gradientId} className="-bottom-1 -right-1 rotate-180" />
-        <Corner gradientId={gradientId} className="-bottom-1 -left-1 -rotate-90" />
-
-        {/* Inner gilt lip */}
-        <div
-          className="rounded-[3px] p-[6px]"
-          style={{
-            background: `${PATINA}, ${GILT_INNER}`,
-            // beaded inner molding: alternating dark/light rings
-            boxShadow: '0 0 0 1px rgba(40,25,5,0.65), inset 0 0 0 1px rgba(240,215,150,0.6), inset 0 0 0 2px rgba(60,40,10,0.55), inset 0 2px 4px rgba(40,25,5,0.6)',
-          }}
-        >
-          {/* Mat */}
-          <div className="p-[9%]" style={{ background: '#f4eedf', boxShadow: 'inset 0 3px 10px rgba(50,35,10,0.35), inset 0 0 0 1px rgba(120,95,50,0.25)' }}>
-            <div className="relative aspect-square w-full overflow-hidden bg-[#ebe4d4]" style={{ boxShadow: '0 0 0 1px rgba(90,70,35,0.35), 0 2px 6px rgba(40,25,5,0.35)' }}>
-              {count === 0 ? (
-                <div className="flex h-full items-center justify-center p-6 text-center font-serif text-sm italic text-[#7a6845]">
-                  {emptyMessage}
-                </div>
-              ) : (
-                <>
-                  {previous !== null && previous !== safeIndex && artworks[previous] && layer(artworks[previous], false)}
-                  {current && layer(current, true)}
-                </>
-              )}
-            </div>
+      {/* Frame: the opening sits under the carving so the moulding's shadow falls onto it */}
+      <div className="relative aspect-square w-full" style={{ filter: 'drop-shadow(0 22px 22px rgba(10,5,0,0.55)) drop-shadow(0 6px 6px rgba(10,5,0,0.35))' }}>
+        <div className="absolute p-[4%]" style={{ inset: `${OPENING_INSET * 100}%`, background: VELVET, boxShadow: 'inset 0 8px 14px rgba(0,0,0,0.65), inset 0 -2px 6px rgba(0,0,0,0.4)' }}>
+          <div
+            className="relative h-full w-full overflow-hidden bg-[#ebe4d4]"
+            // a thin gilt fillet around the art
+            style={{ boxShadow: '0 0 0 1.5px #d6b263, 0 0 0 2.5px #3a2504, 0 3px 8px rgba(0,0,0,0.55)' }}
+          >
+            {count === 0 ? (
+              <div className="flex h-full items-center justify-center p-6 text-center font-serif text-sm italic text-[#7a6845]">
+                {emptyMessage}
+              </div>
+            ) : (
+              <>
+                {previous !== null && previous !== safeIndex && artworks[previous] && layer(artworks[previous], false)}
+                {current && layer(current, true)}
+              </>
+            )}
           </div>
         </div>
+        <BaroqueFrame className="pointer-events-none absolute inset-0 h-full w-full" />
       </div>
 
       {/* Brass plaque */}
