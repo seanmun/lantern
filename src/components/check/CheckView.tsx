@@ -324,6 +324,24 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
               </p>
             </div>
           </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-soft p-4">
+              <div className="text-[13px] font-semibold text-muted">Likely tied to</div>
+              <div className="text-xl font-extrabold tabular-nums text-ink">
+                {result.linked.count === 0 ? 'No other wallets found' : `${result.linked.count} other wallet${result.linked.count === 1 ? '' : 's'}`}
+              </div>
+              {result.linked.reasons.length > 0 && <p className="mt-0.5 text-[13px] text-muted">Through {result.linked.reasons.join('; ')}.</p>}
+            </div>
+            <div className="rounded-2xl bg-soft p-4">
+              <div className="text-[13px] font-semibold text-muted">Could reach</div>
+              <div className="text-xl font-extrabold tabular-nums text-ink">{result.potential > result.score ? `${result.potential} / 100` : `${result.score} / 100`}</div>
+              <p className="mt-0.5 text-[13px] text-muted">
+                {result.potential > result.score
+                  ? 'By fixing what can still change on this wallet: its ENS profile, visible balance and NFTs. The rest is permanent history; a fresh wallet is the way past it.'
+                  : 'What’s left is permanent public history. A fresh wallet, kept apart from this one, is the way past it.'}
+              </p>
+            </div>
+          </div>
           {result.factors.length > 0 && (
             <ul className="space-y-3">
               {result.factors.map((f) => (
@@ -337,7 +355,7 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
               ))}
             </ul>
           )}
-          <p className="text-[13px] text-muted">Based on public explorer data from PulseChain and Ethereum and the last {facts!.sampled} transfers. Firms with private data can see more, so treat this as a best case. Your tracked wallets are compared in this browser and never sent anywhere.</p>
+          <p className="text-[13px] text-muted">Based on public explorer data from PulseChain and Ethereum, the last {facts!.sampled} transfers and Etherscan’s public exchange labels. Firms with private data can see more, so treat this as a best case. Other wallets tied to this one are counted, never listed. Your tracked wallets are compared in this browser and never sent anywhere.</p>
         </>
       )}
     </section>
