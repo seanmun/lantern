@@ -89,10 +89,22 @@ async function chainFacts(chain: string, address: string) {
   };
 }
 
-/** Has this address ever sent a transaction on the chain? */
+// PulseChain copied every Ethereum account at its fork, transaction counter included
+const PULSECHAIN_FORK_BLOCK = 17_233_000;
+
+/**
+ * Has this address ever sent a transaction on the chain? On PulseChain only
+ * sends after the fork count: a pre-fork Ethereum wallet inherits its count
+ * without ever having touched PulseChain.
+ */
 async function used(config: typeof BASE_CONFIG, address: string) {
   try {
-    return (await createProvider(config).getTransactionCount(address)) > 0;
+    const provider = createProvider(config);
+    if (config === PULSECHAIN_CONFIG) {
+      const [now, atFork] = await Promise.all([provider.getTransactionCount(address), provider.getTransactionCount(address, PULSECHAIN_FORK_BLOCK)]);
+      return now > atFork;
+    }
+    return (await provider.getTransactionCount(address)) > 0;
   } catch {
     return false;
   }
