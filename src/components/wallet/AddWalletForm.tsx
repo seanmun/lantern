@@ -7,9 +7,11 @@ import { AddWalletResult } from '@/hooks/useWallets';
 
 interface AddWalletFormProps {
   onAdd: (address: string, name?: string) => AddWalletResult;
+  /** Fields stacked, for narrow columns */
+  stacked?: boolean;
 }
 
-export function AddWalletForm({ onAdd }: AddWalletFormProps) {
+export function AddWalletForm({ onAdd, stacked = false }: AddWalletFormProps) {
   const [address, setAddress] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className={`flex flex-col gap-3 ${stacked ? '' : 'sm:flex-row'}`}>
         <input
           value={address}
           onChange={(e) => { setAddress(e.target.value); setError(null); }}
@@ -46,7 +48,7 @@ export function AddWalletForm({ onAdd }: AddWalletFormProps) {
           placeholder="Name (optional)"
           aria-label="Wallet name"
           maxLength={40}
-          className="sm:w-48 rounded-xl border border-line bg-surface px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+          className={`${stacked ? '' : 'sm:w-48'} rounded-xl border border-line bg-surface px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent`}
         />
         <button
           type="submit"

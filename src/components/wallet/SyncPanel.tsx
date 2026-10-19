@@ -13,12 +13,12 @@ function ago(ms: number): string {
 }
 
 const button = 'inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-bold transition disabled:opacity-50';
-const primary = `${button} bg-ink text-on-ink hover:bg-ink/85`;
+const primary = `${button} bg-ink text-on-ink hover:bg-ink/85 disabled:bg-line disabled:text-muted disabled:opacity-100`;
 const secondary = `${button} bg-soft text-ink ring-1 ring-line hover:bg-line`;
 const quiet = 'text-sm font-semibold text-muted underline-offset-4 hover:text-ink hover:underline disabled:opacity-50';
 
 /** Enter a code from another device. Used on the Wallets page and the empty dashboard. */
-export function SyncJoinForm({ onCancel, showError = false }: { onCancel?: () => void; showError?: boolean }) {
+export function SyncJoinForm({ onCancel, showError = false, autoFocus = true, stacked = false }: { onCancel?: () => void; showError?: boolean; autoFocus?: boolean; stacked?: boolean }) {
   const { busy, error } = useSync();
   const [input, setInput] = useState('');
 
@@ -33,8 +33,8 @@ export function SyncJoinForm({ onCancel, showError = false }: { onCancel?: () =>
   };
 
   return (
-    <div className="mt-5">
-      <form onSubmit={join} className="flex flex-col gap-3 sm:flex-row">
+    <div className={stacked ? '' : 'mt-5'}>
+      <form onSubmit={join} className={`flex flex-col gap-3 ${stacked ? '' : 'sm:flex-row'}`}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -43,10 +43,10 @@ export function SyncJoinForm({ onCancel, showError = false }: { onCancel?: () =>
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          autoFocus
-          className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 font-mono text-base tracking-widest text-ink uppercase focus:outline-none focus:ring-2 focus:ring-accent sm:max-w-xs"
+          autoFocus={autoFocus}
+          className={`min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 font-mono text-base tracking-widest text-ink uppercase focus:outline-none focus:ring-2 focus:ring-accent ${stacked ? '' : 'sm:max-w-xs'}`}
         />
-        <button type="submit" disabled={busy || !input.trim()} className={primary}>
+        <button type="submit" disabled={busy || !input.trim()} className={`${primary} ${stacked ? 'h-12' : ''}`}>
           {busy ? 'Unlocking…' : 'Connect'}
         </button>
         {onCancel && (
