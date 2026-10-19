@@ -46,6 +46,9 @@ const NATIVE_LOGOS: Record<string, string> = {
   ethereum: 'https://coin-images.coingecko.com/coins/images/279/large/ethereum.png',
   pulsechain: 'https://coin-images.coingecko.com/coins/images/25666/large/PLS-LogoTransparent_1.png',
   solana: 'https://coin-images.coingecko.com/coins/images/4128/large/solana.png',
+  litecoin: 'https://coin-images.coingecko.com/coins/images/2/large/litecoin.png',
+  dogecoin: 'https://coin-images.coingecko.com/coins/images/5/large/dogecoin.png',
+  'bitcoin-cash': 'https://coin-images.coingecko.com/coins/images/780/large/bitcoin-cash-circle.png',
 };
 
 // Bridged tokens wear their origin token's logo

@@ -224,7 +224,7 @@ export interface APIResponse<T> {
 // Validation types
 export interface AddressValidation {
   isValid: boolean;
-  format: 'hex' | 'base58' | 'bech32' | 'unknown';
+  format: 'hex' | 'base58' | 'bech32' | 'cashaddr' | 'unknown';
   compatibleChains: string[];
 }
 

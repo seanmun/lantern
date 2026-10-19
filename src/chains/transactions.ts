@@ -5,6 +5,7 @@ import { ETHEREUM_CONFIG } from './ethereum';
 import { PULSECHAIN_CONFIG } from './pulsechain';
 import { BASE_CONFIG } from './base';
 import { ROBINHOOD_CONFIG } from './robinhood';
+import { toCashAddr } from '@/utils/address';
 
 /**
  * Unified transaction history, one page at a time per (chain, wallet).
@@ -12,6 +13,7 @@ import { ROBINHOOD_CONFIG } from './robinhood';
  * Sources: Blockscout explorers (Ethereum; Pulsechain's transaction list),
  * Transfer event logs read from Pulsechain's own RPC (its explorer times out
  * on token transfers for airdrop-heavy wallets), mempool.space (Bitcoin),
+ * litecoinspace.org (Litecoin), BitPay's Bitcore (Dogecoin, Bitcoin Cash),
  * Solana JSON-RPC, and Alchemy's asset-transfers API for Base / Robinhood
  * (their explorers block servers), which needs ALCHEMY_API_KEY.
  */
@@ -54,8 +56,11 @@ const EXPLORERS: Record<string, string> = {
   robinhood: 'https://robinhoodchain.blockscout.com/tx/',
   bitcoin: 'https://mempool.space/tx/',
   solana: 'https://solscan.io/tx/',
+  litecoin: 'https://litecoinspace.org/tx/',
+  dogecoin: 'https://blockchair.com/dogecoin/transaction/',
+  bitcoincash: 'https://blockchair.com/bitcoin-cash/transaction/',
 };
-const NATIVE: Record<string, string> = { ethereum: 'ETH', pulsechain: 'PLS', base: 'ETH', robinhood: 'ETH', bitcoin: 'BTC', solana: 'SOL' };
+const NATIVE: Record<string, string> = { ethereum: 'ETH', pulsechain: 'PLS', base: 'ETH', robinhood: 'ETH', bitcoin: 'BTC', solana: 'SOL', litecoin: 'LTC', dogecoin: 'DOGE', bitcoincash: 'BCH' };
 const BLOCKSCOUT: Record<string, string> = { ethereum: 'https://eth.blockscout.com', pulsechain: 'https://api.scan.pulsechain.com' };
 const ALCHEMY_NETWORK: Record<string, string> = { base: 'base-mainnet', robinhood: 'robinhood-mainnet', ethereum: 'eth-mainnet' };
 const EVM_CONFIG: Record<string, EvmChainConfig> = { ethereum: ETHEREUM_CONFIG, pulsechain: PULSECHAIN_CONFIG, base: BASE_CONFIG, robinhood: ROBINHOOD_CONFIG };
@@ -293,7 +298,7 @@ async function evmAlchemyPage(chain: string, wallet: string, cursor: string | nu
   return { txs: finalize(map, wallet), cursor: next.outDone && next.inDone ? null : encode(next) };
 }
 
-// ---------- Bitcoin via mempool.space ----------
+// ---------- Bitcoin and Litecoin via Esplora APIs (mempool.space, litecoinspace.org) ----------
 
 interface BtcTx {
   txid: string; fee: number; status: { confirmed: boolean; block_time?: number };
@@ -301,28 +306,80 @@ interface BtcTx {
   vout: { scriptpubkey_address?: string; value: number }[];
 }
 
-async function bitcoinPage(wallet: string, cursor: string | null): Promise<TxPage> {
+const ESPLORA: Record<string, string> = { bitcoin: 'https://mempool.space/api', litecoin: 'https://litecoinspace.org/api' };
+
+async function esploraPage(chain: string, wallet: string, cursor: string | null): Promise<TxPage> {
   const after = decode<{ last: string }>(cursor)?.last;
-  const txs = await getJSON<BtcTx[]>(`https://mempool.space/api/address/${wallet}/txs${after ? `/chain/${after}` : ''}`);
+  const txs = await getJSON<BtcTx[]>(`${ESPLORA[chain]}/address/${wallet}/txs${after ? `/chain/${after}` : ''}`);
   const out: Tx[] = txs.map((t) => {
     const sent = t.vin.filter((v) => v.prevout?.scriptpubkey_address === wallet).reduce((s, v) => s + (v.prevout?.value ?? 0), 0);
     const received = t.vout.filter((v) => v.scriptpubkey_address === wallet).reduce((s, v) => s + v.value, 0);
     const net = received - sent;
     const spent = sent > 0;
     return {
-      id: `bitcoin:${t.txid}`, chain: 'bitcoin', wallet, hash: t.txid,
+      id: `${chain}:${t.txid}`, chain, wallet, hash: t.txid,
       timestamp: (t.status.block_time ?? Date.now() / 1000) * 1000,
       type: net >= 0 ? 'receive' : 'send', status: 'success',
       fee: spent ? t.fee / 1e8 : undefined,
       // Net change excluding the fee, so a self-transfer shows ~0 + fee
-      transfers: ([{ symbol: 'BTC', amount: Math.abs(net + (spent ? t.fee : 0)) / 1e8, direction: net >= 0 ? 'in' : 'out' }] as TxTransfer[]).filter((x) => x.amount > 0),
-      explorerUrl: EXPLORERS.bitcoin + t.txid,
+      transfers: ([{ symbol: NATIVE[chain], amount: Math.abs(net + (spent ? t.fee : 0)) / 1e8, direction: net >= 0 ? 'in' : 'out' }] as TxTransfer[]).filter((x) => x.amount > 0),
+      explorerUrl: EXPLORERS[chain] + t.txid,
     };
   });
-  // mempool.space pages confirmed history 25 at a time
+  // Esplora pages confirmed history 25 at a time
   const confirmed = txs.filter((t) => t.status.confirmed);
   const last = confirmed[confirmed.length - 1]?.txid;
   return { txs: out, cursor: txs.length >= 25 && last ? encode({ last }) : null };
+}
+
+// ---------- Dogecoin and Bitcoin Cash via Bitcore ----------
+
+interface BitcoreCoin { mintTxid: string; mintHeight: number; spentTxid: string; spentHeight: number; value: number }
+interface BitcoreTx { blockTime?: string; fee: number }
+const BITCORE: Record<string, string> = { dogecoin: 'DOGE', bitcoincash: 'BCH' };
+const BITCORE_COINS = 200;
+const BITCORE_TXS = 15;
+
+/**
+ * Bitcore lists an address's coins (outputs), not its transactions, so the
+ * recent ones are rebuilt from them: + each coin's value where it was
+ * received, − where it was spent. One page of the latest activity; a send
+ * that spent coins older than the window shows a smaller amount.
+ */
+async function bitcorePage(chain: string, wallet: string): Promise<TxPage> {
+  const base = `https://api.bitcore.io/api/${BITCORE[chain]}/mainnet`;
+  const query = chain === 'bitcoincash' ? toCashAddr(wallet).replace(/^bitcoincash:/, '') : wallet;
+  const coins = await getJSON<BitcoreCoin[]>(`${base}/address/${query}/txs?limit=${BITCORE_COINS}`);
+  const byTx = new Map<string, { height: number; received: number; sent: number }>();
+  const add = (txid: string, height: number, received: number, sent: number) => {
+    const t = byTx.get(txid) ?? { height, received: 0, sent: 0 };
+    t.received += received;
+    t.sent += sent;
+    byTx.set(txid, t);
+  };
+  for (const c of coins) {
+    add(c.mintTxid, c.mintHeight, c.value, 0);
+    if (c.spentTxid) add(c.spentTxid, c.spentHeight, 0, c.value);
+  }
+  // Unconfirmed (height ≤ 0) first, then newest blocks
+  const rank = (h: number) => (h > 0 ? h : Number.MAX_SAFE_INTEGER);
+  const recent = [...byTx].sort((a, b) => rank(b[1].height) - rank(a[1].height)).slice(0, BITCORE_TXS);
+  const details = await Promise.all(recent.map(([txid]) => getJSON<BitcoreTx>(`${base}/tx/${txid}`, undefined, 10_000).catch(() => null)));
+  const txs: Tx[] = recent.map(([txid, t], i) => {
+    const d = details[i];
+    const spent = t.sent > 0;
+    const fee = spent && d ? d.fee : 0;
+    const net = t.received - t.sent;
+    return {
+      id: `${chain}:${txid}`, chain, wallet, hash: txid,
+      timestamp: d?.blockTime ? Date.parse(d.blockTime) : Date.now(),
+      type: net >= 0 ? 'receive' : 'send', status: 'success',
+      fee: spent && d ? fee / 1e8 : undefined,
+      transfers: ([{ symbol: NATIVE[chain], amount: Math.abs(net + fee) / 1e8, direction: net >= 0 ? 'in' : 'out' }] as TxTransfer[]).filter((x) => x.amount > 0),
+      explorerUrl: EXPLORERS[chain] + txid,
+    };
+  });
+  return { txs, cursor: null };
 }
 
 // ---------- Solana via JSON-RPC ----------
@@ -391,7 +448,8 @@ async function solanaPage(wallet: string, cursor: string | null): Promise<TxPage
 }
 
 export async function transactionsPage(chain: string, wallet: string, cursor: string | null): Promise<TxPage> {
-  if (chain === 'bitcoin') return bitcoinPage(wallet, cursor);
+  if (ESPLORA[chain]) return esploraPage(chain, wallet, cursor);
+  if (BITCORE[chain]) return bitcorePage(chain, wallet);
   if (chain === 'solana') return solanaPage(wallet, cursor);
   if (BLOCKSCOUT[chain]) return evmBlockscoutPage(chain, wallet, cursor);
   if (EVM_CONFIG[chain]) return evmAlchemyPage(chain, wallet, cursor);

@@ -11,7 +11,7 @@ const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope', displa
 
 export const metadata: Metadata = {
   title: { default: 'Lantern', template: '%s · Lantern' },
-  description: 'Shine a light on your whole crypto portfolio. A free, open-source, read-only tracker for Bitcoin, Ethereum, PulseChain, Base, Solana and Robinhood Chain, with deep HEX and PulseChain support.',
+  description: 'Shine a light on your whole crypto portfolio. A free, open-source, read-only tracker for Bitcoin, Ethereum, PulseChain, Base, Solana, Robinhood Chain, Litecoin, Dogecoin and Bitcoin Cash, with deep HEX and PulseChain support.',
 };
 
 export const viewport: Viewport = {

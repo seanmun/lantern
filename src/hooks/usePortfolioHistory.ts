@@ -13,6 +13,10 @@ const WRAPPED: Record<string, { chain: string; address: string }> = {
   pulsechain: { chain: 'pulsechain', address: '0xa1077a294dde1b09bb078844df40758a5d0f9a27' },
   bitcoin: { chain: 'ethereum', address: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599' },
   solana: { chain: 'solana', address: 'So11111111111111111111111111111111111111112' },
+  // No wrapped versions on the chains above: Binance-pegged tokens track them
+  litecoin: { chain: 'bsc', address: '0x4338665cbb7b2485a8855a139b75d5e34ab0db94' },
+  dogecoin: { chain: 'bsc', address: '0xba2ae424d960c26247dd6c32edc70b295c744c43' },
+  'bitcoin-cash': { chain: 'bsc', address: '0x8ff795a6f4d97e7887c79bea79aba5cc76444adf' },
 };
 const HISTORY_CHAINS = new Set(['ethereum', 'pulsechain', 'base', 'solana']);
 const MAX_SERIES = 10;

@@ -8,6 +8,8 @@ import { chainLabel } from '@/config/chainDisplay';
 import { normalizeAddress, shortAddress } from '@/utils/address';
 import { formatUSD } from '@/utils/prices';
 
+const COIN_CHAINS = new Set(['bitcoin', 'litecoin', 'dogecoin', 'bitcoincash']);
+
 const TYPE_LABEL: Record<TxType, string> = {
   receive: 'Received', send: 'Sent', swap: 'Swap', stake: 'Staking', approval: 'Approval', contract: 'Contract', nft: 'NFT',
 };
@@ -20,7 +22,7 @@ const TYPE_STYLE: Record<TxType, { icon: string; className: string }> = {
   contract: { icon: '⚙', className: 'bg-soft text-ink/85' },
   nft: { icon: '▣', className: 'bg-accent/10 text-accent' },
 };
-const NATIVE_SYMBOL: Record<string, string> = { ethereum: 'ETH', pulsechain: 'PLS', base: 'ETH', robinhood: 'ETH', bitcoin: 'BTC', solana: 'SOL' };
+const NATIVE_SYMBOL: Record<string, string> = { ethereum: 'ETH', pulsechain: 'PLS', base: 'ETH', robinhood: 'ETH', bitcoin: 'BTC', solana: 'SOL', litecoin: 'LTC', dogecoin: 'DOGE', bitcoincash: 'BCH' };
 
 // Readable names for common HEX / Hedron / Maximus / Venice methods
 const METHOD_NAMES: Record<string, string> = {
@@ -201,6 +203,7 @@ function TxRow({ tx, walletName, symbolOf, priceOf }: {
   else if (tx.type === 'stake') title = `${methodName(tx.method) ?? 'Staking'}${tx.transfers.length ? ` · ${describe(tx.transfers)}` : ''}`;
   else if (ins.length && !outs.length) title = `Received ${describe(ins)}`;
   else if (outs.length && !ins.length) title = `Sent ${describe(outs)}`;
+  else if (COIN_CHAINS.has(tx.chain)) title = 'Moved between your own addresses'; // coin chains have no contracts: a spend that came back as change
   else title = tx.method ? methodName(tx.method) !== tx.method ? methodName(tx.method)! : `Called ${tx.method}` : 'Contract interaction';
 
   // Today's value (current prices, not historical): what came in for swaps,

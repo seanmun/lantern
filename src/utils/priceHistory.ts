@@ -20,6 +20,7 @@ const NETWORKS: Record<string, [string, string]> = {
   pulsechain: ['pulsechain', 'pulsechain'],
   base: ['base', 'base'],
   solana: ['solana', 'solana'],
+  bsc: ['bsc', 'bsc'], // Binance-pegged LTC / DOGE / BCH, for their native coins' history
 };
 
 // Two cached resolutions per token; each range is a slice of one

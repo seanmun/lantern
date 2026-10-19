@@ -10,6 +10,9 @@ export const NATIVE_COIN: Record<string, string> = {
   robinhood: 'ethereum',
   pulsechain: 'pulsechain',
   solana: 'solana',
+  litecoin: 'litecoin',
+  dogecoin: 'dogecoin',
+  bitcoincash: 'bitcoin-cash',
 };
 
 interface PriceResponse {

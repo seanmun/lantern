@@ -2,7 +2,7 @@
 
 **Shine a light on your whole crypto portfolio.**
 
-Lantern is a free, open-source, read-only portfolio tracker for every wallet you own: Bitcoin, Ethereum, PulseChain, Base, Solana and Robinhood Chain in one view. It reads public blockchain data and explains it plainly: what you hold, how it has moved, what your stakes will pay and when, and whether a token looks like a scam.
+Lantern is a free, open-source, read-only portfolio tracker for every wallet you own: Bitcoin, Ethereum, PulseChain, Base, Solana, Robinhood Chain, Litecoin, Dogecoin and Bitcoin Cash in one view. It reads public blockchain data and explains it plainly: what you hold, how it has moved, what your stakes will pay and when, and whether a token looks like a scam.
 
 It was born in the HEX and PulseChain community, so it goes deepest there: contract-exact HEX staking, Maximus DAO, Hedron and Icosa, and scam checks that understand PulseChain fork copies.
 
@@ -17,7 +17,7 @@ Lantern is an independent project. It is not affiliated with PulseChain, HEX or 
 
 ## What it does
 
-- **One portfolio across chains:** PulseChain, Ethereum, Bitcoin (including Ordinals, Runes and BRC-20), Base, Solana and Robinhood Chain. ETH and WETH, and HEX liquid plus staked plus pools, roll up into single holdings. eHEX and pHEX are always priced separately.
+- **One portfolio across chains:** PulseChain, Ethereum, Bitcoin (including Ordinals, Runes and BRC-20), Base, Solana, Robinhood Chain, Litecoin, Dogecoin and Bitcoin Cash (legacy Bitcoin addresses also show any Bitcoin Cash from the 2017 split). ETH and WETH, and HEX liquid plus staked plus pools, roll up into single holdings. eHEX and pHEX are always priced separately.
 - **A dashboard that tells you what matters:** net worth, a value chart (today's holdings at past prices) and a short morning brief, such as stakes that need ending, the day's move, the next stake to land and HDRN ready to mint.
 - **HEX, done properly:** contract-exact interest and penalties, stake ladder and maturity calendar, a stake estimator with payout scenarios, .ics calendar export and stake alerts, and HSIs with mintable HDRN.
 - **Maximus DAO:** perps worth now versus at cycle end, TEAM staking with unclaimed rewards, and pools compared with staking directly.

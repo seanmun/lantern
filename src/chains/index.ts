@@ -7,6 +7,7 @@ import { PulsechainHandler } from './pulsechain';
 import { BaseHandler } from './base';
 import { RobinhoodHandler } from './robinhood';
 import { SolanaHandler } from './solana';
+import { UTXO_CONFIGS, UtxoHandler } from './utxo';
 
 /**
  * Chain registry. Server-only: handlers read API keys from the environment,
@@ -24,6 +25,9 @@ const HANDLERS: Record<SupportedChain, () => ChainHandler> = {
   base: () => new BaseHandler(),
   robinhood: () => new RobinhoodHandler(),
   solana: () => new SolanaHandler(),
+  litecoin: () => new UtxoHandler(UTXO_CONFIGS.litecoin),
+  dogecoin: () => new UtxoHandler(UTXO_CONFIGS.dogecoin),
+  bitcoincash: () => new UtxoHandler(UTXO_CONFIGS.bitcoincash),
 };
 
 export function getHandler(chain: SupportedChain): ChainHandler {

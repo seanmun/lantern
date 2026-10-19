@@ -22,7 +22,7 @@ export default function DashboardPage() {
           <div className="mb-4 flex justify-center"><LanternMark size={64} /></div>
           <h1 className="text-4xl font-extrabold tracking-tight text-ink">Your portfolio, in one place</h1>
           <p className="mx-auto mt-3 max-w-2xl text-lg text-muted">
-            Bitcoin, Ethereum, PulseChain, Base, Robinhood Chain and Solana, with HEX staking built in.
+            Bitcoin, Ethereum, PulseChain, Base, Solana, Robinhood Chain, Litecoin, Dogecoin and Bitcoin Cash, with HEX staking built in.
           </p>
         </div>
         <div className="mt-8 grid items-stretch gap-4 lg:grid-cols-[1fr_auto_1fr]">

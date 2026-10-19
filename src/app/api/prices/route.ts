@@ -32,6 +32,7 @@ const TOKEN_NETWORKS: Record<string, [string, string]> = {
   base: ['base', 'base'],
   robinhood: ['robinhood', 'robinhood'],
   solana: ['solana', 'solana'],
+  bsc: ['bsc', 'bsc'], // only for the Binance-pegged fallbacks below
 };
 
 // Native coin → wrapped token used as a fallback when CoinGecko fails
@@ -40,6 +41,9 @@ const NATIVE_FALLBACKS: Record<string, [string, string]> = {
   ethereum: ['ethereum', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'], // WETH
   pulsechain: ['pulsechain', '0xA1077a294dDE1B09bB078844df40758a5D0f9a27'], // WPLS
   solana: ['solana', 'So11111111111111111111111111111111111111112'], // wrapped SOL
+  litecoin: ['bsc', '0x4338665cbb7b2485a8855a139b75d5e34ab0db94'], // Binance-Peg LTC
+  dogecoin: ['bsc', '0xba2ae424d960c26247dd6c32edc70b295c744c43'], // Binance-Peg DOGE
+  'bitcoin-cash': ['bsc', '0x8ff795a6f4d97e7887c79bea79aba5cc76444adf'], // Binance-Peg BCH
 };
 
 const cache = new Map<string, { price: number | null; at: number }>();

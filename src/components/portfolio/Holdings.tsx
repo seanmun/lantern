@@ -39,6 +39,9 @@ const CHAIN_DOT: Record<string, string> = {
   base: 'bg-accent',
   robinhood: 'bg-up',
   solana: 'bg-violet-500',
+  litecoin: 'bg-slate-400',
+  dogecoin: 'bg-amber-400',
+  bitcoincash: 'bg-emerald-500',
 };
 
 function formatAmount(value: number): string {

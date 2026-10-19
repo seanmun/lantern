@@ -27,7 +27,7 @@ export interface HoldingPart {
   amount: number; // contribution in the holding's unit
 }
 
-const NATIVE_NAMES: Record<string, string> = { bitcoin: 'Bitcoin', ethereum: 'Ether', pulsechain: 'Pulse', solana: 'Solana' };
+const NATIVE_NAMES: Record<string, string> = { bitcoin: 'Bitcoin', ethereum: 'Ether', pulsechain: 'Pulse', solana: 'Solana', litecoin: 'Litecoin', dogecoin: 'Dogecoin', bitcoincash: 'Bitcoin Cash' };
 
 // Wrapped ETH by contract (never by ticker, so look-alikes don't fold in)
 const WETH = new Set([

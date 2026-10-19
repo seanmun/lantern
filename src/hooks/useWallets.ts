@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
 import { Wallet } from '@/types';
-import { validateAddress } from '@/utils/address';
+import { toCashAddr, validateAddress } from '@/utils/address';
 
 /**
  * Wallets live only in this browser's localStorage (privacy-first: nothing is
@@ -11,6 +11,9 @@ import { validateAddress } from '@/utils/address';
  */
 
 const STORAGE_KEY = 'cpt.wallets.v1';
+const WALLET_KIND: Record<string, string> = { solana: 'Solana', litecoin: 'Litecoin', dogecoin: 'Dogecoin', bitcoincash: 'Bitcoin Cash' };
+// Bech32 is case-insensitive (stored lowercase); CashAddr is stored with its prefix
+const toCashAddrIfBch = (a: string, format: string) => (format === 'cashaddr' ? toCashAddr(a) : a.toLowerCase());
 const EMPTY: Wallet[] = [];
 
 let current: Wallet[] | null = null;
@@ -65,11 +68,14 @@ export function useWallets() {
     const trimmed = address.trim();
     const validation = validateAddress(trimmed);
     if (!validation.isValid) {
-      return { ok: false, error: 'Not a recognized EVM (0x…), Bitcoin or Solana address' };
+      return { ok: false, error: 'Not a recognized EVM (0x…), Bitcoin, Solana, Litecoin, Dogecoin or Bitcoin Cash address' };
     }
 
     const existing = getSnapshot();
-    const sameAddress = (a: string) => (validation.format === 'base58' ? a === trimmed : a.toLowerCase() === trimmed.toLowerCase());
+    const sameAddress = (a: string) =>
+      validation.format === 'base58' ? a === trimmed
+        : validation.format === 'cashaddr' ? a.toLowerCase() === toCashAddr(trimmed)
+          : a.toLowerCase() === trimmed.toLowerCase();
     if (existing.some((w) => sameAddress(w.address))) {
       return { ok: false, error: 'That wallet is already being tracked' };
     }
@@ -77,8 +83,8 @@ export function useWallets() {
     const now = new Date().toISOString();
     const wallet: Wallet = {
       id: crypto.randomUUID(),
-      name: name?.trim() || `${validation.format === 'hex' ? 'EVM' : validation.compatibleChains[0] === 'solana' ? 'Solana' : 'Bitcoin'} Wallet ${existing.length + 1}`,
-      address: validation.format === 'bech32' ? trimmed.toLowerCase() : trimmed,
+      name: name?.trim() || `${validation.format === 'hex' ? 'EVM' : WALLET_KIND[validation.compatibleChains[0]] ?? 'Bitcoin'} Wallet ${existing.length + 1}`,
+      address: validation.format === 'bech32' || validation.format === 'cashaddr' ? toCashAddrIfBch(trimmed, validation.format) : trimmed,
       chains: validation.compatibleChains,
       createdAt: now,
       updatedAt: now,

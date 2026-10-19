@@ -30,8 +30,8 @@ export default function AboutPage() {
         <LanternMark size={56} />
         <h1 className="text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">Shine a light on your portfolio</h1>
         <p className="text-lg leading-relaxed text-muted">
-          Lantern is a free, open-source portfolio tracker for every wallet you own: Bitcoin, Ethereum, PulseChain, Base, Solana
-          and Robinhood Chain in one view. It reads public blockchain data and explains it plainly: what you hold, what your
+          Lantern is a free, open-source portfolio tracker for every wallet you own: Bitcoin, Ethereum, PulseChain, Base, Solana,
+          Robinhood Chain, Litecoin, Dogecoin and Bitcoin Cash in one view. It reads public blockchain data and explains it plainly: what you hold, what your
           stakes will pay, and whether a token looks safe. It was born in the HEX and PulseChain community, so it goes deepest
           there, with full HEX, Maximus, Hedron and Icosa support. It is an independent project, not affiliated with PulseChain,
           HEX or their founders.

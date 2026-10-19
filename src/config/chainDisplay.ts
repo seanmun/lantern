@@ -43,6 +43,21 @@ export const CHAIN_DISPLAY: ChainDisplay[] = [
     dot: 'from-violet-400 to-fuchsia-500', title: 'from-violet-600 to-fuchsia-700',
     badge: 'bg-violet-100 text-violet-800', border: 'border-violet-100 hover:border-violet-200',
   },
+  {
+    key: 'litecoin', label: 'Litecoin', icon: 'Ł',
+    dot: 'from-slate-300 to-slate-500', title: 'from-slate-500 to-slate-700',
+    badge: 'bg-slate-100 text-slate-800', border: 'border-slate-100 hover:border-slate-200',
+  },
+  {
+    key: 'dogecoin', label: 'Dogecoin', icon: 'Ð',
+    dot: 'from-amber-300 to-amber-500', title: 'from-amber-500 to-amber-700',
+    badge: 'bg-amber-100 text-amber-800', border: 'border-amber-100 hover:border-amber-200',
+  },
+  {
+    key: 'bitcoincash', label: 'Bitcoin Cash', icon: 'Ƀ',
+    dot: 'from-emerald-400 to-emerald-600', title: 'from-emerald-600 to-emerald-800',
+    badge: 'bg-emerald-100 text-emerald-800', border: 'border-emerald-100 hover:border-emerald-200',
+  },
 ];
 
 export const chainLabel = (key: string) => CHAIN_DISPLAY.find((c) => c.key === key)?.label ?? key;

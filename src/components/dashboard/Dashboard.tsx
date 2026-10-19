@@ -400,7 +400,7 @@ function AssetRow({ h, color, perKey, showChain }: { h: Holding; color: string; 
             <path d={spark} fill="none" stroke={series![series!.length - 1][1] >= series![0][1] ? UP : DOWN} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
           </svg>
         )}
-        <span className="w-[88px] shrink-0 text-right">
+        <span className="min-w-[88px] shrink-0 text-right">
           <span className="block text-[15px] font-bold tabular-nums text-ink">{formatUSD(h.valueUSD ?? 0)}</span>
           {change !== null && (
             <span
