@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { usePortfolioContext } from '@/components/app/PortfolioProvider';
 import { PageHeader } from '@/components/app/AppShell';
 import { AddWalletForm } from '@/components/wallet/AddWalletForm';
@@ -13,7 +14,12 @@ const TEST_WALLETS = [
 ].filter((w): w is { address: string; name: string } => !!w.address);
 
 export default function WalletsPage() {
-  const { wallets, walletTotals, walletLoading, addWallet, renameWallet, removeWallet } = usePortfolioContext();
+  const { wallets, walletTotals, walletLoading, assets, addWallet, renameWallet, removeWallet } = usePortfolioContext();
+  const nftCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const w of wallets) counts.set(w.id, assets.filter((a) => a.walletAddress === w.address && (a.type === 'nft' || a.type === 'ordinal')).length);
+    return counts;
+  }, [wallets, assets]);
   const { code } = useSync();
   return (
     <>
@@ -24,7 +30,7 @@ export default function WalletsPage() {
       <section className="rounded-3xl border border-line bg-surface p-6 sm:p-8">
         {wallets.length > 0 && (
           <div className="mb-6">
-            <WalletList wallets={wallets} totals={walletTotals} loading={walletLoading} onRename={renameWallet} onRemove={removeWallet} />
+            <WalletList wallets={wallets} totals={walletTotals} loading={walletLoading} nftCounts={nftCounts} onRename={renameWallet} onRemove={removeWallet} />
           </div>
         )}
         <AddWalletForm onAdd={addWallet} />

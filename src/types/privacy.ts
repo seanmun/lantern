@@ -18,4 +18,12 @@ export interface PrivacyFacts {
   twoWay: number;
   /** Likely UTC offset from the daily pause in this wallet's own transactions */
   timezone: { offset: number; sample: number } | null;
+  /** Coin chains only (Bitcoin, Litecoin, Dogecoin, Bitcoin Cash) */
+  coin?: {
+    chain: string;
+    received: number;       // payments received at this one address
+    receivedAtLeast?: boolean; // the source lists only so many, so `received` is a floor
+    coSpent: number;        // other addresses spent together with it in recent transactions
+    cluster: number | null; // addresses WalletExplorer groups with it across all history (Bitcoin)
+  };
 }

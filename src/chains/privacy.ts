@@ -225,7 +225,7 @@ async function depositAddresses(host: string, me: string, sentTo: Map<string, nu
  * wallet's own transactions, taken as roughly midnight to 6 a.m. local time,
  * give its likely UTC offset; no clear pause (bots, shared wallets) gives none.
  */
-function timezoneOf(times: number[]): PrivacyFacts['timezone'] {
+export function timezoneOf(times: number[]): PrivacyFacts['timezone'] {
   if (times.length < MIN_TIMEZONE_SAMPLE) return null;
   if (new Set(times.map((t) => new Date(t * 1000).toISOString().slice(0, 10))).size < MIN_TIMEZONE_DAYS) return null;
   const hours = new Array(24).fill(0);

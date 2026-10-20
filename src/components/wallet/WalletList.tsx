@@ -4,16 +4,20 @@ import { KeyboardEvent, useState } from 'react';
 import { Wallet } from '@/types';
 import { shortAddress } from '@/utils/address';
 import { formatUSD } from '@/utils/prices';
+import { PrivacyBadge } from './PrivacyBadge';
 
 interface WalletListProps {
   wallets: Wallet[];
   totals: Map<string, number>;
   loading: Set<string>;
+  /** NFTs and Ordinals held, per wallet id (for the privacy score) */
+  nftCounts?: Map<string, number>;
   onRename: (id: string, name: string) => void;
   onRemove: (id: string) => void;
 }
 
-export function WalletList({ wallets, totals, loading, onRename, onRemove }: WalletListProps) {
+export function WalletList({ wallets, totals, loading, nftCounts, onRename, onRemove }: WalletListProps) {
+  const addresses = wallets.map((w) => w.address.toLowerCase());
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {wallets.map((wallet) => (
@@ -22,6 +26,8 @@ export function WalletList({ wallets, totals, loading, onRename, onRemove }: Wal
           wallet={wallet}
           total={totals.get(wallet.id) ?? 0}
           isLoading={loading.has(wallet.id)}
+          nftCount={nftCounts?.get(wallet.id) ?? 0}
+          otherWallets={addresses.filter((a) => a !== wallet.address.toLowerCase())}
           onRename={onRename}
           onRemove={onRemove}
         />
@@ -34,11 +40,13 @@ interface WalletCardProps {
   wallet: Wallet;
   total: number;
   isLoading: boolean;
+  nftCount: number;
+  otherWallets: string[];
   onRename: (id: string, name: string) => void;
   onRemove: (id: string) => void;
 }
 
-function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCardProps) {
+function WalletCard({ wallet, total, isLoading, nftCount, otherWallets, onRename, onRemove }: WalletCardProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(wallet.name);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -121,8 +129,11 @@ function WalletCard({ wallet, total, isLoading, onRename, onRemove }: WalletCard
         )}
       </div>
 
-      <div className="mt-3 flex items-end justify-between">
-        <span className="text-xs text-muted">{wallet.chains.length} chain{wallet.chains.length === 1 ? '' : 's'}</span>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <span className="flex flex-wrap items-center gap-2 text-xs text-muted">
+          {wallet.chains.length} chain{wallet.chains.length === 1 ? '' : 's'}
+          <PrivacyBadge wallet={wallet} valueUSD={total} nftCount={nftCount} ready={!isLoading} otherWallets={otherWallets} />
+        </span>
         <span className="text-lg font-bold text-ink">
           {isLoading ? <span className="text-sm font-normal text-muted/70">Loading…</span> : formatUSD(total)}
         </span>

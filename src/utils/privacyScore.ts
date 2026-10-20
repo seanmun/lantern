@@ -22,14 +22,14 @@ export interface PrivacyScore {
   band: 'exposed' | 'partial' | 'private';
   factors: PrivacyFactor[];
   /** Other wallets this one is likely tied to, and why */
-  linked: { count: number; reasons: string[] };
+  linked: { count: number; reasons: string[]; unit: 'wallet' | 'address' };
   /** Where the score could get by fixing what can still change on this wallet (ENS, balance, NFTs) */
   potential: number;
 }
 
 const MAX_DEPOSIT_PEERS = 10;
 const FIXABLE_IN_PLACE = new Set(['ens', 'ens-records', 'value', 'nfts']);
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const plural = (n: number, word: string, many = `${word}s`) => `${n.toLocaleString()} ${n === 1 ? word : many}`;
 
 /** "UTC−5", with a rough region so the number means something */
 function zoneLabel(offset: number): string {
@@ -95,7 +95,9 @@ export function privacyScore(facts: PrivacyFacts, ctx: PrivacyContext): PrivacyS
     factors.push({
       id: 'exchanges', impact: -25,
       label: `Sent or received funds directly with ${names}. Exchanges know their customers, so this links the wallet to an identity.`,
-      fix: 'Withdraw from exchanges to a fresh wallet and move funds on from there, or through a privacy system such as Railgun.',
+      fix: facts.coin
+        ? 'Withdraw from exchanges to a fresh address, and consider a wallet with CoinJoin before moving funds on.'
+        : 'Withdraw from exchanges to a fresh wallet and move funds on from there, or through a privacy system such as Railgun.',
     });
   }
   const ownLinked = new Set(facts.counterparties.filter((c) => ctx.otherWallets.includes(c)));
@@ -121,6 +123,12 @@ export function privacyScore(facts: PrivacyFacts, ctx: PrivacyContext): PrivacyS
     linkedCount += 1;
     reasons.push('the wallet that first funded it');
   }
+  // Coin chains: the whole-history cluster when known, else what recent co-spending shows
+  const coinPeers = facts.coin ? Math.max((facts.coin.cluster ?? 1) - 1, facts.coin.coSpent) : 0;
+  if (coinPeers) {
+    linkedCount += coinPeers;
+    reasons.push(facts.coin!.cluster && facts.coin!.cluster - 1 >= facts.coin!.coSpent ? 'addresses grouped with it by how they were spent together, across its whole history' : 'addresses spent together with it');
+  }
   if (facts.twoWay) {
     linkedCount += facts.twoWay;
     reasons.push(`${plural(facts.twoWay, 'wallet')} it both sends to and receives from`);
@@ -128,7 +136,7 @@ export function privacyScore(facts: PrivacyFacts, ctx: PrivacyContext): PrivacyS
   if (linkedCount >= 3) {
     factors.push({
       id: 'cluster', impact: linkedCount >= 10 ? -15 : -10,
-      label: `Likely tied to about ${plural(linkedCount, 'other wallet')}: ${listOf(reasons)}. Finding any of them leads here.`,
+      label: `Likely tied to about ${facts.coin ? plural(linkedCount, 'other address', 'other addresses') : plural(linkedCount, 'other wallet')}: ${listOf(reasons)}. Finding any of them leads here.`,
       fix: 'Keep wallets you want separate from ever paying each other, sharing a funder or sharing an exchange deposit address.',
     });
   }
@@ -138,6 +146,23 @@ export function privacyScore(facts: PrivacyFacts, ctx: PrivacyContext): PrivacyS
       label: `The same address is used on ${facts.activeChains.length} chains, which ties all that activity together.`,
       fix: 'Use different addresses on different chains for funds you want kept apart.',
     });
+  }
+  if (facts.coin) {
+    const { received, receivedAtLeast, coSpent } = facts.coin;
+    if (received >= 2) {
+      factors.push({
+        id: 'reuse', impact: received >= 10 ? -25 : -15,
+        label: `This one address has received ${received.toLocaleString()}${receivedAtLeast ? '+' : ''} payments. Reusing an address ties every payment, and everyone who paid it, to the same owner.`,
+        fix: 'Use a wallet that gives a fresh receiving address every time (most modern wallets do) and move funds off this one.',
+      });
+    }
+    if (coSpent > 0) {
+      factors.push({
+        id: 'co-spend', impact: coSpent >= 5 ? -15 : -10,
+        label: `It was spent in the same transaction as ${plural(coSpent, 'other address', 'other addresses')}, which marks them all as one owner (the rule chain analysis is built on).`,
+        fix: 'Avoid combining coins from different sources in one payment. Wallets with coin control let you pick which coins to spend.',
+      });
+    }
   }
   if (facts.timezone) {
     factors.push({
@@ -171,5 +196,5 @@ export function privacyScore(facts: PrivacyFacts, ctx: PrivacyContext): PrivacyS
   const score = clamp(100 + factors.reduce((s, f) => s + f.impact, 0));
   // Only these can still change on this wallet; the rest is permanent public history
   const potential = clamp(score - factors.filter((f) => FIXABLE_IN_PLACE.has(f.id)).reduce((s, f) => s + f.impact, 0));
-  return { score, band: score >= 70 ? 'private' : score >= 40 ? 'partial' : 'exposed', factors, linked: { count: linkedCount, reasons }, potential: Math.max(score, potential) };
+  return { score, band: score >= 70 ? 'private' : score >= 40 ? 'partial' : 'exposed', factors, linked: { count: linkedCount, reasons, unit: facts.coin ? 'address' : 'wallet' }, potential: Math.max(score, potential) };
 }

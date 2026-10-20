@@ -6,8 +6,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Asset } from '@/types';
 import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, SiteCheck, TokenCheck, TxCheck } from '@/types/check';
 import { ApprovalItem, ApprovalsReport } from '@/types/approvals';
-import { PrivacyFacts } from '@/types/privacy';
 import { privacyScore } from '@/utils/privacyScore';
+import { privacyChainOf, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
 import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
 import { groupHoldings } from '@/utils/holdings';
@@ -265,11 +265,12 @@ function WalletCard({ address, chains, title }: { address: string; chains: strin
       )}
       <p className="text-[13px] text-muted">Read from public chain data. Tracking a wallet only saves its address in this browser.</p>
     </section>
-    {/^0x[0-9a-fA-F]{40}$/.test(address) && !title && (
+    {privacyChainOf(address, chains) && !title && (
       <PrivacyPanel
         address={address}
+        chains={chains}
         valueUSD={total}
-        nftCount={(assets ?? []).filter((a) => a.type === 'nft').length}
+        nftCount={(assets ?? []).filter((a) => a.type === 'nft' || a.type === 'ordinal').length}
         ready={assets !== null}
         otherWallets={wallets.map((w) => w.address.toLowerCase()).filter((a) => a !== address.toLowerCase())}
       />
@@ -286,25 +287,23 @@ const BAND = {
 };
 
 /** How identifiable this wallet is, and what would improve it. */
-function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { address: string; valueUSD: number; nftCount: number; ready: boolean; otherWallets: string[] }) {
-  const [facts, setFacts] = useState<PrivacyFacts | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/privacy?address=${address}`).then((r) => r.json()).then((d: PrivacyFacts) => !cancelled && setFacts(d)).catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [address]);
+function PrivacyPanel({ address, chains, valueUSD, nftCount, ready, otherWallets }: { address: string; chains: string[]; valueUSD: number; nftCount: number; ready: boolean; otherWallets: string[] }) {
+  const { facts, failed } = usePrivacyFacts(address, privacyChainOf(address, chains));
 
   const result = facts && ready ? privacyScore(facts, { otherWallets, valueUSD, nftCount }) : null;
+  // Arriving from a wallet's privacy badge (…#privacy): the panel fills in late, so scroll once it has
+  const shown = !!result;
+  useEffect(() => {
+    if (shown && window.location.hash === '#privacy') document.getElementById('privacy')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [shown]);
   const band = result ? BAND[result.band] : null;
   return (
-    <section className="space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-labelledby="privacy-h">
+    <section id="privacy" className="scroll-mt-24 space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-labelledby="privacy-h">
       <div>
         <h2 id="privacy-h" className="text-2xl font-extrabold tracking-tight text-ink">Privacy score</h2>
         <p className="mt-1 text-[15px] text-muted">How easily a stranger could work out who owns this wallet and what else they own, from public data alone.</p>
       </div>
-      {!result && <div className="rounded-2xl bg-soft p-5 text-center text-muted">Looking at what this wallet reveals…</div>}
+      {!result && <div className="rounded-2xl bg-soft p-5 text-center text-muted">{failed ? 'Couldn’t read this wallet’s public history right now. Try again in a minute.' : 'Looking at what this wallet reveals…'}</div>}
       {result && band && (
         <>
           <div className="flex flex-wrap items-center gap-5">
@@ -328,7 +327,9 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
             <div className="rounded-2xl bg-soft p-4">
               <div className="text-[13px] font-semibold text-muted">Likely tied to</div>
               <div className="text-xl font-extrabold tabular-nums text-ink">
-                {result.linked.count === 0 ? 'No other wallets found' : `${result.linked.count} other wallet${result.linked.count === 1 ? '' : 's'}`}
+                {result.linked.count === 0
+                  ? `No other ${result.linked.unit === 'address' ? 'addresses' : 'wallets'} found`
+                  : `${result.linked.count.toLocaleString()} other ${result.linked.unit === 'address' ? (result.linked.count === 1 ? 'address' : 'addresses') : result.linked.count === 1 ? 'wallet' : 'wallets'}`}
               </div>
               {result.linked.reasons.length > 0 && <p className="mt-0.5 text-[13px] text-muted">Through {result.linked.reasons.join('; ')}.</p>}
             </div>
@@ -355,7 +356,9 @@ function PrivacyPanel({ address, valueUSD, nftCount, ready, otherWallets }: { ad
               ))}
             </ul>
           )}
-          <p className="text-[13px] text-muted">Based on public explorer data from PulseChain and Ethereum, the last {facts!.sampled} transfers and Etherscan’s public exchange labels. Firms with private data can see more, so treat this as a best case. Other wallets tied to this one are counted, never listed. Your tracked wallets are compared in this browser and never sent anywhere.</p>
+          <p className="text-[13px] text-muted">{facts!.coin
+            ? <>Based on this address&apos;s public {chainLabel(facts!.coin.chain)} history{facts!.coin.chain === 'bitcoin' ? ' and WalletExplorer’s address clusters and labels' : ''}.</>
+            : <>Based on public explorer data from PulseChain and Ethereum, the last {facts!.sampled} transfers and Etherscan’s public exchange labels.</>} Firms with private data can see more, so treat this as a best case. Other wallets tied to this one are counted, never listed. Your tracked wallets are compared in this browser and never sent anywhere.</p>
         </>
       )}
     </section>
