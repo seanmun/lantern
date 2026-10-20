@@ -96,6 +96,8 @@ async function chainFacts(chain: string, address: string) {
     getJSON<{ items?: BsTx[] }>(`${host}/api/v2/addresses/${address}/transactions`),
     getJSON<{ items?: BsTransfer[] }>(`${host}/api/v2/addresses/${address}/token-transfers`),
   ]);
+  // Nothing came back: the explorer is down or rate-limiting, not a wallet with no history
+  if (!info && !counters && !txs) return null;
   const me = address.toLowerCase();
   const counterparties = new Map<string, { address: string; label: string | null; isContract: boolean }>();
   const sentTo = new Map<string, number>(); // EOAs this wallet paid, with counts
@@ -243,6 +245,8 @@ export function timezoneOf(times: number[]): PrivacyFacts['timezone'] {
   return { offset, sample: times.length };
 }
 
+export class PrivacyUnavailable extends Error {}
+
 const cache: Map<string, { facts: PrivacyFacts; at: number }> = ((globalThis as { __privacyFacts?: Map<string, { facts: PrivacyFacts; at: number }> }).__privacyFacts ??= new Map());
 
 export async function privacyFacts(input: string): Promise<PrivacyFacts> {
@@ -258,6 +262,8 @@ export async function privacyFacts(input: string): Promise<PrivacyFacts> {
     used(BASE_CONFIG, address),
   ]);
   const chains = [eth, pls].filter((c): c is NonNullable<typeof c> => !!c);
+  // A wallet that couldn't be read must not score as perfectly private
+  if (chains.length === 0) throw new PrivacyUnavailable('Block explorers are unavailable right now');
   const activeChains = [ethUsed && 'ethereum', plsUsed && 'pulsechain', baseUsed && 'base'].filter((c): c is string => !!c);
   const me = address.toLowerCase();
 

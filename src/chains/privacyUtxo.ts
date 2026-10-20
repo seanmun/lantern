@@ -132,11 +132,24 @@ async function bitcoreFacts(chain: string, address: string): Promise<PrivacyFact
   const query = chain === 'bitcoincash' ? toCashAddr(address).replace(/^bitcoincash:/, '') : address;
   const coins = await getJSON<{ mintTxid: string; spentTxid: string }[]>(`https://api.bitcore.io/api/${BITCORE[chain]}/mainnet/address/${query}/txs?limit=${BITCORE_COINS}`);
   const facts = empty(address);
-  if (!coins) return facts;
+  if (!coins) return chain === 'dogecoin' ? blockcypherFacts(address) : facts;
   facts.activeChains = [chain];
   facts.transactions = new Set(coins.flatMap((c) => [c.mintTxid, c.spentTxid].filter(Boolean))).size;
   facts.sampled = coins.length;
   facts.coin = { chain, received: coins.length, receivedAtLeast: coins.length >= BITCORE_COINS, coSpent: 0, cluster: null };
+  return facts;
+}
+
+/** Dogecoin backup: BlockCypher's address view lists outputs received, enough for address reuse */
+async function blockcypherFacts(address: string): Promise<PrivacyFacts> {
+  const facts = empty(address);
+  const data = await getJSON<{ n_tx?: number; txrefs?: { tx_output_n: number }[]; hasMore?: boolean }>(`https://api.blockcypher.com/v1/doge/main/addrs/${address}?limit=${BITCORE_COINS}`);
+  if (!data) return facts;
+  const received = (data.txrefs ?? []).filter((t) => t.tx_output_n >= 0).length;
+  facts.activeChains = ['dogecoin'];
+  facts.transactions = data.n_tx ?? 0;
+  facts.sampled = data.txrefs?.length ?? 0;
+  facts.coin = { chain: 'dogecoin', received, receivedAtLeast: !!data.hasMore, coSpent: 0, cluster: null };
   return facts;
 }
 

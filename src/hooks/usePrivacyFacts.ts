@@ -63,3 +63,21 @@ export function usePrivacyFacts(address: string | null, chain: string | null): E
   const entry = address && chain ? entries.get(keyOf(address, chain)) : undefined;
   return { facts: entry?.facts ?? null, failed: entry?.failed ?? false, loading: !!address && !!chain && !entry };
 }
+
+/** Facts for several wallets at once (they still load one at a time); keyed by "chain:address". */
+export function usePrivacyFactsMany(items: { address: string; chain: string | null }[]): Map<string, Entry> {
+  useSyncExternalStore(subscribe, () => version, () => 0);
+  const signature = items.map((i) => `${i.chain}:${i.address}`).join('|');
+  useEffect(() => {
+    for (const i of items) if (i.chain) request(i.address, i.chain);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the signature covers the items
+  }, [signature]);
+  const out = new Map<string, Entry>();
+  for (const i of items) {
+    const entry = i.chain ? entries.get(keyOf(i.address, i.chain)) : undefined;
+    if (entry && i.chain) out.set(keyOf(i.address, i.chain), entry);
+  }
+  return out;
+}
+
+export const privacyKey = keyOf;

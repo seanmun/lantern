@@ -5,7 +5,7 @@ import { privacyChainOf, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
 import { privacyScore } from '@/utils/privacyScore';
 import { Wallet } from '@/types';
 
-const TONE = {
+export const PRIVACY_TONE = {
   exposed: { label: 'Exposed', className: 'bg-bad-soft text-bad ring-bad-line' },
   partial: { label: 'Partly private', className: 'bg-warn-soft text-warn ring-warn-line' },
   private: { label: 'Private', className: 'bg-good-soft text-good ring-good-line' },
@@ -26,7 +26,7 @@ export function PrivacyBadge({ wallet, valueUSD, nftCount, ready, otherWallets }
     return <span className="inline-flex h-6 items-center rounded-full bg-soft px-2.5 text-xs font-semibold text-muted">Privacy…</span>;
   }
   const { score, band, linked } = privacyScore(facts, { otherWallets, valueUSD, nftCount });
-  const tone = TONE[band];
+  const tone = PRIVACY_TONE[band];
   return (
     <Link
       href={href}

@@ -12,6 +12,7 @@ import { HistoryRange, PortfolioPoint, priceKeyOf, usePortfolioHistory } from '@
 import { artByFloor } from '@/hooks/useFeaturedArt';
 import { Artwork, PaintingFrame } from '@/components/overview/PaintingFrame';
 import { TokenLogo } from '@/components/ui/TokenLogo';
+import { PortfolioPrivacy } from './PortfolioPrivacy';
 
 interface DashboardProps {
   assets: Asset[];
@@ -311,6 +312,7 @@ function AssetRail({ holdings, total, perKey }: { holdings: Holding[]; total: nu
           See all {holdings.length} holdings
         </Link>
       </div>
+      <PortfolioPrivacy />
       <p className="mx-1 mt-3.5 text-[13px] leading-relaxed text-muted">Read-only. Your keys stay in your wallet; your addresses stay in this browser.</p>
     </aside>
   );
