@@ -1,4 +1,5 @@
 import 'server-only';
+import { fetchUntrusted } from '@/server/untrustedFetch';
 import { getAddress } from 'ethers';
 import { normalizeAddress } from '@/utils/address';
 import { BLOCKSCOUT_HOSTS } from '@/chains/blockscout';
@@ -76,18 +77,13 @@ async function getJSON(url: string) {
 /** Fetch a candidate image; null unless it's a raster/SVG image under the size cap. */
 async function fetchImage(url: string): Promise<Logo | null> {
   try {
-    // Candidate URLs can come from token creators (e.g. a Blockscout icon_url), so
-    // never let Node decompress Brotli from them: CVE-2026-111497 (Oct 2026) is an
-    // out-of-bounds write in Node's Brotli decoder. Ask for identity and refuse br.
-    const response = await fetch(url, { headers: { 'Accept-Encoding': 'identity' }, signal: AbortSignal.timeout(TIMEOUT_MS) });
-    if (/\bbr\b/i.test(response.headers.get('content-encoding') ?? '')) {
-      await response.body?.cancel();
-      return null;
-    }
-    const contentType = response.headers.get('content-type')?.split(';')[0].trim() ?? '';
+    // Candidate URLs can come from token creators (e.g. a Blockscout icon_url), so the
+    // response is never decompressed (see server/untrustedFetch.ts, CVE-2026-111497)
+    const response = await fetchUntrusted(url, { timeoutMs: TIMEOUT_MS, maxBytes: MAX_IMAGE_BYTES });
+    const contentType = response.contentType.split(';')[0].trim();
     if (!response.ok || !/^image\/(png|jpe?g|gif|webp|svg\+xml|avif)$/.test(contentType)) return null;
-    const body = await response.arrayBuffer();
-    return body.byteLength > 0 && body.byteLength <= MAX_IMAGE_BYTES ? { body, contentType } : null;
+    const { body } = response;
+    return body.byteLength > 0 ? { body: body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) as ArrayBuffer, contentType } : null;
   } catch {
     return null;
   }
