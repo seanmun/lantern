@@ -76,7 +76,14 @@ async function getJSON(url: string) {
 /** Fetch a candidate image; null unless it's a raster/SVG image under the size cap. */
 async function fetchImage(url: string): Promise<Logo | null> {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    // Candidate URLs can come from token creators (e.g. a Blockscout icon_url), so
+    // never let Node decompress Brotli from them: CVE-2026-111497 (Oct 2026) is an
+    // out-of-bounds write in Node's Brotli decoder. Ask for identity and refuse br.
+    const response = await fetch(url, { headers: { 'Accept-Encoding': 'identity' }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (/\bbr\b/i.test(response.headers.get('content-encoding') ?? '')) {
+      await response.body?.cancel();
+      return null;
+    }
     const contentType = response.headers.get('content-type')?.split(';')[0].trim() ?? '';
     if (!response.ok || !/^image\/(png|jpe?g|gif|webp|svg\+xml|avif)$/.test(contentType)) return null;
     const body = await response.arrayBuffer();

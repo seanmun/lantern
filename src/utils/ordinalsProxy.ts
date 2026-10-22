@@ -22,9 +22,16 @@ const SANDBOX_CSP = [
 export async function proxyOrdinals(path: string, { immutable }: { immutable: boolean }): Promise<NextResponse> {
   try {
     const upstream = await fetch(`${ORD_SERVER}${path}`, {
-      headers: { 'User-Agent': 'Crypto-Portfolio-Tracker/1.0', Accept: '*/*' },
+      // Anyone can inscribe Brotli-compressed content, so never let Node decompress
+      // it: CVE-2026-111497 (Oct 2026) is an out-of-bounds write in Node's Brotli
+      // decoder. Ask for identity and refuse a br response before reading it.
+      headers: { 'User-Agent': 'Crypto-Portfolio-Tracker/1.0', Accept: '*/*', 'Accept-Encoding': 'identity' },
       signal: AbortSignal.timeout(15_000),
     });
+    if (/\bbr\b/i.test(upstream.headers.get('content-encoding') ?? '')) {
+      await upstream.body?.cancel();
+      return new NextResponse(null, { status: 406, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
     if (!upstream.ok) {
       // Recursive art often references inscriptions that don't exist yet; a plain 404 is expected
       return new NextResponse(null, { status: upstream.status, headers: { 'Access-Control-Allow-Origin': '*' } });
