@@ -36,7 +36,7 @@ Lantern is an independent project. It is not affiliated with PulseChain, HEX or 
 
 ## Run it yourself
 
-Requires Node.js 20 or newer.
+Requires Node.js 24 (the current LTS; `nvm use` picks it up from `.nvmrc`). Use 24.22.1 or later for the October 2026 security fixes.
 
 ```bash
 git clone https://github.com/seanmun/lantern.git
