@@ -7,7 +7,7 @@ import { Asset } from '@/types';
 import { CheckResult, CheckSignal, CheckVerdict, ContractCheck, SiteCheck, TokenCheck, TxCheck } from '@/types/check';
 import { ApprovalItem, ApprovalsReport } from '@/types/approvals';
 import { privacyScore } from '@/utils/privacyScore';
-import { privacyChainOf, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
+import { checkedLabel, privacyChainOf, recheckPrivacy, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
 import { chainLabel } from '@/config/chainDisplay';
 import { applyPrices, formatUSD } from '@/utils/prices';
 import { groupHoldings } from '@/utils/holdings';
@@ -288,7 +288,8 @@ const BAND = {
 
 /** How identifiable this wallet is, and what would improve it. */
 function PrivacyPanel({ address, chains, valueUSD, nftCount, ready, otherWallets }: { address: string; chains: string[]; valueUSD: number; nftCount: number; ready: boolean; otherWallets: string[] }) {
-  const { facts, failed } = usePrivacyFacts(address, privacyChainOf(address, chains));
+  const chain = privacyChainOf(address, chains);
+  const { facts, failed, checkedAt, checking } = usePrivacyFacts(address, chain);
 
   const result = facts && ready ? privacyScore(facts, { otherWallets, valueUSD, nftCount }) : null;
   // Arriving from a wallet's privacy badge (…#privacy): the panel fills in late, so scroll once it has
@@ -300,7 +301,23 @@ function PrivacyPanel({ address, chains, valueUSD, nftCount, ready, otherWallets
   return (
     <section id="privacy" className="scroll-mt-24 space-y-4 rounded-3xl border border-line p-5 sm:p-7" aria-labelledby="privacy-h">
       <div>
-        <h2 id="privacy-h" className="text-2xl font-extrabold tracking-tight text-ink">Privacy score</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="privacy-h" className="text-2xl font-extrabold tracking-tight text-ink">Privacy score</h2>
+          {facts && (
+            <span className="flex items-center gap-2 text-[13px] text-muted">
+              {checking ? 'Re-checking…' : checkedAt ? checkedLabel(checkedAt) : null}
+              {failed && !checking && <span className="text-bad">Re-check failed; showing the previous result.</span>}
+              <button
+                type="button"
+                onClick={() => chain && recheckPrivacy(address, chain)}
+                disabled={checking}
+                className="rounded-full bg-soft px-3 py-1.5 font-bold text-ink ring-1 ring-line hover:bg-line disabled:opacity-50"
+              >
+                Run again
+              </button>
+            </span>
+          )}
+        </div>
         <p className="mt-1 text-[15px] text-muted">How easily a stranger could work out who owns this wallet and what else they own, from public data alone.</p>
       </div>
       {!result && <div className="rounded-2xl bg-soft p-5 text-center text-muted">{failed ? 'Couldn’t read this wallet’s public history right now. Try again in a minute.' : 'Looking at what this wallet reveals…'}</div>}

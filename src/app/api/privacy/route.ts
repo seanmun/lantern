@@ -16,9 +16,11 @@ const cache: Map<string, { body: unknown; at: number }> = ((globalThis as { __co
 export async function GET(request: NextRequest) {
   const address = request.nextUrl.searchParams.get('address')?.trim() ?? '';
   const validation = validateAddress(address);
+  // A re-check the viewer asked for: skip the cache and read the chains again
+  const fresh = request.nextUrl.searchParams.get('fresh') === '1';
   if (validation.format === 'hex') {
     try {
-      return NextResponse.json(await privacyFacts(address), { headers: { 'Cache-Control': 'public, max-age=300' } });
+      return NextResponse.json(await privacyFacts(address, { fresh }), { headers: { 'Cache-Control': fresh ? 'no-store' : 'public, max-age=300' } });
     } catch (error) {
       if (error instanceof PrivacyUnavailable) return NextResponse.json({ error: error.message }, { status: 503 });
       throw error;
@@ -30,10 +32,10 @@ export async function GET(request: NextRequest) {
 
   const key = `${chain}:${address}`;
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_MS) return NextResponse.json(hit.body);
+  if (hit && !fresh && Date.now() - hit.at < CACHE_MS) return NextResponse.json(hit.body);
   const body = await utxoPrivacyFacts(chain, address);
   // A failed read (no coin facts) must not score as perfectly private: report it, and retry next time
   if (!body.coin) return NextResponse.json({ error: 'This chain’s explorers are unavailable right now' }, { status: 503 });
   cache.set(key, { body, at: Date.now() });
-  return NextResponse.json(body, { headers: { 'Cache-Control': 'public, max-age=300' } });
+  return NextResponse.json(body, { headers: { 'Cache-Control': fresh ? 'no-store' : 'public, max-age=300' } });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { privacyChainOf, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
+import { checkedLabel, privacyChainOf, privacyKey, scoringContext, usePrivacyFacts } from '@/hooks/usePrivacyFacts';
 import { privacyScore } from '@/utils/privacyScore';
 import { Wallet } from '@/types';
 
@@ -18,19 +18,21 @@ export const PRIVACY_TONE = {
  */
 export function PrivacyBadge({ wallet, valueUSD, nftCount, ready, otherWallets }: { wallet: Wallet; valueUSD: number; nftCount: number; ready: boolean; otherWallets: string[] }) {
   const chain = privacyChainOf(wallet.address, wallet.chains);
-  const { facts, failed } = usePrivacyFacts(wallet.address, chain);
+  const { facts, failed, checkedAt } = usePrivacyFacts(wallet.address, chain);
   if (!chain) return null;
   const href = `/check?q=${encodeURIComponent(wallet.address)}#privacy`;
-  if (failed) return null;
-  if (!facts || !ready) {
+  if (failed && !facts) return null;
+  // Before balances load, score with the value seen last visit, so a saved score shows at once
+  const ctx = facts ? scoringContext(privacyKey(wallet.address, chain), { valueUSD, nftCount }, ready) : null;
+  if (!facts || !ctx) {
     return <span className="inline-flex h-6 items-center rounded-full bg-soft px-2.5 text-xs font-semibold text-muted">Privacy…</span>;
   }
-  const { score, band, linked } = privacyScore(facts, { otherWallets, valueUSD, nftCount });
+  const { score, band, linked } = privacyScore(facts, { otherWallets, ...ctx });
   const tone = PRIVACY_TONE[band];
   return (
     <Link
       href={href}
-      title={`${tone.label}${linked.count ? `, likely tied to ${linked.count} other ${linked.unit === 'address' ? (linked.count === 1 ? 'address' : 'addresses') : linked.count === 1 ? 'wallet' : 'wallets'}` : ''}. See why`}
+      title={`${tone.label}${checkedAt ? ` (${checkedLabel(checkedAt).toLowerCase()})` : ''}${linked.count ? `, likely tied to ${linked.count} other ${linked.unit === 'address' ? (linked.count === 1 ? 'address' : 'addresses') : linked.count === 1 ? 'wallet' : 'wallets'}` : ''}. See why`}
       className={`inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-xs font-bold tabular-nums ring-1 hover:opacity-85 ${tone.className}`}
     >
       Privacy {score}

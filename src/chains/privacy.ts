@@ -249,10 +249,10 @@ export class PrivacyUnavailable extends Error {}
 
 const cache: Map<string, { facts: PrivacyFacts; at: number }> = ((globalThis as { __privacyFacts?: Map<string, { facts: PrivacyFacts; at: number }> }).__privacyFacts ??= new Map());
 
-export async function privacyFacts(input: string): Promise<PrivacyFacts> {
+export async function privacyFacts(input: string, { fresh = false }: { fresh?: boolean } = {}): Promise<PrivacyFacts> {
   const address = ethers.getAddress(input.toLowerCase());
   const hit = cache.get(address);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.facts;
+  if (hit && !fresh && Date.now() - hit.at < CACHE_MS) return hit.facts;
 
   const [eth, pls, ethUsed, plsUsed, baseUsed] = await Promise.all([
     chainFacts('ethereum', address),

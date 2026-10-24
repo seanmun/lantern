@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import { usePortfolioContext } from '@/components/app/PortfolioProvider';
-import { privacyChainOf, privacyKey, usePrivacyFactsMany } from '@/hooks/usePrivacyFacts';
+import { checkedLabel, privacyChainOf, privacyKey, recheckPrivacy, scoringContext, usePrivacyFactsMany } from '@/hooks/usePrivacyFacts';
 import { privacyScore, PrivacyScore } from '@/utils/privacyScore';
 import { PRIVACY_TONE } from '@/components/wallet/PrivacyBadge';
 
@@ -24,35 +24,55 @@ export function PortfolioPrivacy() {
   const summary = useMemo(() => {
     const addresses = wallets.map((w) => w.address.toLowerCase());
     const scored = items
-      .filter((i) => i.chain && facts.get(privacyKey(i.address, i.chain))?.facts && !walletLoading.has(i.wallet.id))
       .map((i) => {
-        const value = walletTotals.get(i.wallet.id) ?? 0;
-        const nftCount = assets.filter((a) => a.walletAddress === i.address && (a.type === 'nft' || a.type === 'ordinal')).length;
-        const result = privacyScore(facts.get(privacyKey(i.address, i.chain!))!.facts!, {
-          otherWallets: addresses.filter((a) => a !== i.address.toLowerCase()),
-          valueUSD: value,
-          nftCount,
-        });
-        return { wallet: i.wallet, value, score: result.score };
-      });
+        const key = i.chain ? privacyKey(i.address, i.chain) : '';
+        const saved = i.chain ? facts.get(key)?.facts : null;
+        if (!saved) return null;
+        // Before balances load, score with the value seen last visit, so the saved score shows at once
+        const live = {
+          valueUSD: walletTotals.get(i.wallet.id) ?? 0,
+          nftCount: assets.filter((a) => a.walletAddress === i.address && (a.type === 'nft' || a.type === 'ordinal')).length,
+        };
+        const ctx = scoringContext(key, live, !walletLoading.has(i.wallet.id));
+        if (!ctx) return null;
+        const result = privacyScore(saved, { otherWallets: addresses.filter((a) => a !== i.address.toLowerCase()), ...ctx });
+        return { wallet: i.wallet, value: ctx.valueUSD, score: result.score };
+      })
+      .filter((w): w is NonNullable<typeof w> => !!w);
     const totalValue = scored.reduce((s, w) => s + w.value, 0);
     // No value yet (or all empty): every wallet counts the same
     const weight = (w: { value: number }) => (totalValue > 0 ? w.value / totalValue : 1 / scored.length);
     const score = scored.length ? Math.round(scored.reduce((s, w) => s + w.score * weight(w), 0)) : null;
     // The wallet costing the most: lowest score times its weight
     const worst = [...scored].sort((a, b) => (100 - b.score) * weight(b) - (100 - a.score) * weight(a))[0];
-    return { scored, score, worst, weight, scorable: items.filter((i) => i.chain).length, failed: items.filter((i) => i.chain && facts.get(privacyKey(i.address, i.chain))?.failed).length };
+    const entryOf = (i: (typeof items)[number]) => (i.chain ? facts.get(privacyKey(i.address, i.chain)) : undefined);
+    const checkedTimes = items.map((i) => entryOf(i)?.checkedAt).filter((t): t is number => !!t);
+    return {
+      scored, score, worst, weight,
+      scorable: items.filter((i) => i.chain).length,
+      // Never read at all (a failed re-check keeps its saved score)
+      unreadable: items.filter((i) => entryOf(i)?.failed && !entryOf(i)?.facts).length,
+      refreshFailed: items.filter((i) => entryOf(i)?.failed && entryOf(i)?.facts).length,
+      checking: items.filter((i) => entryOf(i)?.checking).length,
+      // The oldest check is the honest date for the total
+      checkedAt: checkedTimes.length ? Math.min(...checkedTimes) : null,
+    };
   }, [items, facts, wallets, walletTotals, walletLoading, assets]);
 
   if (summary.scorable === 0) return null;
-  const pending = summary.scorable - summary.scored.length - summary.failed;
+  const firstRun = summary.scored.length < summary.scorable - summary.unreadable;
+  const recheckAll = () => items.forEach((i) => i.chain && recheckPrivacy(i.address, i.chain));
   const band = summary.score !== null ? bandOf(summary.score) : null;
 
   return (
     <section aria-labelledby="privacy-total-h" className="mt-4 rounded-3xl border border-line p-5">
       <div className="flex items-center justify-between">
         <h2 id="privacy-total-h" className="text-lg font-extrabold text-ink">Privacy</h2>
-        {pending > 0 && <span className="text-[13px] text-muted">Scoring {summary.scored.length + 1} of {summary.scorable}…</span>}
+        {summary.checking > 0 && (
+          <span className="text-[13px] text-muted" aria-live="polite">
+            {firstRun ? `Scoring ${summary.scored.length + 1} of ${summary.scorable}…` : `Re-checking ${summary.checking} wallet${summary.checking === 1 ? '' : 's'}…`}
+          </span>
+        )}
       </div>
 
       {summary.score === null || !band ? (
@@ -88,7 +108,19 @@ export function PortfolioPrivacy() {
               </li>
             ))}
           </ul>
-          {summary.failed > 0 && <p className="mt-1 text-[13px] text-muted">{summary.failed} wallet{summary.failed === 1 ? '' : 's'} couldn&apos;t be read right now and {summary.failed === 1 ? 'is' : 'are'} left out.</p>}
+          {summary.unreadable > 0 && <p className="mt-1 text-[13px] text-muted">{summary.unreadable} wallet{summary.unreadable === 1 ? '' : 's'} couldn&apos;t be read right now and {summary.unreadable === 1 ? 'is' : 'are'} left out.</p>}
+          {summary.refreshFailed > 0 && summary.checking === 0 && <p className="mt-1 text-[13px] text-muted">The last re-check couldn&apos;t reach {summary.refreshFailed === 1 ? 'one wallet' : `${summary.refreshFailed} wallets`}; {summary.refreshFailed === 1 ? 'its' : 'their'} previous score is shown.</p>}
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3 text-[13px] text-muted">
+            <span>{summary.checkedAt ? checkedLabel(summary.checkedAt) : ' '}</span>
+            <button
+              type="button"
+              onClick={recheckAll}
+              disabled={summary.checking > 0}
+              className="rounded-full bg-soft px-3 py-1.5 font-bold text-ink ring-1 ring-line hover:bg-line disabled:opacity-50"
+            >
+              {summary.checking > 0 ? 'Checking…' : 'Re-check'}
+            </button>
+          </div>
         </>
       )}
     </section>
