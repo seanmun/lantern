@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node --import ./test/register.mjs --test \"test/**/*.test.ts\""
   },
   "dependencies": {
     "ethers": "^6.14.3",

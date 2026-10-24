@@ -1,7 +1,7 @@
 import 'server-only';
 import { PrivacyFacts } from '@/types/privacy';
 import { toCashAddr } from '@/utils/address';
-import { timezoneOf } from './privacy';
+import { timezoneOf } from '@/utils/timezone';
 
 /**
  * Privacy facts for coin-chain addresses (Bitcoin, Litecoin, Dogecoin,

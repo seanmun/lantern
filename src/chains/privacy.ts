@@ -1,6 +1,7 @@
 import 'server-only';
 import { ethers } from 'ethers';
 import { PrivacyFacts } from '@/types/privacy';
+import { timezoneOf } from '@/utils/timezone';
 import EXCHANGE_LIST from '@/config/exchangeWallets.json';
 import { BLOCKSCOUT_HOSTS } from './blockscout';
 import { createProvider } from './evm';
@@ -36,8 +37,6 @@ import { BASE_CONFIG } from './base';
 const TIMEOUT_MS = 15_000;
 const CACHE_MS = 10 * 60_000;
 const DEPOSIT_CANDIDATES = 3; // each costs two to four explorer calls; the free tier rate-limits
-const MIN_TIMEZONE_SAMPLE = 20;
-const MIN_TIMEZONE_DAYS = 7; // a single burst of activity has a 'quiet' stretch by accident
 // Exchange names as they appear in explorer labels and tags
 const EXCHANGE_RE = /binance|coinbase|kraken|okx|okex|bybit|kucoin|gemini|bitfinex|bitstamp|crypto\.com|huobi|htx|gate\.io|bitget|mexc|upbit|robinhood|exchange/i;
 // Exchange hot wallets and deposit addresses on Ethereum (see config/exchangeWallets.NOTICE.md).
@@ -222,28 +221,6 @@ async function depositAddresses(host: string, me: string, sentTo: Map<string, nu
   return found;
 }
 
-/**
- * Most people send nothing while asleep. The quietest six hours of a
- * wallet's own transactions, taken as roughly midnight to 6 a.m. local time,
- * give its likely UTC offset; no clear pause (bots, shared wallets) gives none.
- */
-export function timezoneOf(times: number[]): PrivacyFacts['timezone'] {
-  if (times.length < MIN_TIMEZONE_SAMPLE) return null;
-  if (new Set(times.map((t) => new Date(t * 1000).toISOString().slice(0, 10))).size < MIN_TIMEZONE_DAYS) return null;
-  const hours = new Array(24).fill(0);
-  for (const t of times) hours[new Date(t * 1000).getUTCHours()]++;
-  let start = 0;
-  let quietest = Infinity;
-  for (let s = 0; s < 24; s++) {
-    let sum = 0;
-    for (let k = 0; k < 6; k++) sum += hours[(s + k) % 24];
-    if (sum < quietest) [quietest, start] = [sum, s];
-  }
-  if (quietest / times.length > 0.08) return null;
-  // The window starts at local midnight
-  const offset = ((((0 - start) % 24) + 36) % 24) - 12;
-  return { offset, sample: times.length };
-}
 
 export class PrivacyUnavailable extends Error {}
 

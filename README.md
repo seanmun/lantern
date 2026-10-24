@@ -46,6 +46,8 @@ cp .env.example .env.local   # every key is optional
 npm run dev                  # http://localhost:3000
 ```
 
+Run the tests with `npm test` (Node's built-in test runner; no extra dependencies).
+
 Everything works without API keys, using public endpoints. These optional keys make it faster or more complete:
 
 | Variable | What it adds |
